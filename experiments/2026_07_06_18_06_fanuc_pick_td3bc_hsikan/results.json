@@ -1,0 +1,144 @@
+{
+  "name": "fanuc_pick_td3bc_hsikan",
+  "select": "place",
+  "total_steps": 100000,
+  "place_median": 0.25,
+  "place_per_seed": [
+    0.25,
+    0.25
+  ],
+  "seeds": [
+    {
+      "seed": 0,
+      "peak": {
+        "place": 0.25,
+        "step": 0.0,
+        "stage": "bc_step0",
+        "lift": 0.625
+      },
+      "curve": [
+        {
+          "step": 0.0,
+          "stage": "bc_step0",
+          "lift": 0.625,
+          "place": 0.25
+        },
+        {
+          "step": 12500.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 25000.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 37500.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 50000.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 62500.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 75000.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 87500.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 100000.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        }
+      ],
+      "wall_s": 142.7
+    },
+    {
+      "seed": 2,
+      "peak": {
+        "place": 0.25,
+        "step": 0.0,
+        "stage": "bc_step0",
+        "lift": 0.75
+      },
+      "curve": [
+        {
+          "step": 0.0,
+          "stage": "bc_step0",
+          "lift": 0.75,
+          "place": 0.25
+        },
+        {
+          "step": 12500.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 25000.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 37500.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 50000.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 62500.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 75000.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 87500.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 100000.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        }
+      ],
+      "wall_s": 138.8
+    }
+  ]
+}

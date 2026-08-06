@@ -1,0 +1,163 @@
+{
+ "seed": 0,
+ "steps_scale": 1.0,
+ "ready_states": 39,
+ "thresholds": [
+  0.37306976318359375,
+  0.7461395263671875
+ ],
+ "band_sizes": {
+  "B0_ready": 39,
+  "B1_near": 243,
+  "B2_mid": 243,
+  "B3_far": 244,
+  "B4_clear_start": 192
+ },
+ "band_reports": [
+  {
+   "band": "B0_ready",
+   "budget": 8000,
+   "held1": {
+    "n": 24,
+    "strict": 5,
+    "loose": 5,
+    "ready_entry": 4,
+    "handoff": 0,
+    "coverage": 5,
+    "mean_progress": 0.0172,
+    "ready_entry_rate": 0.167,
+    "handoff_rate": 0.0
+   },
+   "held2": {
+    "n": 24,
+    "strict": 0,
+    "loose": 0,
+    "ready_entry": 0,
+    "handoff": 0,
+    "coverage": 0,
+    "mean_progress": 0.0,
+    "ready_entry_rate": 0.0,
+    "handoff_rate": 0.0
+   }
+  },
+  {
+   "band": "B1_near",
+   "budget": 12000,
+   "held1": {
+    "n": 24,
+    "strict": 1,
+    "loose": 5,
+    "ready_entry": 4,
+    "handoff": 0,
+    "coverage": 1,
+    "mean_progress": 0.0148,
+    "ready_entry_rate": 0.167,
+    "handoff_rate": 0.0
+   },
+   "held2": {
+    "n": 24,
+    "strict": 0,
+    "loose": 0,
+    "ready_entry": 0,
+    "handoff": 0,
+    "coverage": 0,
+    "mean_progress": 0.0,
+    "ready_entry_rate": 0.0,
+    "handoff_rate": 0.0
+   }
+  },
+  {
+   "band": "B2_mid",
+   "budget": 15000,
+   "held1": {
+    "n": 24,
+    "strict": 0,
+    "loose": 5,
+    "ready_entry": 4,
+    "handoff": 0,
+    "coverage": 0,
+    "mean_progress": 0.0178,
+    "ready_entry_rate": 0.167,
+    "handoff_rate": 0.0
+   },
+   "held2": {
+    "n": 24,
+    "strict": 0,
+    "loose": 0,
+    "ready_entry": 0,
+    "handoff": 0,
+    "coverage": 0,
+    "mean_progress": 0.0013,
+    "ready_entry_rate": 0.0,
+    "handoff_rate": 0.0
+   }
+  },
+  {
+   "band": "B3_far",
+   "budget": 15000,
+   "held1": {
+    "n": 24,
+    "strict": 0,
+    "loose": 4,
+    "ready_entry": 4,
+    "handoff": 0,
+    "coverage": 0,
+    "mean_progress": 0.0134,
+    "ready_entry_rate": 0.167,
+    "handoff_rate": 0.0
+   },
+   "held2": {
+    "n": 24,
+    "strict": 0,
+    "loose": 0,
+    "ready_entry": 0,
+    "handoff": 0,
+    "coverage": 0,
+    "mean_progress": 0.0009,
+    "ready_entry_rate": 0.0,
+    "handoff_rate": 0.0
+   }
+  },
+  {
+   "band": "B4_clear_start",
+   "budget": 25000,
+   "held1": {
+    "n": 24,
+    "strict": 0,
+    "loose": 5,
+    "ready_entry": 4,
+    "handoff": 0,
+    "coverage": 0,
+    "mean_progress": 0.0136,
+    "ready_entry_rate": 0.167,
+    "handoff_rate": 0.0
+   },
+   "held2": {
+    "n": 24,
+    "strict": 0,
+    "loose": 0,
+    "ready_entry": 0,
+    "handoff": 0,
+    "coverage": 0,
+    "mean_progress": 0.0,
+    "ready_entry_rate": 0.0,
+    "handoff_rate": 0.0
+   }
+  }
+ ],
+ "causal_held1": {
+  "n": 24,
+  "transport_alone": 4,
+  "untrained_relay": 4,
+  "trained_relay": 0,
+  "zero_action": 0
+ },
+ "causal_held2": {
+  "n": 24,
+  "transport_alone": 0,
+  "untrained_relay": 0,
+  "trained_relay": 0,
+  "zero_action": 0
+ },
+ "classification": "NO_EFFECT"
+}

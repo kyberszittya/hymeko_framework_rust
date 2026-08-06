@@ -1,0 +1,43 @@
+{
+  "hybrid_delivery_median": 0.28,
+  "hybrid_delivery_per_seed": [
+    0.2,
+    0.28,
+    0.44
+  ],
+  "baselines": {
+    "teacher_scripted": 0.84,
+    "flat_bc_clone_median": 0.34
+  },
+  "config": {
+    "modes": [
+      "swing",
+      "plow"
+    ],
+    "features": 11,
+    "bc_epochs": 60,
+    "bc_batch": 512,
+    "n_demos": 200,
+    "n_eval": 50,
+    "eval_seed": 9000,
+    "samples": {
+      "swing": 14189,
+      "plow": 13286
+    }
+  },
+  "wall_s": 279.5,
+  "seeds": [
+    {
+      "seed": 0,
+      "delivery": 0.28
+    },
+    {
+      "seed": 1,
+      "delivery": 0.44
+    },
+    {
+      "seed": 2,
+      "delivery": 0.2
+    }
+  ]
+}

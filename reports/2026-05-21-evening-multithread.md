@@ -25,9 +25,9 @@ empty.
 
 ### 2.1 Phase 1 grid (running, 8 cells)
 
-Script: ``signedkan_wip/experiments/run_voc_d3_break_2026_05_21.sh``
+Script: ``hymeko_neuro/experiments/run_voc_d3_break_2026_05_21.sh``
 (PID 893163, log dir
-``signedkan_wip/experiments/results/voc_d3_break_20260521T010352Z/``).
+``hymeko_neuro/experiments/results/voc_d3_break_20260521T010352Z/``).
 
 Goal: push past D-3-bis's 0.0153 mAP_50 ceiling by sweeping the
 loss-balance lever harder + lengthening training.
@@ -51,14 +51,14 @@ Wall budget ~2.5 h.  Falsifier: best cell ≥ 0.020 mAP_50 → queue
 **The user noticed the existing quadtree extension was unused.**  Now
 plumbed end-to-end:
 
-- ``signedkan_wip/src/vision/hymeyolo_warmstart_quadtree.py`` (new,
+- ``hymeko_neuro/experiments/vision/hymeyolo_warmstart_quadtree.py`` (new,
   235 LOC) — uses ``AdaptiveQuadtreeRust`` to place query centres at
   the variance-ranked leaves of the adaptive quadtree.  Cheap
   post-hoc per-leaf variance scoring + FPS within the top pool.
-- ``signedkan_wip/src/vision/train_voc_stagec.py`` — new
+- ``hymeko_neuro/experiments/vision/train_voc_stagec.py`` — new
   ``--warmstart-mode {off, saliency, quadtree}`` flag and
   ``--warmstart-bootstrap-n`` for the bootstrap batch size.
-- ``signedkan_wip/tests/test_hymeyolo_warmstart_quadtree.py`` —
+- ``hymeko_neuro/tests/test_hymeyolo_warmstart_quadtree.py`` —
   9 unit tests, all passing: shape/range checks, two-blob
   concentration (both blobs hit), determinism, uniform-fallback
   degenerate case, padding when quadtree underprovides, mock-model
@@ -67,9 +67,9 @@ plumbed end-to-end:
 ### 2.3 Phase 2 grid (queued, 4 cells)
 
 Script:
-``signedkan_wip/experiments/run_voc_quadtree_warmstart_2026_05_21.sh``
+``hymeko_neuro/experiments/run_voc_quadtree_warmstart_2026_05_21.sh``
 (PID 894731, log dir
-``signedkan_wip/experiments/results/voc_quadtree_warmstart_20260521T011912Z/``).
+``hymeko_neuro/experiments/results/voc_quadtree_warmstart_20260521T011912Z/``).
 
 Tests the 2×2 grid:
 ``warmstart_mode ∈ {off, quadtree} × lam_gate_neg ∈ {1.0, 2.0}`` at
@@ -83,7 +83,7 @@ paired Δ at 4.68σ (2026-05-16).  The open question is whether the
 ## 3. Overnight signed-graph 5-seed
 
 Script:
-``signedkan_wip/experiments/run_outer_hsikan_overnight_5seed_2026_05_21.sh``
+``hymeko_neuro/experiments/run_outer_hsikan_overnight_5seed_2026_05_21.sh``
 (PID 893290, log dir
 ``/tmp/outer_hsikan_overnight_5seed_20260521T010529Z/``).
 
@@ -101,7 +101,7 @@ expected wall time ~6-8 h (BA fast, Slashdot slowest).
 
 ## 4. HSIKAN time-series benchmark — NULL result (honest)
 
-Package: ``signedkan_wip/src/timeseries/`` (4 files, 250 LOC).
+Package: ``hymeko_neuro/experiments/timeseries/`` (4 files, 250 LOC).
 
 - ``datasets.py`` — pure-NumPy generators for sine, noisy_sine,
   Mackey-Glass, Lorenz-x.  All normalised to mean 0, std 1.
@@ -138,7 +138,7 @@ architecture's scope.
 
 ## 5. HSIKAN control benchmark — competitive with LQR/MPC
 
-Package: ``signedkan_wip/src/control/`` (5 files, 530 LOC).
+Package: ``hymeko_neuro/experiments/control/`` (5 files, 530 LOC).
 
 - ``bicycle.py`` — RK4-integrated kinematic bicycle.
 - ``tracks.py`` — three reference paths (straight, sinusoid,
@@ -216,9 +216,9 @@ imitation-learning HSIKAN application.
 
 | Suite | Result |
 | --- | --- |
-| ``signedkan_wip/tests/test_hymeyolo_warmstart_quadtree.py`` | **9 / 9 pass** |
-| ``signedkan_wip/tests/test_control.py`` | **12 / 12 pass** |
-| ``signedkan_wip/tests/test_htl.py`` (earlier in session) | **18 / 18 pass** |
+| ``hymeko_neuro/tests/test_hymeyolo_warmstart_quadtree.py`` | **9 / 9 pass** |
+| ``hymeko_neuro/tests/test_control.py`` | **12 / 12 pass** |
+| ``hymeko_neuro/tests/test_htl.py`` (earlier in session) | **18 / 18 pass** |
 
 39 new unit tests added today.  No regressions in prior suites.
 
@@ -249,7 +249,7 @@ Clean.
    ``orchestrator.log`` of both grids; tabulate which (if any) cell
    broke 0.020 mAP_50.
 2. **Signed-graph overnight aggregate.**  Read
-   ``signedkan_wip/experiments/results/outer_hsikan_overnight_5seed_*.jsonl``
+   ``hymeko_neuro/experiments/results/outer_hsikan_overnight_5seed_*.jsonl``
    morning; compute paired Δ for OTC d=4 and Slashdot d=4.
 3. **HSIKAN control: 5-seed validation + nonlinear regime tests.**
    Tonight's run is seed=0 only.  Real claim needs 5 seeds.  And
@@ -269,25 +269,25 @@ Clean.
 
 | File | Type | LOC |
 | --- | --- | --- |
-| ``signedkan_wip/src/timeseries/{__init__,datasets,models}.py`` | new | ~280 |
-| ``signedkan_wip/experiments/runs/run_timeseries_smoke.py`` | new | 150 |
-| ``signedkan_wip/src/control/{__init__,bicycle,tracks,controllers,benchmark}.py`` | new | ~530 |
-| ``signedkan_wip/experiments/runs/run_control_benchmark_smoke.py`` | new | 140 |
-| ``signedkan_wip/tests/test_control.py`` | new | 165 |
-| ``signedkan_wip/src/vision/hymeyolo_warmstart_quadtree.py`` | new | 235 |
-| ``signedkan_wip/src/vision/train_voc_stagec.py`` | extended | +45 (CLI + warmstart dispatch) |
-| ``signedkan_wip/tests/test_hymeyolo_warmstart_quadtree.py`` | new | 145 |
-| ``signedkan_wip/experiments/run_voc_d3_break_2026_05_21.sh`` | new | 130 |
-| ``signedkan_wip/experiments/run_voc_quadtree_warmstart_2026_05_21.sh`` | new | 100 |
-| ``signedkan_wip/experiments/run_outer_hsikan_overnight_5seed_2026_05_21.sh`` | new | 130 |
+| ``hymeko_neuro/experiments/timeseries/{__init__,datasets,models}.py`` | new | ~280 |
+| ``hymeko_neuro/experiments/runs/run_timeseries_smoke.py`` | new | 150 |
+| ``hymeko_neuro/experiments/control/{__init__,bicycle,tracks,controllers,benchmark}.py`` | new | ~530 |
+| ``hymeko_neuro/experiments/runs/run_control_benchmark_smoke.py`` | new | 140 |
+| ``hymeko_neuro/tests/test_control.py`` | new | 165 |
+| ``hymeko_neuro/experiments/vision/hymeyolo_warmstart_quadtree.py`` | new | 235 |
+| ``hymeko_neuro/experiments/vision/train_voc_stagec.py`` | extended | +45 (CLI + warmstart dispatch) |
+| ``hymeko_neuro/tests/test_hymeyolo_warmstart_quadtree.py`` | new | 145 |
+| ``hymeko_neuro/experiments/run_voc_d3_break_2026_05_21.sh`` | new | 130 |
+| ``hymeko_neuro/experiments/run_voc_quadtree_warmstart_2026_05_21.sh`` | new | 100 |
+| ``hymeko_neuro/experiments/run_outer_hsikan_overnight_5seed_2026_05_21.sh`` | new | 130 |
 | ``reports/2026-05-21-evening-multithread.md`` | new | this file |
 
 ## 11. What's running, right now
 
 | PID | What | Log | ETA |
 | --- | --- | --- | --- |
-| 893163 | VOC D-3-BREAK Phase 1 (8 cells) | ``signedkan_wip/experiments/results/voc_d3_break_20260521T010352Z/orchestrator.log`` | ~2.5 h |
-| 894731 | VOC D-3-BREAK Phase 2 (4 cells, quadtree warmstart) | ``signedkan_wip/experiments/results/voc_quadtree_warmstart_20260521T011912Z/orchestrator.log`` | waits for 893163 |
+| 893163 | VOC D-3-BREAK Phase 1 (8 cells) | ``hymeko_neuro/experiments/results/voc_d3_break_20260521T010352Z/orchestrator.log`` | ~2.5 h |
+| 894731 | VOC D-3-BREAK Phase 2 (4 cells, quadtree warmstart) | ``hymeko_neuro/experiments/results/voc_quadtree_warmstart_20260521T011912Z/orchestrator.log`` | waits for 893163 |
 | 893290 | outer-HSIKAN 5-seed on BA d=8 + OTC d=4 + Slashdot d=4 | ``/tmp/outer_hsikan_overnight_5seed_20260521T010529Z/orchestrator.log`` | waits for 894731 then ~6 h |
 
 Total queue: ~10-11 h from now.  Wakeup the user to:

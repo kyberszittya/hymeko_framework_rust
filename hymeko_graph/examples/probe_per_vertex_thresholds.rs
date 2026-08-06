@@ -18,7 +18,7 @@
 //! Usage:
 //! ```
 //! ./target/release/examples/probe_per_vertex_thresholds \
-//!     signedkan_wip/data/epinions.txt 4 128
+//!     hymeko_neuro/assets/data/epinions.txt 4 128
 //! ```
 
 use std::env;

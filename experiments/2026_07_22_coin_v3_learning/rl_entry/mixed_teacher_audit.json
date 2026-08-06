@@ -1,0 +1,33 @@
+{
+ "contract": "MIXED_TEACHER_AVERAGING_AUDIT (item 8)",
+ "date": "2026-07-23",
+ "pi0_sha": "1902454c",
+ "no_td3": true,
+ "trigger": "M1_FEEDBACK_NO_GAIN (M=1 worse than M=2 => horizon not the limiter)",
+ "n": 164,
+ "n_planner": 51,
+ "n_pi0_fallback": 113,
+ "teacher_gap": {
+  "mean": 3.896364450454712,
+  "median": 3.223590612411499,
+  "p90": 6.9982171058654785,
+  "mean_planner_states": 4.248874664306641
+ },
+ "first_action_error": {
+  "mean": 0.19195030629634857,
+  "median": 0.12894389033317566
+ },
+ "nn_mode_disagreement_mean": 0.3871951219512195,
+ "conditional_variance_first_label_mean": 0.6811596751213074,
+ "error_by_admissibility_boundary": {
+  "interior_both": 0.23548226058483124,
+  "boundary_xor": 0.17434705793857574,
+  "interior_neither": 0.15658067166805267
+ },
+ "error_vs_mode_disagreement_corr": 0.2553056340574285,
+ "between_teachers_frac": 0.054878048780487805,
+ "between_and_off_label_frac": 0.024390243902439025,
+ "planner_states_pulled_toward_pi0_frac": 0.0392156862745098,
+ "planner_states_mean_segment_pos": 0.9467982649803162,
+ "verdict": "MIXED_TEACHER_AVERAGING_NOT_CONFIRMED"
+}

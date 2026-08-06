@@ -1,0 +1,313 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{remark}
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{remark}{Remark}
+
+\newcommand{\Cl}{\mathsf{C}}
+\newcommand{\Rstrict}{R_{\mathrm{strict}}}
+\newcommand{\Rtopo}{R_{\mathrm{topo}}}
+\newcommand{\Rfull}{R_{\mathrm{full}}}
+\newcommand{\reach}{\mathsf{reach}}
+
+\title{Reachability Rules: a Shared Algebra for\\
+       Process-Graph Optimization, Signed-Link Leakage,\\
+       and Cognitive-Agent Synthesis\\[0.3em]
+       \large Mathematical framework report}
+\author{Csaba Hajdu}
+\date{2026-06-14}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We isolate one algebraic object --- a \emph{reachability rule}: a parameter that
+selects which generators seed a monotone closure operator, evaluated against an
+admissibility predicate --- and show it instantiates, with the same monotonicity
+and reduction theorems, in three otherwise-unrelated programs implemented in the
+HyMeKo framework: (A) Friedler-axiom process-network synthesis (P-graph
+optimization: MSG/SSG/ABB), (B) signed-link-prediction leakage auditing (neural
+networks), and (C) gatekeeper-bounded cognitive-agent synthesis (AKOIRE). The
+contribution is twofold: a small theory (\S\ref{sec:theory}) with proofs, and
+three instantiations (\S\ref{sec:pgraph}--\S\ref{sec:agent}) that each become a
+standalone article. We are explicit (\S\ref{sec:status}) about what is a theorem,
+what is an empirically supported proposition, and what is a conjecture.
+\end{abstract}
+
+\section{Introduction}
+
+Three problems in this codebase share a structure that is usually re-derived ad
+hoc in each. (A) PNS synthesis asks which products are \emph{producible} from a
+set of operating units --- a forward closure gated by the five Friedler axioms.
+(B) The signed-link leakage audit asks whether a held-out edge sign is
+\emph{reachable} by a model's message passing --- a closure over an adjacency,
+the basis of the strict vs.\ transductive protocols. (C) The AKOIRE cognitive
+loop asks which refinements of an always-parseable \emph{ambience} are
+\emph{reachable} under a gatekeeper --- a closure over accepted edits, bounded by
+a round cap. In all three a closure is computed, its seed/generator set is a free
+parameter, and an admissibility predicate filters the result. We name that
+parameter and study it once.
+
+\section{The theory}
+\label{sec:theory}
+
+\subsection{Closures and rules}
+
+Let $(L,\subseteq)$ be a finite lattice (in practice the powerset of a ground set
+of edges, materials, or refinements).
+
+\begin{definition}[Generator-seeded closure]
+A \emph{closure family} is a monotone operator
+$\Cl : 2^{G}\times L \to L$, where $G$ is a set of \emph{generators} and, for
+fixed generator set $\Gamma\subseteq G$, $\Cl(\Gamma,\cdot)$ is a closure
+operator: extensive ($X\subseteq \Cl(\Gamma,X)$), monotone
+($X\subseteq Y \Rightarrow \Cl(\Gamma,X)\subseteq\Cl(\Gamma,Y)$), and idempotent.
+We additionally require monotonicity in the generators:
+$\Gamma\subseteq\Gamma' \Rightarrow \Cl(\Gamma,X)\subseteq\Cl(\Gamma',X)$.
+\end{definition}
+
+\begin{definition}[Reachability rule]
+\label{def:rule}
+A \emph{reachability rule} $R$ is a map assigning to a problem instance a
+generator set $\Gamma_R\subseteq G$. The \emph{reachable set} under $R$ from a
+base $B$ is $\reach_R(B) := \Cl(\Gamma_R, B)$. Rules are ordered by
+$R\sqsubseteq R'$ iff $\Gamma_R\subseteq\Gamma_{R'}$ on every instance.
+\end{definition}
+
+In every instantiation below the same three rules appear, forming a chain:
+\begin{equation}
+  \Rstrict \;\sqsubseteq\; \Rtopo \;\sqsubseteq\; \Rfull .
+  \label{eq:lattice}
+\end{equation}
+$\Rstrict$ admits only \emph{confirmed} generators (training edges / established
+units / committed ambience); $\Rtopo$ additionally admits \emph{candidate
+connectivity} with labels withheld; $\Rfull$ admits candidates with labels.
+
+\subsection{Core results}
+
+\begin{theorem}[Monotonicity]
+\label{thm:mono}
+For any base $B$, $R\sqsubseteq R' \Rightarrow \reach_R(B)\subseteq\reach_{R'}(B)$.
+In particular, along \eqref{eq:lattice},
+$\reach_{\Rstrict}(B)\subseteq\reach_{\Rtopo}(B)\subseteq\reach_{\Rfull}(B)$.
+\end{theorem}
+\begin{proof}
+$R\sqsubseteq R'$ gives $\Gamma_R\subseteq\Gamma_{R'}$ by
+Definition~\ref{def:rule}; apply generator-monotonicity of $\Cl$.
+\end{proof}
+
+\begin{theorem}[Reduction]
+\label{thm:reduction}
+Let $\Cl_0$ be a domain's canonical closure with its conventional generator set
+$\Gamma_0$. If $\Gamma_{\Rstrict}=\Gamma_0$, then
+$\reach_{\Rstrict}(B)=\Cl_0(B)$ for all $B$: the strict rule reproduces the
+pre-existing semantics exactly.
+\end{theorem}
+\begin{proof}
+Immediate from $\Cl(\Gamma_{\Rstrict},B)=\Cl(\Gamma_0,B)=\Cl_0(B)$.
+\end{proof}
+
+Theorem~\ref{thm:reduction} is the safety guarantee: introducing the rule axis
+does not perturb a domain's established results --- it is a conservative
+extension, checked by a regression test in each instantiation.
+
+\begin{theorem}[Bound admissibility]
+\label{thm:admiss}
+Let a branch-and-bound search prune a branch when a feasibility target
+$T\subseteq G$ is not contained in an \emph{optimistic} reachable set
+$\reach_{R}(B^{\uparrow})$ (the closure under the maximal still-available
+generators). Widening $R$ to $R'\sqsupseteq R$ keeps the bound \emph{admissible}:
+no branch pruned under $R'$ would have been retained under $R$, and the search
+remains exact.
+\end{theorem}
+\begin{proof}
+By Theorem~\ref{thm:mono}, $\reach_{R}(B^{\uparrow})\subseteq
+\reach_{R'}(B^{\uparrow})$, so $T\subseteq\reach_{R}(B^{\uparrow})\Rightarrow
+T\subseteq\reach_{R'}(B^{\uparrow})$: the wider rule prunes a (weak) superset of
+the branches the narrower one keeps feasible, never cutting an optimum. Exactness
+of the underlying B\&B is preserved because the leaf feasibility test is unchanged.
+\end{proof}
+
+\section{Instantiation A --- Process-graph optimization}
+\label{sec:pgraph}
+
+\textbf{Closure.} $G$ = operating units; $B=\Gamma_0$ = raw materials $R$;
+$\Cl$ = the producibility fixpoint \texttt{close\_producible}: admit a unit's
+outputs once all its inputs are reachable. This is exactly the closure the ABB
+reachability bound and SSG feasibility evaluate (\texttt{hymeko\_pgraph}).
+
+\textbf{Rules.} $\Gamma_{\Rstrict}$ = confirmed units (canonical PNS, so
+$\Gamma_{\Rstrict}=\Gamma_0$ and Theorem~\ref{thm:reduction} applies);
+$\Rtopo/\Rfull$ additionally admit \emph{candidate} units, differing only in
+whether candidate \emph{costs} are counted --- the cost layer, orthogonal to the
+closure.
+
+\textbf{Axioms as a second filter.} The Friedler axioms S1--S5 are an
+admissibility predicate on the closed structure; A4/S4 (``every operating unit
+reaches a required product'') is itself a reachability statement, and the
+extension bundle (\texttt{axiom\_extensions.rs}) shows orthogonal rules already
+sit \emph{alongside} S1--S5 without contradiction. The reachability rule is the
+\emph{reachability-axis} analogue: a refinement \emph{regime} (the
+\texttt{regime.rs} Strategy seam) layered on MSG/SSG/ABB.
+
+\emph{Verified (Rust, \texttt{hymeko\_pgraph::reachability}):}
+Theorem~\ref{thm:reduction} as a unit test ($\Rstrict$ equals
+\texttt{close\_producible}); Theorem~\ref{thm:mono} as the monotone-closure test;
+a fixture where a product is producible \emph{only} via a candidate unit
+(reachability strictly grows). Article~A (\S\ref{sec:articles}).
+
+\section{Instantiation B --- Signed-link leakage (neural networks)}
+\label{sec:nn}
+
+\textbf{Closure.} $G$ = edges (with optional signs); $B$ = the node set;
+$\Cl$ = the message-passing reachability of a signed GNN/transformer --- a node's
+representation reaches the labels on edges in its receptive field.
+
+\textbf{Rules.} $\Gamma_{\Rstrict}$ = training edges only; $\Rtopo$ adds
+test-edge \emph{topology} with signs masked to a neutral token; $\Rfull$ adds
+test edges \emph{with} signs (the convention these baselines self-report under).
+A train-label \emph{shuffle} permutes training signs; the held-out AUROC under
+shuffle is the leakage probe.
+
+\begin{definition}[Leak]
+A method \emph{leaks} under $(R,\text{shuffle})$ if its held-out AUROC under the
+shuffle stays above chance.
+\end{definition}
+
+\begin{proposition}[Necessity]
+\label{prop:nec}
+If the held-out label is not in $\reach_R(B)$ then the method does not leak under
+$(R,\text{shuffle})$ (the readout has no access to it).
+\end{proposition}
+Under $\Rstrict$ the test sign is never reachable, so by
+Proposition~\ref{prop:nec} the strict-shuffle AUROC is chance. \emph{Verified
+empirically:} 5-seed grid, $7$ baselines $\times 5$ datasets ($350$ runs); mean
+shuffled AUROC $0.515$--$0.545$, $\sim$35\,pp below real; epinions $0.500$,
+slashdot $0.514$ (clean to chance).
+
+\begin{proposition}[Reachability is not sufficient: the readout factor]
+\label{prop:readout}
+Label reachability under $R$ is necessary but not sufficient for a leak.
+Leakage factors as
+\[
+  \textsc{leak}(R,\text{model}) \;\Longleftrightarrow\;
+  \big[\text{label}\in\reach_R(B)\big]\ \wedge\ \big[\text{readout is local}\big],
+\]
+where a \emph{local} readout exposes a held-out edge's own label environment to
+its per-edge logit, and a \emph{diffuse} (node-embedding) readout averages it
+away.
+\end{proposition}
+\emph{Empirical support.} Under $\Rfull$ (test signs reachable), an SGT with a
+node-embedding $\times$ MLP readout still drops to chance under shuffle
+($0.514$, bitcoin-alpha, 60 ep) --- reachable but not exploited; whereas a
+cycle-/path-feature readout leaks at $0.73$ (2026-06-11). The factorization is
+the proposed headline of Article~B; the decisive test is the $\Rtopo$ sweep
+across readout families (wired and unit-tested; sweep pending).
+
+\begin{remark}[A residual the label-shuffle misses]
+On reddit-body the strict-shuffle AUROC is a \emph{stable} $0.564\pm0.024$, not
+chance. Because the shuffle permutes signs but preserves topology, a node-level
+sign prior carried by degree/position survives it. Formally this is leakage
+through a \emph{generator the rule does not vary} (topology); isolating it needs a
+degree-preserving rewire control. (Conjecture~\ref{conj:topo}.)
+\end{remark}
+
+\section{Instantiation C --- Cognitive-agent synthesis (AKOIRE)}
+\label{sec:agent}
+
+\textbf{Closure.} $G$ = candidate refinements the agent may propose;
+$B$ = the current \emph{ambience} (an always-parseable source with a monotonic
+generation counter); $\Cl$ = the set of ambiences reachable by sequences of
+\emph{gatekeeper-accepted} refinements. Each accepted refinement increments the
+generation; the closure is approached one step per loop round, bounded by
+\texttt{max\_rounds}.
+
+\textbf{Rule \& admissibility.} The gatekeeper (the HyMeKo Layer-1 parser) is the
+admissibility predicate: a refinement is admitted iff the resulting source parses
+(the cognitive-layer analogue of the Friedler axioms). The reachability rule
+selects which refinements are candidates --- a \emph{strict} agent reaches only
+refinements over confirmed structure; a \emph{transductive} agent may reach over
+proposed-but-unconfirmed structure, with or without committing its semantics
+(topology vs.\ full), exactly mirroring \eqref{eq:lattice}.
+
+\begin{proposition}[Termination]
+\label{prop:term}
+Since the generation counter is strictly monotone on acceptance and the loop is
+capped, the cognitive closure is approached by a finite, non-decreasing chain
+$B=A_0\sqsubseteq A_1\sqsubseteq\cdots$ terminating in
+\textsc{Converged}, \textsc{Exhausted}, or \textsc{CapReached}.
+\end{proposition}
+\emph{Realized} in \texttt{akoire} (the \texttt{CognitiveLoop} driver,
+\texttt{ScriptedSynthesizer} for determinism); the LLM-backed synthesizer is the
+production binding. Article~C frames the agent as \emph{reachable-refinement
+synthesis under a structural gatekeeper} --- ``structurally accountable AI'': the
+agent's moves are exactly the admissible elements of a reachability closure.
+
+\section{The three articles}
+\label{sec:articles}
+
+\begin{tabular}{p{2.6cm}p{6.2cm}p{4.6cm}}
+\toprule
+Program & Contribution & Status / evidence \\
+\midrule
+A. P-graph opt. & Reachability \emph{regimes} for PNS: the rule lattice over
+MSG/SSG/ABB; Thm.\ \ref{thm:reduction}/\ref{thm:admiss}; candidate-unit synthesis.
+& \texttt{reachability.rs} + 4 tests; Pimentel fixtures (book\_validation). \\
+B. Neural nets & Leakage $=$ reachability rule $\times$ readout locality
+(Prop.\ \ref{prop:readout}); the strict protocol; Gömb-strict survives.
+& 350-run 5-seed grid; figure; $\Rtopo$ wired + tested; sweep pending. \\
+C. Cognitive agents & Structurally-accountable synthesis: agent moves $=$
+admissible reachable refinements (Prop.\ \ref{prop:term}).
+& \texttt{akoire} crate + loop tests; LLM binding sketched. \\
+\midrule
+0. Umbrella & This framework (\S\ref{sec:theory}): one algebra, three domains.
+& this report. \\
+\bottomrule
+\end{tabular}
+
+A detailed sequencing/venue plan is in
+\texttt{docs/plans/2026-06-14-research-program-reachability/}.
+
+\section{Epistemic status (honesty)}
+\label{sec:status}
+
+\begin{itemize}
+\item \textbf{Theorems \ref{thm:mono}--\ref{thm:admiss}} are proved above and hold
+in every instantiation; \ref{thm:reduction} is additionally a passing regression
+test in domains A and B.
+\item \textbf{Propositions \ref{prop:nec}--\ref{prop:term}} are correct given
+their definitions; \ref{prop:readout} (the readout factor) is
+\emph{empirically supported}, not proved --- it rests on the SGT-vs-cycle
+contrast and awaits the full $\Rtopo$ sweep.
+\item The \textbf{cognitive-agent} instantiation (\S\ref{sec:agent}) is the least
+formally developed: the closure/gatekeeper picture is faithful to the
+\texttt{akoire} implementation, but ``reachable-refinement synthesis'' is a
+framing, not yet a theorem about agent competence.
+\end{itemize}
+
+\begin{conjecture}[Topology-carried residual]
+\label{conj:topo}
+On graphs where edge sign correlates with node topological position
+(e.g.\ reddit-body), held-out AUROC under $(\Rstrict,\text{shuffle})$ exceeds
+chance by a margin equal to the predictivity of a degree/position-only node
+prior; a degree-preserving rewire of the test topology removes it.
+\end{conjecture}
+
+\end{document}

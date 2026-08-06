@@ -3,8 +3,8 @@
 **Date:** 2026-05-16
 **Plan:** [docs/plans/2026-05-16-hymeyolo-stage-b-backbone/](../docs/plans/2026-05-16-hymeyolo-stage-b-backbone/) (tex/pdf/tikz/mmd)
 **Results dirs:**
-- [`signedkan_wip/experiments/results/hymeyolo_ladder_b_resnet_20260516T171048Z/`](../signedkan_wip/experiments/results/hymeyolo_ladder_b_resnet_20260516T171048Z/) — ResNet-tiny backbone
-- [`signedkan_wip/experiments/results/hymeyolo_ladder_b_hsikan_20260516T192708Z/`](../signedkan_wip/experiments/results/hymeyolo_ladder_b_hsikan_20260516T192708Z/) — HSiKAN-CR backbone
+- [`hymeko_neuro/experiments/results/hymeyolo_ladder_b_resnet_20260516T171048Z/`](../hymeko_neuro/experiments/results/hymeyolo_ladder_b_resnet_20260516T171048Z/) — ResNet-tiny backbone
+- [`hymeko_neuro/experiments/results/hymeyolo_ladder_b_hsikan_20260516T192708Z/`](../hymeko_neuro/experiments/results/hymeyolo_ladder_b_hsikan_20260516T192708Z/) — HSiKAN-CR backbone
 
 **Sweep window:** 17:10 → ~24:00 CEST (~6h 50min wall total)
 
@@ -98,19 +98,19 @@ Stage A-2's mAP_50:95 (from the May-16 stage_a2 jsonls) is in the rough ~0.55 ra
 
 | Item | Status |
 |---|---|
-| Source: [`signedkan_wip/src/vision/hymeyolo_backbones.py`](../signedkan_wip/src/vision/hymeyolo_backbones.py) (NEW, ResNet-tiny + HSiKAN-CR + dispatcher) | shipped |
-| Source: [`signedkan_wip/src/vision/hymeyolo_circles_ricci.py`](../signedkan_wip/src/vision/hymeyolo_circles_ricci.py) (backbone kwarg + dispatch) | modified |
-| Source: [`signedkan_wip/src/vision/train_circles_ricci.py`](../signedkan_wip/src/vision/train_circles_ricci.py) (`--backbone` CLI flag, jsonl row) | modified |
-| Orchestrator: [`signedkan_wip/experiments/run_hymeyolo_ladder_5seed.sh`](../signedkan_wip/experiments/run_hymeyolo_ladder_5seed.sh) (b_resnet + b_hsikan stages) | shipped |
-| Analyser: [`signedkan_wip/experiments/analyse_hymeyolo_ladder_paired.py`](../signedkan_wip/experiments/analyse_hymeyolo_ladder_paired.py) (any pair of result dirs) | shipped |
-| Tests: [`signedkan_wip/tests/test_hymeyolo_stage_b.py`](../signedkan_wip/tests/test_hymeyolo_stage_b.py) (19 tests; CR activation, ResNet + HSiKAN backbones, dispatcher, RicciHyMeYOLOMulti integration) | shipped, all pass |
+| Source: [`hymeko_neuro/experiments/vision/hymeyolo_backbones.py`](../hymeko_neuro/experiments/vision/hymeyolo_backbones.py) (NEW, ResNet-tiny + HSiKAN-CR + dispatcher) | shipped |
+| Source: [`hymeko_neuro/experiments/vision/hymeyolo_circles_ricci.py`](../hymeko_neuro/experiments/vision/hymeyolo_circles_ricci.py) (backbone kwarg + dispatch) | modified |
+| Source: [`hymeko_neuro/experiments/vision/train_circles_ricci.py`](../hymeko_neuro/experiments/vision/train_circles_ricci.py) (`--backbone` CLI flag, jsonl row) | modified |
+| Orchestrator: [`hymeko_neuro/experiments/run_hymeyolo_ladder_5seed.sh`](../hymeko_neuro/experiments/run_hymeyolo_ladder_5seed.sh) (b_resnet + b_hsikan stages) | shipped |
+| Analyser: [`hymeko_neuro/experiments/analyse_hymeyolo_ladder_paired.py`](../hymeko_neuro/experiments/analyse_hymeyolo_ladder_paired.py) (any pair of result dirs) | shipped |
+| Tests: [`hymeko_neuro/tests/test_hymeyolo_stage_b.py`](../hymeko_neuro/tests/test_hymeyolo_stage_b.py) (19 tests; CR activation, ResNet + HSiKAN backbones, dispatcher, RicciHyMeYOLOMulti integration) | shipped, all pass |
 | Plan dir: [`docs/plans/2026-05-16-hymeyolo-stage-b-backbone/`](../docs/plans/2026-05-16-hymeyolo-stage-b-backbone/) (tex/pdf/tikz/mmd) | 4 formats present |
-| b_resnet results: [`hymeyolo_ladder_b_resnet_20260516T171048Z/`](../signedkan_wip/experiments/results/hymeyolo_ladder_b_resnet_20260516T171048Z/) | 5 jsonl rows + orchestrator.log |
-| b_hsikan results: [`hymeyolo_ladder_b_hsikan_20260516T192708Z/`](../signedkan_wip/experiments/results/hymeyolo_ladder_b_hsikan_20260516T192708Z/) | 5 jsonl rows (seed 2 salvaged via 2026-05-17 sole-GPU rerun, 3126 s wall); orchestrator.log present with both rerun-end markers |
+| b_resnet results: [`hymeyolo_ladder_b_resnet_20260516T171048Z/`](../hymeko_neuro/experiments/results/hymeyolo_ladder_b_resnet_20260516T171048Z/) | 5 jsonl rows + orchestrator.log |
+| b_hsikan results: [`hymeyolo_ladder_b_hsikan_20260516T192708Z/`](../hymeko_neuro/experiments/results/hymeyolo_ladder_b_hsikan_20260516T192708Z/) | 5 jsonl rows (seed 2 salvaged via 2026-05-17 sole-GPU rerun, 3126 s wall); orchestrator.log present with both rerun-end markers |
 
 ## 6. CORE.YAML items touched
 
-None. All edits internal to `signedkan_wip/src/vision/` (Python, non-core); no template, no parser, no `lockdown` file edited.
+None. All edits internal to `hymeko_neuro/experiments/vision/` (Python, non-core); no template, no parser, no `lockdown` file edited.
 
 ## 7. Experiment provenance
 
@@ -182,7 +182,7 @@ The C-stage (FPN multi-scale heads) is the natural next push. b_prime (the A-3-l
 
 ## 12. Stage B' (b_prime) — successful 5-seed rerun under sole-GPU, attribution verdict
 
-**Status:** All 5 seeds completed cleanly under sole-GPU on 2026-05-17 12:24-14:39 CEST. The orchestrator end-line `ladder stage=b_prime end  5 rows` is on disk in [`hymeyolo_ladder_b_prime_20260517T102427Z/orchestrator.log`](../signedkan_wip/experiments/results/hymeyolo_ladder_b_prime_20260517T102427Z/orchestrator.log). Per-seed wall 1613-1631 s (~27 min) — far inside the 3600 s budget, confirming the earlier failure was contention-induced (not configuration).
+**Status:** All 5 seeds completed cleanly under sole-GPU on 2026-05-17 12:24-14:39 CEST. The orchestrator end-line `ladder stage=b_prime end  5 rows` is on disk in [`hymeyolo_ladder_b_prime_20260517T102427Z/orchestrator.log`](../hymeko_neuro/experiments/results/hymeyolo_ladder_b_prime_20260517T102427Z/orchestrator.log). Per-seed wall 1613-1631 s (~27 min) — far inside the 3600 s budget, confirming the earlier failure was contention-induced (not configuration).
 
 **5-seed paired numbers (vs A-2 baseline)**
 
@@ -223,7 +223,7 @@ The sum **(-0.0102) + (+0.1597) = +0.1495** reconciles to within rounding with t
 **Wall-time evidence supporting "contention, not config":** sole-GPU per-seed wall = 1613-1631 s, ~1.55× over A-2's 1041 s/seed — consistent with the larger label-set + Ricci-mod head incurring a modest constant compute overhead. The previous 2400 s SIGKILL boundary was below the natural wall + the 1.4× contention slowdown observed on b_hsikan seeds 3/4, exactly as the original §12 root-cause diagnosis predicted.
 
 **Files (5-seed rerun artefacts on disk):**
-- [`hymeyolo_ladder_b_prime_20260517T102427Z/orchestrator.log`](../signedkan_wip/experiments/results/hymeyolo_ladder_b_prime_20260517T102427Z/orchestrator.log) — "5 rows".
+- [`hymeyolo_ladder_b_prime_20260517T102427Z/orchestrator.log`](../hymeko_neuro/experiments/results/hymeyolo_ladder_b_prime_20260517T102427Z/orchestrator.log) — "5 rows".
 - `b_prime_seed{0..4}_e100.jsonl` — 5 files, all populated.
 
 ---

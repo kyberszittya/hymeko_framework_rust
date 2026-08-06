@@ -1,0 +1,549 @@
+{
+ "eval_seeds": "64000-64089",
+ "episode_count": 90,
+ "unique_state_count": 82,
+ "duplicate_state_count": 8,
+ "max_duplication": 4,
+ "rows": [
+  {
+   "eval_seed": 64000,
+   "selected_bank_index": 261,
+   "state_id_hash": "cf7fbb53c4dc4033",
+   "duplicate_count": 4
+  },
+  {
+   "eval_seed": 64001,
+   "selected_bank_index": 290,
+   "state_id_hash": "40c010ec344f3754",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64002,
+   "selected_bank_index": 206,
+   "state_id_hash": "271539999b09199f",
+   "duplicate_count": 2
+  },
+  {
+   "eval_seed": 64003,
+   "selected_bank_index": 153,
+   "state_id_hash": "cf6edc1ba03ca664",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64004,
+   "selected_bank_index": 237,
+   "state_id_hash": "d670e75c31a7bcf9",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64005,
+   "selected_bank_index": 316,
+   "state_id_hash": "56abfa4d2b10d4fc",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64006,
+   "selected_bank_index": 287,
+   "state_id_hash": "5096d19d025b258c",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64007,
+   "selected_bank_index": 254,
+   "state_id_hash": "e37f24e945a8b620",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64008,
+   "selected_bank_index": 138,
+   "state_id_hash": "5bccebf347069038",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64009,
+   "selected_bank_index": 105,
+   "state_id_hash": "5e9e8912aed260e5",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64010,
+   "selected_bank_index": 38,
+   "state_id_hash": "640c174af024affa",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64011,
+   "selected_bank_index": 117,
+   "state_id_hash": "6a98237ad8c3aca2",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64012,
+   "selected_bank_index": 372,
+   "state_id_hash": "1da96e46094b8193",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64013,
+   "selected_bank_index": 2,
+   "state_id_hash": "1ac66839b43d1778",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64014,
+   "selected_bank_index": 267,
+   "state_id_hash": "60e84a12bd7f24e5",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64015,
+   "selected_bank_index": 206,
+   "state_id_hash": "271539999b09199f",
+   "duplicate_count": 2
+  },
+  {
+   "eval_seed": 64016,
+   "selected_bank_index": 269,
+   "state_id_hash": "4e99451d382c3b1b",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64017,
+   "selected_bank_index": 89,
+   "state_id_hash": "b4d2aefad37b119f",
+   "duplicate_count": 2
+  },
+  {
+   "eval_seed": 64018,
+   "selected_bank_index": 66,
+   "state_id_hash": "9ce44294bc8fceb8",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64019,
+   "selected_bank_index": 158,
+   "state_id_hash": "db978540e047984d",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64020,
+   "selected_bank_index": 288,
+   "state_id_hash": "7e497917141cb61a",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64021,
+   "selected_bank_index": 314,
+   "state_id_hash": "75ecda032bb2ba9b",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64022,
+   "selected_bank_index": 19,
+   "state_id_hash": "7f1f6c5a7eefd307",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64023,
+   "selected_bank_index": 161,
+   "state_id_hash": "5eb109f336642f01",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64024,
+   "selected_bank_index": 1,
+   "state_id_hash": "727866d3edecddd9",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64025,
+   "selected_bank_index": 216,
+   "state_id_hash": "683b21c8b91352c5",
+   "duplicate_count": 2
+  },
+  {
+   "eval_seed": 64026,
+   "selected_bank_index": 89,
+   "state_id_hash": "b4d2aefad37b119f",
+   "duplicate_count": 2
+  },
+  {
+   "eval_seed": 64027,
+   "selected_bank_index": 193,
+   "state_id_hash": "dd923cbb7d13d70c",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64028,
+   "selected_bank_index": 97,
+   "state_id_hash": "8aa9afa23c7c962e",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64029,
+   "selected_bank_index": 65,
+   "state_id_hash": "51a2d7026f0bd2de",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64030,
+   "selected_bank_index": 225,
+   "state_id_hash": "1520470234f9fc14",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64031,
+   "selected_bank_index": 13,
+   "state_id_hash": "5c9bd4647b3e1a0e",
+   "duplicate_count": 2
+  },
+  {
+   "eval_seed": 64032,
+   "selected_bank_index": 191,
+   "state_id_hash": "55e6680ab641374a",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64033,
+   "selected_bank_index": 87,
+   "state_id_hash": "9c0e0bb15bc71686",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64034,
+   "selected_bank_index": 228,
+   "state_id_hash": "5c0fcfe4c8d54ea6",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64035,
+   "selected_bank_index": 152,
+   "state_id_hash": "ccf7b101517e1cfe",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64036,
+   "selected_bank_index": 363,
+   "state_id_hash": "71602364569d2a0d",
+   "duplicate_count": 2
+  },
+  {
+   "eval_seed": 64037,
+   "selected_bank_index": 284,
+   "state_id_hash": "368175a16b2a25fd",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64038,
+   "selected_bank_index": 48,
+   "state_id_hash": "882e5a838ac28927",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64039,
+   "selected_bank_index": 330,
+   "state_id_hash": "e58f57e604d0bed1",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64040,
+   "selected_bank_index": 227,
+   "state_id_hash": "c726eed61645d0b7",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64041,
+   "selected_bank_index": 336,
+   "state_id_hash": "f2e07cabc422d276",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64042,
+   "selected_bank_index": 172,
+   "state_id_hash": "0c96f52c64a7ec6c",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64043,
+   "selected_bank_index": 204,
+   "state_id_hash": "d86bb27a7151cd90",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64044,
+   "selected_bank_index": 238,
+   "state_id_hash": "0370065d55faa0df",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64045,
+   "selected_bank_index": 375,
+   "state_id_hash": "e62dc40beb6fb34c",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64046,
+   "selected_bank_index": 258,
+   "state_id_hash": "12c52ec11d9f745f",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64047,
+   "selected_bank_index": 363,
+   "state_id_hash": "71602364569d2a0d",
+   "duplicate_count": 2
+  },
+  {
+   "eval_seed": 64048,
+   "selected_bank_index": 278,
+   "state_id_hash": "fd68f5edc408059f",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64049,
+   "selected_bank_index": 27,
+   "state_id_hash": "5ebd8723fff7afe3",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64050,
+   "selected_bank_index": 360,
+   "state_id_hash": "3ed8eb225e5e9a54",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64051,
+   "selected_bank_index": 297,
+   "state_id_hash": "4b219b7adfd654aa",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64052,
+   "selected_bank_index": 333,
+   "state_id_hash": "e47c59228110f023",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64053,
+   "selected_bank_index": 54,
+   "state_id_hash": "34d92e90b7cfc4bd",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64054,
+   "selected_bank_index": 241,
+   "state_id_hash": "1060b33f06049a34",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64055,
+   "selected_bank_index": 197,
+   "state_id_hash": "2389bbb37b748cfa",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64056,
+   "selected_bank_index": 79,
+   "state_id_hash": "d059f9cf4313e1e4",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64057,
+   "selected_bank_index": 194,
+   "state_id_hash": "8acebf589384e38c",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64058,
+   "selected_bank_index": 189,
+   "state_id_hash": "64801273d1f431a8",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64059,
+   "selected_bank_index": 59,
+   "state_id_hash": "00faca130ce429df",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64060,
+   "selected_bank_index": 340,
+   "state_id_hash": "d284fdf39b059650",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64061,
+   "selected_bank_index": 137,
+   "state_id_hash": "c97c017126a9c70f",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64062,
+   "selected_bank_index": 276,
+   "state_id_hash": "72e31c7b5bfd1006",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64063,
+   "selected_bank_index": 295,
+   "state_id_hash": "382cbbe8e9f5c056",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64064,
+   "selected_bank_index": 261,
+   "state_id_hash": "cf7fbb53c4dc4033",
+   "duplicate_count": 4
+  },
+  {
+   "eval_seed": 64065,
+   "selected_bank_index": 329,
+   "state_id_hash": "049fb9022d14fea9",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64066,
+   "selected_bank_index": 13,
+   "state_id_hash": "5c9bd4647b3e1a0e",
+   "duplicate_count": 2
+  },
+  {
+   "eval_seed": 64067,
+   "selected_bank_index": 365,
+   "state_id_hash": "1eb9e61522bb29e2",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64068,
+   "selected_bank_index": 95,
+   "state_id_hash": "cb103769fad3c004",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64069,
+   "selected_bank_index": 215,
+   "state_id_hash": "b60ba8b1edf2514d",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64070,
+   "selected_bank_index": 139,
+   "state_id_hash": "3fdaddd7eedc31de",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64071,
+   "selected_bank_index": 358,
+   "state_id_hash": "6f2050cab0c79f23",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64072,
+   "selected_bank_index": 141,
+   "state_id_hash": "7c3fe746101f3db8",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64073,
+   "selected_bank_index": 265,
+   "state_id_hash": "0b3b63f2a4151ff0",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64074,
+   "selected_bank_index": 325,
+   "state_id_hash": "170dad960637dca5",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64075,
+   "selected_bank_index": 72,
+   "state_id_hash": "2861811a0174fd22",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64076,
+   "selected_bank_index": 55,
+   "state_id_hash": "d729c951248bf7ee",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64077,
+   "selected_bank_index": 107,
+   "state_id_hash": "ea7cbee016f05486",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64078,
+   "selected_bank_index": 261,
+   "state_id_hash": "cf7fbb53c4dc4033",
+   "duplicate_count": 4
+  },
+  {
+   "eval_seed": 64079,
+   "selected_bank_index": 216,
+   "state_id_hash": "683b21c8b91352c5",
+   "duplicate_count": 2
+  },
+  {
+   "eval_seed": 64080,
+   "selected_bank_index": 361,
+   "state_id_hash": "e89f27fdc2a52487",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64081,
+   "selected_bank_index": 351,
+   "state_id_hash": "4b3abfe6a784e2b8",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64082,
+   "selected_bank_index": 7,
+   "state_id_hash": "601e3dd04008cc16",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64083,
+   "selected_bank_index": 264,
+   "state_id_hash": "1b8340baca9d298d",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64084,
+   "selected_bank_index": 211,
+   "state_id_hash": "d2ced2eb52ad7edd",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64085,
+   "selected_bank_index": 291,
+   "state_id_hash": "b7d2aa3bb08f0f56",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64086,
+   "selected_bank_index": 374,
+   "state_id_hash": "fd07beb4b93ca018",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64087,
+   "selected_bank_index": 29,
+   "state_id_hash": "b77b289ee904ad22",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64088,
+   "selected_bank_index": 125,
+   "state_id_hash": "65fb26d448068764",
+   "duplicate_count": 1
+  },
+  {
+   "eval_seed": 64089,
+   "selected_bank_index": 261,
+   "state_id_hash": "cf7fbb53c4dc4033",
+   "duplicate_count": 4
+  }
+ ]
+}

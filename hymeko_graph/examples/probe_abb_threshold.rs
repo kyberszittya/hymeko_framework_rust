@@ -20,7 +20,7 @@
 //!
 //! Usage:
 //! ```
-//! ./target/release/examples/probe_abb_threshold signedkan_wip/data/epinions.txt 4
+//! ./target/release/examples/probe_abb_threshold hymeko_neuro/assets/data/epinions.txt 4
 //! ```
 
 use std::collections::HashMap;

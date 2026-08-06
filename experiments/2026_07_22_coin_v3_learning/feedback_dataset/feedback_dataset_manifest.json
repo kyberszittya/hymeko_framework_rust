@@ -1,0 +1,354 @@
+{
+ "bank": "both",
+ "bundle_hash": "6664ac459cca8f62",
+ "obs_contract": "FULL_ACTION_OBS_HISTORY_V1",
+ "obs_contract_sha": "6c84fa5b6ab0aab96cc9deccbb03ec8c9b7226219bd8c0cc96387fe84f504eac",
+ "action_dim": 4,
+ "feature_dim": 152,
+ "config": {
+  "horizon": 30,
+  "pop": 40,
+  "iters": 6,
+  "elite": 8,
+  "plan_seed_base": 0,
+  "max_steps": 360
+ },
+ "n_states": 39,
+ "n_certified_trajectories": 27,
+ "n_feedback_labels": 578,
+ "n_approach_labels": 2547,
+ "label_sources": {
+  "e_approach": "state-feedback approach policy",
+  "h30_expert": "per-step replanned H=30 receding-horizon"
+ },
+ "open_loop_suffix_labels": 0,
+ "index": [
+  {
+   "seed": 1011,
+   "certified": true,
+   "steps": 128,
+   "n_feedback": 0,
+   "n_approach": 128,
+   "max_dwell": 6,
+   "sha256": "d8ff5d22b3787085a2eff1d77bc8f33ea35ac7302c63fe798625831b3a5a3e56"
+  },
+  {
+   "seed": 6017,
+   "certified": true,
+   "steps": 96,
+   "n_feedback": 0,
+   "n_approach": 96,
+   "max_dwell": 6,
+   "sha256": "fa0ef9de380297f81fe568ec2423c6ced6b448eb9e832bbe19e8ba14549914b6"
+  },
+  {
+   "seed": 6005,
+   "certified": true,
+   "steps": 172,
+   "n_feedback": 12,
+   "n_approach": 160,
+   "max_dwell": 6,
+   "sha256": "cce7a61ca66252f1f3acaa344561a6232efab2b8c287783159d2509d5d6d4ae9"
+  },
+  {
+   "seed": 6003,
+   "certified": true,
+   "steps": 73,
+   "n_feedback": 17,
+   "n_approach": 56,
+   "max_dwell": 6,
+   "sha256": "cae86cbc8b8ba8c82751b729ee732304f55ee56b11a19c8e0ca366e90a0147cd"
+  },
+  {
+   "seed": 6013,
+   "certified": true,
+   "steps": 83,
+   "n_feedback": 16,
+   "n_approach": 67,
+   "max_dwell": 6,
+   "sha256": "31da48d0aa1e851b7a4810c6b4b903a4011565b21e7a60ae363436583620ad4b"
+  },
+  {
+   "seed": 6008,
+   "certified": true,
+   "steps": 114,
+   "n_feedback": 17,
+   "n_approach": 97,
+   "max_dwell": 6,
+   "sha256": "7a8ef41ce9a7e7647f11582ff352a3aff8d744bf9bd4a335db0db5a19cd0f210"
+  },
+  {
+   "seed": 1045,
+   "certified": true,
+   "steps": 173,
+   "n_feedback": 13,
+   "n_approach": 160,
+   "max_dwell": 6,
+   "sha256": "64f1152ee8c07f008c1eb2d44cb8956fb507a56fd95e437cb529b7801f43d437"
+  },
+  {
+   "seed": 6002,
+   "certified": true,
+   "steps": 175,
+   "n_feedback": 15,
+   "n_approach": 160,
+   "max_dwell": 6,
+   "sha256": "fe3f810888f435b87ab3d9e8e332e6660aa8a94cedda30fe5381042810613777"
+  },
+  {
+   "seed": 1278,
+   "certified": true,
+   "steps": 177,
+   "n_feedback": 17,
+   "n_approach": 160,
+   "max_dwell": 6,
+   "sha256": "7f918475ecc56bc3ace2aeed5c7dcff550eb463bd4b40219832c4606b72e59da"
+  },
+  {
+   "seed": 6022,
+   "certified": true,
+   "steps": 107,
+   "n_feedback": 18,
+   "n_approach": 89,
+   "max_dwell": 6,
+   "sha256": "12f192c0f8f759da3ce2cbf31e55f517bce97334d902246208b18443dea8b291"
+  },
+  {
+   "seed": 6011,
+   "certified": true,
+   "steps": 98,
+   "n_feedback": 21,
+   "n_approach": 77,
+   "max_dwell": 6,
+   "sha256": "efb8cac1dfaa90258c3a747cbe1afb6d7d35f09dddeabc4baac87f5a035290fb"
+  },
+  {
+   "seed": 6023,
+   "certified": true,
+   "steps": 57,
+   "n_feedback": 14,
+   "n_approach": 43,
+   "max_dwell": 6,
+   "sha256": "56e226657fc61131ffd988badb12a38d381f34dfd032fd9260b1586d3e81c7bc"
+  },
+  {
+   "seed": 1568,
+   "certified": true,
+   "steps": 125,
+   "n_feedback": 21,
+   "n_approach": 104,
+   "max_dwell": 6,
+   "sha256": "c6b9eacdd2ffc716f9c558ee44bb7a1b919f26fe3661613e5b27e49f1996c4e9"
+  },
+  {
+   "seed": 6014,
+   "certified": true,
+   "steps": 95,
+   "n_feedback": 16,
+   "n_approach": 79,
+   "max_dwell": 6,
+   "sha256": "da4912eff83a9de21785480508b63b5386d49d12cd8fa6398797af1ecd7b7861"
+  },
+  {
+   "seed": 1164,
+   "certified": true,
+   "steps": 81,
+   "n_feedback": 20,
+   "n_approach": 61,
+   "max_dwell": 6,
+   "sha256": "f7e3a6ac0de2d30a1f4d526c4419f3ce6756239e9964560536e96ee006536186"
+  },
+  {
+   "seed": 6010,
+   "certified": true,
+   "steps": 87,
+   "n_feedback": 21,
+   "n_approach": 66,
+   "max_dwell": 6,
+   "sha256": "958b3e68affd2fbea43886457c16f6e33a70fae804797df2b04539017c66d52c"
+  },
+  {
+   "seed": 1174,
+   "certified": true,
+   "steps": 182,
+   "n_feedback": 22,
+   "n_approach": 160,
+   "max_dwell": 6,
+   "sha256": "97ce3235755b185d03951b2e2d4ac7dda5dfccfb88e04ff5d305f917e3244edf"
+  },
+  {
+   "seed": 6006,
+   "certified": true,
+   "steps": 100,
+   "n_feedback": 26,
+   "n_approach": 74,
+   "max_dwell": 6,
+   "sha256": "621cc1f883b1550bed6deba0860ba38b7c58d87ec08b22343147cd51a466b1c8"
+  },
+  {
+   "seed": 6024,
+   "certified": true,
+   "steps": 75,
+   "n_feedback": 18,
+   "n_approach": 57,
+   "max_dwell": 6,
+   "sha256": "bdc1ae541bd82d6cdc9acf2f661e9f3a8ab5b18a54e617a996003e42c648fe3a"
+  },
+  {
+   "seed": 6007,
+   "certified": true,
+   "steps": 97,
+   "n_feedback": 23,
+   "n_approach": 74,
+   "max_dwell": 6,
+   "sha256": "be7882085aeae0b6c33dda94a436e88d950d71ed06f13213c15f8c7c191c2098"
+  },
+  {
+   "seed": 6028,
+   "certified": true,
+   "steps": 86,
+   "n_feedback": 18,
+   "n_approach": 68,
+   "max_dwell": 6,
+   "sha256": "cee25a8b221cabb33d7afb4d21b4b177d6d365d7f9f997592032833030941892"
+  },
+  {
+   "seed": 6029,
+   "certified": true,
+   "steps": 98,
+   "n_feedback": 15,
+   "n_approach": 83,
+   "max_dwell": 6,
+   "sha256": "189541ae1a0bec3c245ae158070936a8680f79f5f6aad88cb2b3ece196f0e3eb"
+  },
+  {
+   "seed": 6019,
+   "certified": true,
+   "steps": 190,
+   "n_feedback": 30,
+   "n_approach": 160,
+   "max_dwell": 6,
+   "sha256": "fdd3b01092bfd2c8573048af698a8bf339863a859bb4f6ca0af49052adbc5d50"
+  },
+  {
+   "seed": 6000,
+   "certified": true,
+   "steps": 99,
+   "n_feedback": 39,
+   "n_approach": 60,
+   "max_dwell": 6,
+   "sha256": "a1737d522e080c60a84e16c0347aa420665272ca2741a8cf4ae39b7f0d3a166d"
+  },
+  {
+   "seed": 1447,
+   "certified": true,
+   "steps": 111,
+   "n_feedback": 38,
+   "n_approach": 73,
+   "max_dwell": 6,
+   "sha256": "4827216c234553406aa5363baa7853ab96825b6976d1d84f4f0482b913d3efd1"
+  },
+  {
+   "seed": 6025,
+   "certified": true,
+   "steps": 96,
+   "n_feedback": 34,
+   "n_approach": 62,
+   "max_dwell": 6,
+   "sha256": "0971a2e01135efd50eb7cd119dc713b69bea4b3739dbdc8adce3aa8035747132"
+  },
+  {
+   "seed": 6027,
+   "certified": true,
+   "steps": 150,
+   "n_feedback": 77,
+   "n_approach": 73,
+   "max_dwell": 6,
+   "sha256": "39297ade050244f3835ee336998c65baeb42f70972f1f6d5994238acfe6358b8"
+  },
+  {
+   "seed": 1202,
+   "certified": false,
+   "strict": false,
+   "steps": 360,
+   "failure_class": "no_bilateral_grasp"
+  },
+  {
+   "seed": 6021,
+   "certified": false,
+   "strict": false,
+   "steps": 360,
+   "failure_class": "target_exit_failure"
+  },
+  {
+   "seed": 6026,
+   "certified": false,
+   "strict": false,
+   "steps": 360,
+   "failure_class": "target_entry_failure"
+  },
+  {
+   "seed": 6004,
+   "certified": false,
+   "strict": false,
+   "steps": 360,
+   "failure_class": "target_exit_failure"
+  },
+  {
+   "seed": 1358,
+   "certified": false,
+   "strict": false,
+   "steps": 360,
+   "failure_class": "no_bilateral_grasp"
+  },
+  {
+   "seed": 6009,
+   "certified": false,
+   "strict": false,
+   "steps": 360,
+   "failure_class": "no_bilateral_grasp"
+  },
+  {
+   "seed": 6020,
+   "certified": false,
+   "strict": false,
+   "steps": 360,
+   "failure_class": "target_exit_failure"
+  },
+  {
+   "seed": 6018,
+   "certified": false,
+   "strict": false,
+   "steps": 360,
+   "failure_class": "target_entry_failure"
+  },
+  {
+   "seed": 6015,
+   "certified": false,
+   "strict": false,
+   "steps": 360,
+   "failure_class": "target_exit_failure"
+  },
+  {
+   "seed": 6016,
+   "certified": false,
+   "strict": false,
+   "steps": 360,
+   "failure_class": "target_exit_failure"
+  },
+  {
+   "seed": 6001,
+   "certified": false,
+   "strict": false,
+   "steps": 360,
+   "failure_class": "target_exit_failure"
+  },
+  {
+   "seed": 6012,
+   "certified": false,
+   "strict": false,
+   "steps": 360,
+   "failure_class": "target_exit_failure"
+  }
+ ]
+}

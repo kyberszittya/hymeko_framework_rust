@@ -1,0 +1,84 @@
+{
+ "contract": "CHUNK_SUPERVISED_M1_FEEDBACK_V1",
+ "date": "2026-07-23",
+ "pi0_sha": "1902454c",
+ "no_td3": true,
+ "changed_only": "executed prefix M: 2 -> 1 (K=8 unchanged, same V2 actor)",
+ "dataset_provenance": {
+  "pi0_fallback": 113,
+  "planner": 51
+ },
+ "contact_retention": {
+  "M1_chunk": 0.1045,
+  "M2_chunk": 0.1882,
+  "pi0": 0.5962
+ },
+ "eval_M1_vs_pi0": {
+  "n": 31,
+  "chunk": {
+   "strict_success": 0.0645,
+   "max_dwell": 0.5484,
+   "entered": 0.4194,
+   "exited": 0.2903,
+   "contact_retention": 0.1045,
+   "progress": -0.0542,
+   "ret": -72.3519,
+   "replan_consistent": 1.0
+  },
+  "pi0": {
+   "strict_success": 0.1935,
+   "max_dwell": 1.4839,
+   "entered": 0.5161,
+   "exited": 0.0323,
+   "contact_retention": 0.5962,
+   "progress": 0.0031,
+   "ret": -25.019,
+   "replan_consistent": 1.0
+  },
+  "delta_vs_pi0": {
+   "strict_success": -0.129,
+   "max_dwell": -0.9355,
+   "entered": -0.0967,
+   "exited": 0.258,
+   "contact_retention": -0.4917,
+   "progress": -0.0573,
+   "ret": -47.3329,
+   "replan_consistent": 0.0
+  }
+ },
+ "eval_M2_vs_pi0": {
+  "n": 31,
+  "chunk": {
+   "strict_success": 0.129,
+   "max_dwell": 0.8387,
+   "entered": 0.5161,
+   "exited": 0.2903,
+   "contact_retention": 0.1882,
+   "progress": -0.0469,
+   "ret": -58.0887,
+   "replan_consistent": 1.0
+  },
+  "pi0": {
+   "strict_success": 0.1935,
+   "max_dwell": 1.4839,
+   "entered": 0.5161,
+   "exited": 0.0323,
+   "contact_retention": 0.5962,
+   "progress": 0.0031,
+   "ret": -25.019,
+   "replan_consistent": 1.0
+  },
+  "delta_vs_pi0": {
+   "strict_success": -0.0645,
+   "max_dwell": -0.6452,
+   "entered": 0.0,
+   "exited": 0.258,
+   "contact_retention": -0.408,
+   "progress": -0.05,
+   "ret": -33.0697,
+   "replan_consistent": 0.0
+  }
+ },
+ "acceptance_gate_M1": false,
+ "verdict": "M1_FEEDBACK_NO_GAIN"
+}

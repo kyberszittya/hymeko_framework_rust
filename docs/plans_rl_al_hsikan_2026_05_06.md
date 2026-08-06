@@ -84,7 +84,7 @@ The walker already gives us "one cell = one .hymeko = one reward." We need:
 
 1. **Config emitter**: serialise an action vector → `arch.hymeko` + `training.hymeko`
    text via Python f-strings (NOT a HyMeKo template, those are for parsing).
-2. **Walker call**: shell out `python -m signedkan_wip.src.hymeko_train_walker
+2. **Walker call**: shell out `python -m hymeko_neuro.experiments.hymeko_train_walker
    --arch /tmp/arch_proposal.hymeko --training /tmp/train_proposal.hymeko
    --dataset bitcoin_alpha --seed 0` and parse the JSON.
 3. **Controller**: REINFORCE / GP / bandit, mutating action distribution per

@@ -1,14 +1,16 @@
+use crate::common::ids::{DeclId, EdgeId, HyperArcId, NodeId, SymId};
 use crate::ir::hash::HashId;
-use crate::common::ids::{HyperArcId, DeclId, EdgeId, NodeId, SymId};
 use crate::ir::meta::Meta;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq,
-    Serialize, Deserialize)]
-pub enum DeclKind { Node, Edge, HyperArc }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DeclKind {
+    Node,
+    Edge,
+    HyperArc,
+}
 
-#[derive(Debug, Clone,
-    Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeclNode {
     pub kind: DeclKind,
     pub name: SymId,
@@ -19,8 +21,7 @@ pub struct DeclNode {
     pub anno: AnnoR,
 }
 
-#[derive(Debug, Default, Clone,
-    Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Ir {
     pub meta: Option<Meta>,
     pub doc_hash: Option<HashId>,
@@ -30,16 +31,15 @@ pub struct Ir {
     pub decl_nodes: Vec<DeclNode>,
 
     // “konkrét” táblák
-    pub nodes: Vec<NodeRec>,          // NodeId indexel
-    pub edges: Vec<EdgeRec>,          // EdgeId indexel
-    pub arcs: Vec<ArcRec>,            // ArcId indexel
+    pub nodes: Vec<NodeRec>, // NodeId indexel
+    pub edges: Vec<EdgeRec>, // EdgeId indexel
+    pub arcs: Vec<ArcRec>,   // ArcId indexel
 
     // DeclId -> NodeId/EdgeId leképzés (gyors jump)
     pub decl_to_node: Vec<Option<NodeId>>,
     pub decl_to_edge: Vec<Option<EdgeId>>,
     pub decl_to_arc: Vec<Option<HyperArcId>>,
 }
-
 
 impl Ir {
     pub fn new(meta: Meta) -> Self {
@@ -51,7 +51,9 @@ impl Ir {
 
     #[inline]
     pub fn decl_node(&self, id: DeclId) -> Option<&DeclNode> {
-        if id.is_none() { return None; }
+        if id.is_none() {
+            return None;
+        }
         self.decl_nodes.get(id.0)
     }
 
@@ -62,7 +64,11 @@ impl Ir {
     }
 
     pub fn decl_children(&self, parent: DeclId) -> DeclChildren<'_> {
-        let next = if parent.is_none() { DeclId::NONE } else { self.decl_nodes[parent.0].first_child };
+        let next = if parent.is_none() {
+            DeclId::NONE
+        } else {
+            self.decl_nodes[parent.0].first_child
+        };
         DeclChildren { ir: self, next }
     }
 
@@ -72,19 +78,25 @@ impl Ir {
 
     #[inline]
     pub fn first_child(&self, item: DeclId) -> DeclId {
-        if item.is_none() { return DeclId::NONE; }
+        if item.is_none() {
+            return DeclId::NONE;
+        }
         self.decl_nodes[item.0].first_child
     }
 
     #[inline]
     pub fn next_sibling(&self, item: DeclId) -> DeclId {
-        if item.is_none() { return DeclId::NONE; }
+        if item.is_none() {
+            return DeclId::NONE;
+        }
         self.decl_nodes[item.0].next_sibling
     }
 
     #[inline]
     pub fn parent(&self, item: DeclId) -> DeclId {
-        if item.is_none() { return DeclId::NONE; }
+        if item.is_none() {
+            return DeclId::NONE;
+        }
         self.decl_nodes[item.0].parent
     }
 
@@ -99,15 +111,21 @@ impl Ir {
     }
 
     pub fn as_node(&self, d: DeclId) -> Option<NodeId> {
-        if d.is_none() { return None; }
+        if d.is_none() {
+            return None;
+        }
         self.decl_to_node.get(d.0).copied().flatten()
     }
     pub fn as_edge(&self, d: DeclId) -> Option<EdgeId> {
-        if d.is_none() { return None; }
+        if d.is_none() {
+            return None;
+        }
         self.decl_to_edge.get(d.0).copied().flatten()
     }
-    pub fn as_arc(&self, d: DeclId)  -> Option<HyperArcId>  {
-        if d.is_none() { return None; }
+    pub fn as_arc(&self, d: DeclId) -> Option<HyperArcId> {
+        if d.is_none() {
+            return None;
+        }
         self.decl_to_arc.get(d.0).copied().flatten()
     }
 
@@ -157,25 +175,27 @@ impl<'a> Iterator for DeclChildren<'a> {
     type Item = DeclId;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.next.is_none() { return None; }
+        if self.next.is_none() {
+            return None;
+        }
         let cur = self.next;
         self.next = self.ir.next_sibling(cur);
         Some(cur)
     }
 }
 
-#[derive(Debug, Clone,
-    Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeRec {
     pub decl: DeclId,
     pub bases: Vec<SignedRefR>,
 }
 impl NodeRec {
-    pub fn new(decl: DeclId, bases: Vec<SignedRefR>) -> Self { Self { decl, bases } }
+    pub fn new(decl: DeclId, bases: Vec<SignedRefR>) -> Self {
+        Self { decl, bases }
+    }
 }
 
-#[derive(Debug, Clone,
-    Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EdgeRec {
     pub decl: DeclId,
     pub bases: Vec<SignedRefR>,
@@ -183,29 +203,30 @@ pub struct EdgeRec {
 }
 impl EdgeRec {
     pub fn new(decl: DeclId, bases: Vec<SignedRefR>) -> Self {
-        Self { decl, bases, arcs: Vec::new() }
+        Self {
+            decl,
+            bases,
+            arcs: Vec::new(),
+        }
     }
 }
 
-#[derive(Debug, Clone,
-    Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArcRec {
     pub anno: AnnoR,
-    pub in_edge: DeclId,              // melyik edge scope-jában volt (általában EdgeDecl)
-    pub refs: Vec<SignedRefR>,        // DeclId-kra mutat (determinista)
-    // később: attribútumok/value külön, lásd lent
+    pub in_edge: DeclId, // melyik edge scope-jában volt (általában EdgeDecl)
+    pub refs: Vec<SignedRefR>, // DeclId-kra mutat (determinista)
+                         // később: attribútumok/value külön, lásd lent
 }
 
-#[derive(Debug, Clone, PartialEq,
-    Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RefAtomR {
     pub target: DeclId,
     pub anno: AnnoR,
     pub weights: Option<Vec<ValueR>>,
 }
 
-#[derive(Debug, Clone, PartialEq,
-    Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum SignedRefR {
     Plus(RefAtomR),
     Minus(RefAtomR),
@@ -238,8 +259,7 @@ impl SignedRefR {
     }
 }
 
-#[derive(Debug, Clone, PartialEq,
-    Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ValueR {
     Str(SymId),
     Num(f64),
@@ -247,8 +267,7 @@ pub enum ValueR {
     Ref(DeclId), // AST Ref(path) -> IR Ref(DeclId)
 }
 
-#[derive(Debug, Clone, Default, PartialEq,
-    Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AnnoR {
     pub tags: Vec<SymId>,
     pub value: Option<ValueR>,

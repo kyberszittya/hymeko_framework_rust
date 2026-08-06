@@ -1,0 +1,78 @@
+{
+ "audited_critic_pre": {
+  "spearman": 0.565,
+  "rank_acc": 0.709,
+  "succ_fail_sep": 11.97,
+  "ood_boundary": 0.0,
+  "ood_random": 0.148,
+  "twin_disagree": 0.908,
+  "n_deliver": 4,
+  "n_fail": 68
+ },
+ "init_headline": 3,
+ "init_validation": 2,
+ "best_headline": 3,
+ "best_validation": 2,
+ "best_update": 0,
+ "paused": "all_initial_successes_lost",
+ "improved_validation": false,
+ "improved_headline": false,
+ "checkpoints": [
+  {
+   "update": 0,
+   "headline": 3,
+   "grasp": 9,
+   "validation": 2,
+   "actor_out_delta": 0.0,
+   "actor_param_delta": 0.0,
+   "critic_sep": 11.97,
+   "critic_spear": 0.565,
+   "critic_ood_b": 0.0,
+   "delivered": [
+    1011,
+    1447,
+    1568
+   ]
+  },
+  {
+   "update": 1,
+   "headline": 1,
+   "grasp": 8,
+   "validation": 1,
+   "actor_out_delta": 0.02278,
+   "actor_param_delta": 0.000188,
+   "critic_sep": 11.53,
+   "critic_spear": 0.562,
+   "critic_ood_b": 0.0,
+   "delivered": [
+    1011
+   ]
+  },
+  {
+   "update": 2,
+   "headline": 1,
+   "grasp": 8,
+   "validation": 1,
+   "actor_out_delta": 0.02278,
+   "actor_param_delta": 0.000188,
+   "critic_sep": 11.74,
+   "critic_spear": 0.563,
+   "critic_ood_b": 0.0,
+   "delivered": [
+    1011
+   ]
+  },
+  {
+   "update": 5,
+   "headline": 0,
+   "grasp": 9,
+   "validation": 0,
+   "actor_out_delta": 0.0661,
+   "actor_param_delta": 0.000508,
+   "critic_sep": 12.33,
+   "critic_spear": 0.564,
+   "critic_ood_b": 0.0,
+   "delivered": []
+  }
+ ]
+}

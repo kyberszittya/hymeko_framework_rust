@@ -74,7 +74,7 @@ t = torch.sparse_coo_tensor(indices, values, coo.shape)
 
 ## Walker integration
 
-The walker (`signedkan_wip/src/hymeko_train_walker.py`) uses the wheel for `parse_hymeko_rs`. See [HyMeKo-controlled training](./09-hsikan-training.md) for the full training-cell driver.
+The walker (`hymeko_neuro/experiments/hymeko_train_walker.py`) uses the wheel for `parse_hymeko_rs`. See [HyMeKo-controlled training](./09-hsikan-training.md) for the full training-cell driver.
 
 ## Where the surface is defined
 

@@ -2,7 +2,7 @@
 
 ## Summary
 
-Closed the Phase 7 plumbing gap. `signedkan_wip.src.core.hyperedges.construct`
+Closed the Phase 7 plumbing gap. `hymeko_neuro.hyperedge.hyperedges.construct`
 now accepts an optional `m_per_vertex` cap; `run_compare.run_one`
 exposes it as `m_cycles`. The HSIKAN P-graph framework's
 `cycle_topk_m{4,16,64}` axis — which Phase 7 found was silently
@@ -22,10 +22,10 @@ crossover** at long epochs.
 | File | Status | LOC | Notes |
 | --- | --- | --- | --- |
 | `docs/plans/2026-05-19-pgraph-m-cycles-plumbing/plan.{tex,pdf,mmd,tikz}` | new | 4-format plan, 2 pp PDF | Written before code |
-| `signedkan_wip/src/core/hyperedges.py` | extended | +35 | `m_per_vertex` parameter on `construct()`; deterministic neighbour-set iteration in `_enumerate_triangles` |
-| `signedkan_wip/experiments/runs/run_compare.py` | extended | +6 | `m_cycles` kwarg on `run_one`; forward to `construct`; echo in result dict alongside `n_triads` |
-| `signedkan_wip/experiments/runs/run_hsikan_msg_sweep.py` | minor | -8 | Dropped the Phase-7 env-var workaround now that the kwarg path works |
-| `signedkan_wip/tests/test_hyperedges_m_per_vertex.py` | **new** | 90 | 7 tests pinning cap semantics, determinism, back-compat |
+| `hymeko_neuro/hyperedge/hyperedges.py` | extended | +35 | `m_per_vertex` parameter on `construct()`; deterministic neighbour-set iteration in `_enumerate_triangles` |
+| `hymeko_neuro/experiments/runs/run_compare.py` | extended | +6 | `m_cycles` kwarg on `run_one`; forward to `construct`; echo in result dict alongside `n_triads` |
+| `hymeko_neuro/experiments/runs/run_hsikan_msg_sweep.py` | minor | -8 | Dropped the Phase-7 env-var workaround now that the kwarg path works |
+| `hymeko_neuro/tests/test_hyperedges_m_per_vertex.py` | **new** | 90 | 7 tests pinning cap semantics, determinism, back-compat |
 
 ## CORE.YAML items touched
 
@@ -146,7 +146,7 @@ behaviour axis.
 1. **Phase 9 (consolidated):** fix the `enumerate_cycles_rs` →
    `enumerate_k_cycles_rs` rename at both surfaced call sites
    (`run_gomb_smoke.py:112` + `n_tuples.py:279`) plus any others
-   surfaced by `grep enumerate_cycles_rs signedkan_wip/`. ~5 LOC.
+   surfaced by `grep enumerate_cycles_rs hymeko_neuro/`. ~5 LOC.
 2. **Phase 10 (multi-objective ABB):** the regime crossover at long
    epochs (m=16 wins at n_epochs=60) is exactly the kind of
    non-monotonic cost/quality trade the multi-objective plan is
@@ -169,8 +169,8 @@ behaviour axis.
 - **A/B reproduction:** the small Python snippet in this report's
   "Quantitative result" section is reproducible from the repo root;
   takes ~10 s wall time on a CPU machine.
-- **Tests:** `pytest signedkan_wip/tests/test_hyperedges_m_per_vertex.py
-  signedkan_wip/tests/test_hsikan_pgraph_mapping.py` → 14/14 pass.
+- **Tests:** `pytest hymeko_neuro/tests/test_hyperedges_m_per_vertex.py
+  hymeko_neuro/tests/test_hsikan_pgraph_mapping.py` → 14/14 pass.
 
 ## Acceptance check
 

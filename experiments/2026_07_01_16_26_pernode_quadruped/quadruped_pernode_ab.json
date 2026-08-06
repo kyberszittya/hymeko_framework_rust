@@ -1,0 +1,10 @@
+{
+  "timestamp": "2026-07-01 16:26:06",
+  "task": "quadruped",
+  "mode": "full",
+  "seeds": 3,
+  "steps": 20000,
+  "wall_s": 1.7,
+  "rss_mb": 567.2,
+  "result": {}
+}

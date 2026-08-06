@@ -1,0 +1,38 @@
+{
+  "manifest": "Coin-Delivery external artifacts (gitignored binaries the canonical source loads by SHA-256)",
+  "created_at": "2026-07-21 20:08 JST",
+  "branch": "refactor/canonical-e-approach-loader",
+  "commit": "ae1e94cae6a0282e105b7eff853155b9684e490d",
+  "note": "These are NOT in git (checkpoints/banks are external artifacts). The canonical loaders fail LOUD (FileNotFoundError / ValueError on hash mismatch) when an artifact is absent or wrong — never a silent substitution. Place these at the listed paths to run the POINT delivery headline from a fresh clone.",
+  "artifacts": [
+    {
+      "path": "experiments/2026_07_08_seed_stabilized/E_valselect_v2.pt",
+      "role": "E-approach policy checkpoint (node_features -> action_mean, 4-DoF)",
+      "sha256": "7dbbf1a7782f39f067eeb9f23fc22d58fc7ea33c5e677ba9c5beca4f575e02ae",
+      "sha256_prefix_pinned_in_code": "7dbbf1a7782f",
+      "bytes": 64061,
+      "loaded_by": "hymeko_rl.coin_delivery.e_approach.load_e_approach_policy"
+    },
+    {
+      "path": "experiments/2026_07_21_coin_neutral_handoff/handoff_best.pt",
+      "role": "neutral->contact handoff transport actor (6-DoF SAC)",
+      "sha256": "8955e8db8ac1db240cadf654e1f4a20156ce3387499d27de1305afc3ff718f38",
+      "bytes": 34195,
+      "loaded_by": "torch.load in the composed eval (eval_composed transport_actor)"
+    },
+    {
+      "path": "experiments/2026_07_21_coin_e0_stabilize/learned_delivery_positive.pt",
+      "role": "frozen-transport / learned-delivery control checkpoint",
+      "sha256": "8bd73d8cbea0a9a69e20e3a3b63adbec53faf9a61f2c21c1df1d15b02120b564",
+      "bytes": 34279,
+      "loaded_by": "torch.load (control checkpoint)"
+    },
+    {
+      "path": "experiments/2026_07_18_arcrl/c1_heldseed_bank.pkl",
+      "role": "C1 pre-contact snapshot bank (train/holdout partition by i%4)",
+      "sha256": "9262f6dc842b127c91cc17513269d6560009dea622d8beb064c19d4aacf27544",
+      "bytes": 209795,
+      "loaded_by": "hymeko_rl.coin_delivery.env_factory.load_contact_bank"
+    }
+  ]
+}

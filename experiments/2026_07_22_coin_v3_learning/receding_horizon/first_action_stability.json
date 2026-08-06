@@ -1,0 +1,376 @@
+{
+ "verdict": "FEEDBACK_EXPERT_FIRST_ACTION_STABILITY_PASS",
+ "n_states": 12,
+ "n_critical": 12,
+ "n_conflicting": 0,
+ "conflicting_states": [],
+ "config": {
+  "n_seeds": 6,
+  "horizon": 15,
+  "pop": 48,
+  "iters": 8
+ },
+ "obs_contract_sha": "6c84fa5b6ab0aab96cc9deccbb03ec8c9b7226219bd8c0cc96387fe84f504eac",
+ "rows": [
+  {
+   "seed": 1011,
+   "phase": 3,
+   "phase_name": "TRANSPORT",
+   "first_mean": [
+    -1.5197999477386475,
+    -0.7258999943733215,
+    0.6449999809265137,
+    -0.1881999969482422
+   ],
+   "mean_mag": 1.8133,
+   "first_std_abs": 0.6036,
+   "first_std_norm": 0.1509,
+   "rel_spread": 0.3329,
+   "pairwise_cosine": 0.6451,
+   "near_zero_action": false,
+   "conflicting": false,
+   "selected": [
+    -0.930400013923645,
+    -2.329900026321411,
+    -0.4142000079154968,
+    -0.23479999601840973
+   ],
+   "predicted": {
+    "strict": true,
+    "dwell": 6,
+    "min_dtz": 0.0002,
+    "min_speed": 0.0037
+   }
+  },
+  {
+   "seed": 1011,
+   "phase": 4,
+   "phase_name": "TARGET_ENTRY",
+   "first_mean": [
+    -1.0561000108718872,
+    -0.7716000080108643,
+    -0.48570001125335693,
+    -0.40400001406669617
+   ],
+   "mean_mag": 1.4525,
+   "first_std_abs": 0.5301,
+   "first_std_norm": 0.1325,
+   "rel_spread": 0.3649,
+   "pairwise_cosine": 0.5975,
+   "near_zero_action": false,
+   "conflicting": false,
+   "selected": [
+    -1.534600019454956,
+    -0.8984000086784363,
+    -0.7653999924659729,
+    -0.3183000087738037
+   ],
+   "predicted": {
+    "strict": true,
+    "dwell": 6,
+    "min_dtz": 0.0001,
+    "min_speed": 0.0032
+   }
+  },
+  {
+   "seed": 1011,
+   "phase": 5,
+   "phase_name": "SETTLING",
+   "first_mean": [
+    0.1981000006198883,
+    0.15780000388622284,
+    -0.05380000174045563,
+    -0.05050000175833702
+   ],
+   "mean_mag": 0.2638,
+   "first_std_abs": 0.2573,
+   "first_std_norm": 0.0643,
+   "rel_spread": 0.9752,
+   "pairwise_cosine": 0.0,
+   "near_zero_action": true,
+   "conflicting": false,
+   "selected": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "predicted": {
+    "strict": false,
+    "dwell": 0,
+    "min_dtz": 0.0,
+    "min_speed": 0.0002
+   }
+  },
+  {
+   "seed": 1011,
+   "phase": 6,
+   "phase_name": "STRICT_DWELL",
+   "first_mean": [
+    0.2728999853134155,
+    -0.10270000249147415,
+    -0.020400000736117363,
+    0.05180000141263008
+   ],
+   "mean_mag": 0.2969,
+   "first_std_abs": 0.3992,
+   "first_std_norm": 0.0998,
+   "rel_spread": 1.3447,
+   "pairwise_cosine": 0.0517,
+   "near_zero_action": true,
+   "conflicting": false,
+   "selected": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "predicted": {
+    "strict": false,
+    "dwell": 2,
+    "min_dtz": 0.0,
+    "min_speed": 0.0001
+   }
+  },
+  {
+   "seed": 1045,
+   "phase": 3,
+   "phase_name": "TRANSPORT",
+   "first_mean": [
+    -0.38440001010894775,
+    0.18940000236034393,
+    1.7293000221252441,
+    0.9830999970436096
+   ],
+   "mean_mag": 2.0348,
+   "first_std_abs": 0.6493,
+   "first_std_norm": 0.1623,
+   "rel_spread": 0.3191,
+   "pairwise_cosine": 0.5062,
+   "near_zero_action": false,
+   "conflicting": false,
+   "selected": [
+    0.311599999666214,
+    0.2833999991416931,
+    2.033600091934204,
+    0.7407000064849854
+   ],
+   "predicted": {
+    "strict": true,
+    "dwell": 6,
+    "min_dtz": 0.0091,
+    "min_speed": 0.0049
+   }
+  },
+  {
+   "seed": 1045,
+   "phase": 4,
+   "phase_name": "TARGET_ENTRY",
+   "first_mean": [
+    0.9980999827384949,
+    -2.257999897003174,
+    2.2488999366760254,
+    1.0053999423980713
+   ],
+   "mean_mag": 3.4876,
+   "first_std_abs": 0.6905,
+   "first_std_norm": 0.1726,
+   "rel_spread": 0.198,
+   "pairwise_cosine": 0.8755,
+   "near_zero_action": false,
+   "conflicting": false,
+   "selected": [
+    0.7562999725341797,
+    -2.903700113296509,
+    1.958799958229065,
+    2.818000078201294
+   ],
+   "predicted": {
+    "strict": true,
+    "dwell": 6,
+    "min_dtz": 0.0073,
+    "min_speed": 0.0036
+   }
+  },
+  {
+   "seed": 1174,
+   "phase": 3,
+   "phase_name": "TRANSPORT",
+   "first_mean": [
+    0.37880000472068787,
+    0.12960000336170197,
+    1.4383000135421753,
+    0.6330999732017517
+   ],
+   "mean_mag": 1.6216,
+   "first_std_abs": 0.5444,
+   "first_std_norm": 0.1361,
+   "rel_spread": 0.3357,
+   "pairwise_cosine": 0.5791,
+   "near_zero_action": false,
+   "conflicting": false,
+   "selected": [
+    0.03420000150799751,
+    -0.1712999939918518,
+    1.6330000162124634,
+    -0.3066999912261963
+   ],
+   "predicted": {
+    "strict": true,
+    "dwell": 6,
+    "min_dtz": 0.0,
+    "min_speed": 0.0041
+   }
+  },
+  {
+   "seed": 1174,
+   "phase": 4,
+   "phase_name": "TARGET_ENTRY",
+   "first_mean": [
+    -0.39160001277923584,
+    -0.5706999897956848,
+    0.47699999809265137,
+    -0.4332999885082245
+   ],
+   "mean_mag": 0.9457,
+   "first_std_abs": 0.435,
+   "first_std_norm": 0.1088,
+   "rel_spread": 0.46,
+   "pairwise_cosine": 0.4127,
+   "near_zero_action": false,
+   "conflicting": false,
+   "selected": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "predicted": {
+    "strict": true,
+    "dwell": 6,
+    "min_dtz": 0.0,
+    "min_speed": 0.0045
+   }
+  },
+  {
+   "seed": 1174,
+   "phase": 5,
+   "phase_name": "SETTLING",
+   "first_mean": [
+    -0.2808000147342682,
+    -0.6680999994277954,
+    -0.40939998626708984,
+    0.5945000052452087
+   ],
+   "mean_mag": 1.0228,
+   "first_std_abs": 0.5481,
+   "first_std_norm": 0.137,
+   "rel_spread": 0.5358,
+   "pairwise_cosine": 0.3265,
+   "near_zero_action": false,
+   "conflicting": false,
+   "selected": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "predicted": {
+    "strict": true,
+    "dwell": 6,
+    "min_dtz": 0.0,
+    "min_speed": 0.0036
+   }
+  },
+  {
+   "seed": 1447,
+   "phase": 3,
+   "phase_name": "TRANSPORT",
+   "first_mean": [
+    1.0241999626159668,
+    0.44179999828338623,
+    1.3868999481201172,
+    1.2345999479293823
+   ],
+   "mean_mag": 2.1661,
+   "first_std_abs": 0.7439,
+   "first_std_norm": 0.186,
+   "rel_spread": 0.3434,
+   "pairwise_cosine": 0.6408,
+   "near_zero_action": false,
+   "conflicting": false,
+   "selected": [
+    0.8495000004768372,
+    1.6612999439239502,
+    1.482300043106079,
+    1.6466000080108643
+   ],
+   "predicted": {
+    "strict": true,
+    "dwell": 6,
+    "min_dtz": 0.001,
+    "min_speed": 0.005
+   }
+  },
+  {
+   "seed": 1164,
+   "phase": 3,
+   "phase_name": "TRANSPORT",
+   "first_mean": [
+    -1.1166000366210938,
+    0.4397999942302704,
+    -1.4479000568389893,
+    -0.18960000574588776
+   ],
+   "mean_mag": 1.8901,
+   "first_std_abs": 0.5682,
+   "first_std_norm": 0.1421,
+   "rel_spread": 0.3006,
+   "pairwise_cosine": 0.8109,
+   "near_zero_action": false,
+   "conflicting": false,
+   "selected": [
+    -1.5893000364303589,
+    -0.21150000393390656,
+    -0.8454999923706055,
+    -0.29109999537467957
+   ],
+   "predicted": {
+    "strict": true,
+    "dwell": 6,
+    "min_dtz": 0.0002,
+    "min_speed": 0.0043
+   }
+  },
+  {
+   "seed": 1164,
+   "phase": 4,
+   "phase_name": "TARGET_ENTRY",
+   "first_mean": [
+    0.5072000026702881,
+    0.5604000091552734,
+    0.5961999893188477,
+    -1.2825000286102295
+   ],
+   "mean_mag": 1.6037,
+   "first_std_abs": 0.7619,
+   "first_std_norm": 0.1905,
+   "rel_spread": 0.4751,
+   "pairwise_cosine": 0.3483,
+   "near_zero_action": false,
+   "conflicting": false,
+   "selected": [
+    0.00419999985024333,
+    0.6310999989509583,
+    1.6991000175476074,
+    -4.0
+   ],
+   "predicted": {
+    "strict": true,
+    "dwell": 6,
+    "min_dtz": 0.0171,
+    "min_speed": 0.0033
+   }
+  }
+ ]
+}

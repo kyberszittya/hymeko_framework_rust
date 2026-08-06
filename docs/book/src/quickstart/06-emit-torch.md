@@ -63,7 +63,7 @@ m = mod.HSiKANEmitted()
 print(f"params={sum(p.numel() for p in m.parameters())}")  # 3749
 ```
 
-The emitted layers (`SignedKANLayer` etc.) come from `ehk_torch_stub`. As of the May 2026 Phase-1 codegen change, the stub **delegates to the real `signedkan_wip.src.signedkan.SignedKANLayer`** when `signedkan_wip/` is on the import path — the emitted module computes the actual signed-cycle aggregation, not a placeholder.
+The emitted layers (`SignedKANLayer` etc.) come from `ehk_torch_stub`. As of the May 2026 Phase-1 codegen change, the stub **delegates to the real `hymeko_neuro.signedkan.SignedKANLayer`** when `hymeko_neuro/` is on the import path — the emitted module computes the actual signed-cycle aggregation, not a placeholder.
 
 ## End-to-end smoke test
 

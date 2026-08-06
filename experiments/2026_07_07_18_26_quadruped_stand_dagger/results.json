@@ -1,0 +1,66 @@
+{
+  "name": "quadruped_stand_dagger",
+  "algorithm": "dagger",
+  "select": "standing",
+  "profile": "data/robotics/quadruped_stand_dagger.hymeko",
+  "label_sanity": {
+    "finite": true,
+    "in_bounds": true,
+    "deterministic": true,
+    "latch_coherent": true,
+    "has_latch": false,
+    "max_over_box_ranges": 0.0,
+    "n_steps": 500,
+    "committed_steps": 0,
+    "ok": true
+  },
+  "standing_median": 1.0,
+  "standing_per_seed": [
+    1.0
+  ],
+  "final_standing_median": 1.0,
+  "budget": {
+    "seeds": [
+      0
+    ],
+    "n_demos": 24,
+    "bc_epochs": 40,
+    "dagger_iters": 1,
+    "rollouts_per_iter": 3,
+    "beta": 0.5,
+    "beta_decay": 0.5,
+    "expert_replay_ratio": 1.0,
+    "n_eval": 6
+  },
+  "seeds": [
+    {
+      "seed": 0,
+      "peak": {
+        "standing": 1.0,
+        "round": 1,
+        "stage": "d1",
+        "agg_size": 6565
+      },
+      "final": {
+        "round": 1,
+        "stage": "d1",
+        "agg_size": 6565,
+        "standing": 1.0
+      },
+      "curve": [
+        {
+          "round": 0,
+          "stage": "bc0",
+          "agg_size": 5815,
+          "standing": 0.3333
+        },
+        {
+          "round": 1,
+          "stage": "d1",
+          "agg_size": 6565,
+          "standing": 1.0
+        }
+      ]
+    }
+  ]
+}

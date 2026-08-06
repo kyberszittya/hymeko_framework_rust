@@ -1,0 +1,74 @@
+diff --git a/hymeko_rl/env/planar_grasp_env.py b/hymeko_rl/env/planar_grasp_env.py
+index 437f11f..0ef4a86 100644
+--- a/hymeko_rl/env/planar_grasp_env.py
++++ b/hymeko_rl/env/planar_grasp_env.py
+@@ -15,7 +15,7 @@ from __future__ import annotations
+ import math
+ import xml.etree.ElementTree as ET
+ from dataclasses import dataclass
+-from typing import Any
++from typing import Any, Callable
+ 
+ import gymnasium as gym
+ import mujoco
+@@ -151,6 +151,35 @@ def with_fingertip_sites(arm_mjcf: str) -> str:
+     return ET.tostring(root, encoding="unicode") if changed else arm_mjcf
+ 
+ 
++def with_fingertip_shape(arm_mjcf: str, shape: str, size: str, friction: "float | None" = None,
++                         compliance: "tuple[tuple[float, float], tuple[float, float, float, float, float] | None] | None" = None) -> str:
++    """DIAGNOSTIC (COIN-GRIPPER-GEOMETRY-1 / GRIP-CONTROL-1 / COMPLIANT-PAD-1): configure the collision
++    ``fingertip_{side}`` geoms — retype to a flat/pad ``shape`` (a sphere fingertip is a rolling point contact),
++    set the tangential ``friction`` (pad-material variant), and/or set the ``compliance`` = (solref, solimp) for a
++    *simulated compliant contact* (softer normal response; NOT literal material elasticity). When compliance is given
++    the fingertip geoms get ``priority="1"`` so the fingertip↔coin contact params are governed by the fingertip (the
++    coin/floor stay canonical). Keeps the fingertip site/frame/collision mask + mirror symmetry. No-op only if
++    ``shape == "sphere"`` AND no friction AND no compliance override. # Preconditions ``shape`` in MuJoCo geom types;
++    ``solref`` = (timeconst>0, dampratio>0); ``solimp`` = 5-tuple in the standard MuJoCo form or ``None`` to keep default."""
++    if shape == "sphere" and friction is None and compliance is None:
++        return arm_mjcf
++    root = ET.fromstring(arm_mjcf)
++    for geom in root.iter("geom"):
++        if str(geom.get("name", "")).startswith("fingertip_"):
++            if shape != "sphere":
++                geom.set("type", shape)
++                geom.set("size", size)
++            if friction is not None:
++                geom.set("friction", f"{friction:g} 0.05 0.001")   # tangential / torsional / rolling
++            if compliance is not None:
++                solref, solimp = compliance
++                geom.set("solref", f"{solref[0]:g} {solref[1]:g}")
++                geom.set("priority", "1")                          # fingertip governs the fingertip↔coin contact
++                if solimp is not None:
++                    geom.set("solimp", " ".join(f"{v:g}" for v in solimp))
++    return ET.tostring(root, encoding="unicode")
++
++
+ def with_arm_coin_collision(arm_mjcf: str) -> str:
+     """v2 physics: make the arm-body geoms physically collide with the coin (they pass through it in v1).
+ 
+@@ -357,6 +386,10 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
+                  coin_damping: float = 2.5, coin_density: float | None = None,
+                  coin_shape: str = "cylinder", spin_damping: float = 0.8,
+                  coin_frictionloss: float = 0.0,
++                 fingertip_shape: str = "sphere", fingertip_size: str = "0.006 0.016 0.02",
++                 fingertip_friction: "float | None" = None,
++                 fingertip_compliance: "tuple[tuple[float, float], tuple[float, float, float, float, float] | None] | None" = None,
++                 arm_mjcf_transform: "Callable[[str], str] | None" = None,
+                  terminate_on_success: bool = True,
+                  contact_legality: bool | None = None) -> None:
+         super().__init__()
+@@ -395,6 +428,13 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
+         # approach reward (and the BC demonstrator) shape the true tool point, not a body origin. Massless
+         # → dynamics unchanged. Idempotent on the hand-authored scene (it declares its tips already).
+         arm_mjcf = with_fingertip_sites(arm_mjcf)
++        # DIAGNOSTIC (COIN-GRIPPER-GEOMETRY-1): flat/pad fingertip geometry so a parallel clamp catches the cylinder
++        # (no-op for the canonical sphere). Same site/frame/mask + mirror symmetry; only the collision geom shape.
++        arm_mjcf = with_fingertip_shape(arm_mjcf, fingertip_shape, fingertip_size, fingertip_friction, fingertip_compliance)
++        # PAD-AWARE-COOPERATIVE-CONTROL-0: an OPTIONAL additive arm-MJCF transform (e.g. add a distal pad-orientation
++        # DOF per fingertip). Default None → K0 byte-unchanged. The caller supplies the transform (no layering cycle).
++        if arm_mjcf_transform is not None:
++            arm_mjcf = arm_mjcf_transform(arm_mjcf)
+         # v2 only: give the arm-link geoms a coin-collidable mask so the coin cannot pass through them.
+         # Collision-mask change only (the hypergraph reads body/joint structure, not masks) → the graph is
+         # unaffected; legality is still decided by geom id at metric time.

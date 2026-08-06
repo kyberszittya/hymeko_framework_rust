@@ -1,0 +1,49 @@
+% Hamilton rotor in forward and backward (Hamilton conjugate identity)
+\begin{tikzpicture}[
+  every node/.style={font=\small\sffamily, align=center},
+  block/.style ={rectangle, draw, very thick, rounded corners=2pt,
+                 minimum height=8mm, minimum width=22mm, fill=blue!10},
+  rotor/.style ={ellipse, draw, very thick, fill=orange!20,
+                 minimum height=9mm, minimum width=18mm},
+  fwd/.style   ={->, >=stealth, very thick, blue!70!black},
+  bwd/.style   ={->, >=stealth, very thick, red!70!black, dashed},
+]
+
+% Forward chain
+\node[block]                                     (sh)  {scatter$_h$};
+\node[rotor, right=8mm of sh]                    (Mf)  {$M = e^{\beta H \mathbf{n}}$};
+\node[block, right=8mm of Mf]                    (shmf){$M\otimes$ scatter$_h$};
+\node[block, right=8mm of shmf]                  (Wb)  {$\cdot W_{\text{back}}$};
+\node[block, right=8mm of Wb, fill=green!10]     (out) {output\\ $y$};
+
+\draw[fwd] (sh)   -- (Mf);
+\draw[fwd] (Mf)   -- (shmf);
+\draw[fwd] (shmf) -- (Wb);
+\draw[fwd] (Wb)   -- (out);
+
+% Backward chain (below)
+\node[block, below=20mm of out, fill=red!15]     (go)  {$\partial L / \partial y$};
+\node[block, left=8mm of go]                     (gWb) {$\cdot W_{\text{back}}^{\!\top}$};
+\node[block, left=8mm of gWb]                    (gph) {$\partial L / \partial$\\$\mathrm{(scatter}_{h,\text{mod}})$};
+\node[rotor, left=8mm of gph, fill=red!10]       (Mb)  {$M^{*} \otimes$};
+\node[block, left=8mm of Mb]                     (gsh) {$\partial L / \partial$\\scatter$_h$};
+
+\draw[bwd] (go)  -- (gWb);
+\draw[bwd] (gWb) -- (gph);
+\draw[bwd] (gph) -- (Mb);
+\draw[bwd] (Mb)  -- (gsh);
+
+% Identity label
+\node[font=\scriptsize\itshape, below=22mm of Mf, text width=70mm, align=center]
+  {Hamilton-conjugate identity:\\[2pt]
+   $\dfrac{\partial L}{\partial\,\mathrm{scatter}_h}
+    = M^{*} \otimes \dfrac{\partial L}{\partial\,\mathrm{scatter}_{h,\text{mod}}}$,
+   \quad $M^{*} = (m_0, -m_1, -m_2, -m_3)$};
+
+% Title labels
+\node[font=\scriptsize\itshape, anchor=west, blue!70!black]
+  at ($(sh.west) + (-7mm, 5mm)$) {forward};
+\node[font=\scriptsize\itshape, anchor=east, red!70!black]
+  at ($(go.east) + (7mm, 5mm)$) {backward (closed-form)};
+
+\end{tikzpicture}

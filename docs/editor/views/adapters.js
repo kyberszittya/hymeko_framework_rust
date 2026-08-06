@@ -1,0 +1,318 @@
+// Pure adapters: turn the WASM `snapshot_json()` / `to_urdf()` output into the
+// shapes the 3D views consume. No DOM, no three.js, no globals — so these run
+// under `node --test` (see adapters.test.mjs) and in the browser unchanged.
+//
+// snapshot shape (hymeko_formats/src/snapshot.rs):
+//   { node_count, edge_count, arc_count,
+//     nodes: [{ id, name, kind, bases[], tags[], arcs[] }],
+//     edges: [{ id, name, kind, bases[], tags[], arcs: [{ sign, target_id, target_name }] }] }
+
+/**
+ * Build the star/clique-viewer input from a snapshot.
+ * Preconditions: `snapshot.nodes` / `snapshot.edges` are arrays; each edge arc
+ *   carries `target_id` referencing a node OR edge id and a `sign` in {-1,0,+1}.
+ * Postconditions: returns { n_vertices, vertex_labels[], vertices[], hyperedges[] }
+ *   where each hyperedge is { label, members:[index], sign:±1, arity } and each
+ *   vertex is { label, bases[], tags[] } (metadata for attribute colouring).
+ *   A member index < n_vertices is a vertex; an index in [n_vertices, n_vertices+
+ *   |hyperedges|) is another *hyperedge* (its hub), so a bundle-of-bundles — a
+ *   hyperedge whose arcs target other hyperedges, e.g. a strategy `(+ explore,
+ *   + exploit)` — renders as hub→hub incidence in the shared P[] hub space.
+ *   Arcs that target a genuinely-unknown id (neither node nor kept edge) are
+ *   dropped, never invented. A zero-vertex-member edge is kept ONLY when it is
+ *   part of a bundle (it references an edge, or another edge references it); a
+ *   stray type-root with no incidence stays dropped. `sign` is the product of
+ *   member arc signs (0 leaves it unchanged).
+ */
+export function snapshotToHyperedges(snapshot) {
+  const nodes = snapshot?.nodes ?? [];
+  const edges = snapshot?.edges ?? [];
+  const nodeIdToIdx = new Map();
+  const vertex_labels = [];
+  const vertices = [];
+  for (const n of nodes) {
+    nodeIdToIdx.set(n.id, vertex_labels.length);
+    vertex_labels.push(n.name);
+    vertices.push({ label: n.name, bases: n.bases ?? [], tags: n.tags ?? [],
+                    value: n.value ?? null });
+  }
+  const n = vertex_labels.length;
+  // Edge ids form one decl space with node ids (snapshot.rs: target_id = DeclId),
+  // so an arc targeting an edge carries that edge's id, distinct from any node id.
+  const edgeIds = new Set(edges.map((e) => e.id));
+  const isEdgeTarget = (a) => !nodeIdToIdx.has(a.target_id) && edgeIds.has(a.target_id);
+  // Edges referenced as a member by some *other* edge's arc (a bundle's parts).
+  const referencedEdge = new Set();
+  for (const e of edges) for (const a of e.arcs ?? []) if (isEdgeTarget(a)) referencedEdge.add(a.target_id);
+  // Keep an edge iff it carries incidence we can draw: a vertex member, an
+  // edge-member arc (it is a bundle), or it is itself a bundle member.
+  const edgeIdToIdx = new Map();
+  const kept = [];
+  for (const e of edges) {
+    const arcs = e.arcs ?? [];
+    const hasVertexMember = arcs.some((a) => nodeIdToIdx.has(a.target_id));
+    const refsEdge = arcs.some(isEdgeTarget);
+    if (hasVertexMember || refsEdge || referencedEdge.has(e.id)) {
+      edgeIdToIdx.set(e.id, kept.length);
+      kept.push(e);
+    }
+  }
+  const hyperedges = [];
+  for (const e of kept) {
+    const members = [];
+    let sign = 1;
+    for (const a of e.arcs ?? []) {
+      let idx;
+      if (nodeIdToIdx.has(a.target_id)) idx = nodeIdToIdx.get(a.target_id);
+      else if (edgeIdToIdx.has(a.target_id)) idx = n + edgeIdToIdx.get(a.target_id);
+      else continue;                 // unknown target → dropped, never invented
+      members.push(idx);
+      if (a.sign < 0) sign = -sign;
+    }
+    hyperedges.push({ label: e.name, members, sign, arity: members.length });
+  }
+  return { n_vertices: n, vertex_labels, vertices, hyperedges };
+}
+
+/**
+ * Fold leaf "attribute" decls out of the rendered vertex set and onto their owner's HUD.
+ * An attribute is a node that (a) is NOT a member of any hyperedge, (b) is a scope LEAF (has no
+ * scope-children), and (c) has a scope parent — i.e. exactly the scalar config leaves
+ * (`length "m"`, `ax [1,0,0]`, `mass 1.5`, `type "..."`). Each is attached to its immediate scope
+ * parent (which is therefore a non-leaf, so it stays drawn) as `{name, value}`.
+ *
+ * Preconditions: `hyperedges` is the snapshotToHyperedges output; `scopeSegs` is
+ *   snapshotRelationships(...).scope (an array of [childIdx, parentIdx]); `vertices` carries `label`
+ *   and `value`. All indices are vertex indices in `[0, nVertices)`.
+ * Postconditions: returns { isAttr: bool[nVertices], attrsOf: Map<parentIdx, [{name,value}]> }.
+ *   A node that is a hyperedge member, a non-leaf, or parentless is never an attribute (so a pure
+ *   hyperedge graph or a flat vertex set is returned unchanged — nothing is hidden).
+ */
+export function foldAttributes(nVertices, hyperedges, scopeSegs, vertices) {
+  const parent = new Array(nVertices).fill(-1);
+  const childCount = new Array(nVertices).fill(0);
+  for (const [c, p] of scopeSegs ?? []) {
+    if (c < nVertices && p < nVertices && c !== p && parent[c] === -1) {
+      parent[c] = p;
+      childCount[p] += 1;
+    }
+  }
+  const isMember = new Array(nVertices).fill(false);
+  for (const e of hyperedges ?? []) {
+    for (const m of e.members) if (m < nVertices) isMember[m] = true;
+  }
+  const isAttr = new Array(nVertices).fill(false);
+  const attrsOf = new Map();
+  for (let i = 0; i < nVertices; i++) {
+    if (isMember[i] || childCount[i] > 0 || parent[i] === -1) continue; // structural / container / root
+    isAttr[i] = true;
+    const p = parent[i];
+    if (!attrsOf.has(p)) attrsOf.set(p, []);
+    attrsOf.get(p).push({ name: vertices[i].label, value: vertices[i].value ?? null });
+  }
+  return { isAttr, attrsOf };
+}
+
+/**
+ * Derive a kinematic link/joint graph from a snapshot. Joints = edge decls;
+ * links = only the node decls actually referenced by a joint (so the regime
+ * panels show the robot, not the namespace scaffolding). The arc convention
+ * (+ parent, − child) maps an edge to a directed link pair.
+ * Preconditions: as above.
+ * Postconditions: { links:[name], joints:[{name,sign,parent,child}],
+ *   edges:[[parentIdx,childIdx]], nLinks }. Edges with < 2 vertex arcs are
+ *   skipped. If sign labels are absent, the first/last arcs stand in for
+ *   parent/child so a graph still forms.
+ */
+export function snapshotToKinematicGraph(snapshot) {
+  const nodes = snapshot?.nodes ?? [];
+  const edges = snapshot?.edges ?? [];
+  const nodeById = new Map(nodes.map((n) => [n.id, n]));
+  // Restrict links to node decls referenced by at least one edge (joint).
+  const referenced = new Set();
+  for (const e of edges) for (const a of e.arcs ?? []) if (nodeById.has(a.target_id)) referenced.add(a.target_id);
+  const idToIdx = new Map();
+  const links = [];
+  for (const n of nodes) {
+    if (!referenced.has(n.id)) continue;
+    idToIdx.set(n.id, links.length);
+    links.push(n.name);
+  }
+  const joints = [];
+  const graphEdges = [];
+  for (const e of edges) {
+    const arcs = (e.arcs ?? []).filter((a) => idToIdx.has(a.target_id));
+    if (arcs.length < 2) continue;
+    const parentArc = arcs.find((a) => a.sign > 0) ?? arcs[0];
+    const childArc = arcs.find((a) => a.sign < 0) ?? arcs[arcs.length - 1];
+    let sign = 1;
+    for (const a of arcs) if (a.sign < 0) sign = -sign;
+    const pu = idToIdx.get(parentArc.target_id);
+    const cu = idToIdx.get(childArc.target_id);
+    joints.push({ name: e.name, sign, parent: links[pu], child: links[cu] });
+    graphEdges.push([pu, cu]);
+  }
+  return { links, joints, edges: graphEdges, nLinks: links.length };
+}
+
+/**
+ * Count simple undirected cycles by length k = 3..maxK. Mirrors the stdlib DFS
+ * in demo_web/export_kinematic_data.py so the browser αₖ fingerprint matches the
+ * Python export.
+ * Preconditions: graph = { nLinks, edges:[[u,v]] } with 0 ≤ u,v < nLinks.
+ * Postconditions: { 3:n, 4:n, ..., maxK:n }; each cycle counted exactly once
+ *   (canonical: smallest start vertex, fixed traversal direction).
+ */
+export function cycleArity(graph, maxK = 6) {
+  const n = graph?.nLinks ?? 0;
+  const adj = Array.from({ length: n }, () => new Set());
+  for (const [u, v] of graph?.edges ?? []) {
+    if (u === v || u < 0 || v < 0 || u >= n || v >= n) continue;
+    adj[u].add(v);
+    adj[v].add(u);
+  }
+  const counts = {};
+  for (let k = 3; k <= maxK; k++) counts[k] = 0;
+  const onPath = new Array(n).fill(false);
+  const path = [];
+
+  const dfs = (start, u, depth) => {
+    onPath[u] = true;
+    path.push(u);
+    for (const w of adj[u]) {
+      if (w === start && depth >= 3) {
+        // Close the cycle. Count once by fixing direction: the first step out
+        // of `start` must be smaller than the last step back into it.
+        if (path[1] < path[path.length - 1]) counts[depth]++;
+      } else if (w > start && !onPath[w] && depth < maxK) {
+        dfs(start, w, depth + 1);
+      }
+    }
+    onPath[u] = false;
+    path.pop();
+  };
+
+  for (let s = 0; s < n; s++) dfs(s, s, 1);
+  return counts;
+}
+
+/**
+ * Group the snapshot's named relationships by kind, mapping DeclId endpoints to
+ * vertex indices (same index space as snapshotToHyperedges).
+ * Preconditions: `snapshot.relationships` (if present) is [{kind,from,to}] with
+ *   from/to referencing node ids.
+ * Postconditions: { kind: [[fromIdx, toIdx], ...] }; relationships whose
+ *   endpoints aren't both drawn vertices, or are self-loops, are dropped (never
+ *   fabricated). Returns {} when the snapshot carries no relationships.
+ */
+export function snapshotRelationships(snapshot) {
+  const nodes = snapshot?.nodes ?? [];
+  const idToIdx = new Map();
+  nodes.forEach((n, i) => idToIdx.set(n.id, i));
+  const byKind = {};
+  for (const r of snapshot?.relationships ?? []) {
+    const a = idToIdx.get(r.from), b = idToIdx.get(r.to);
+    if (a == null || b == null || a === b) continue;
+    (byKind[r.kind] ||= []).push([a, b]);
+  }
+  return byKind;
+}
+
+/**
+ * Containment (scope) depth of every decl, for the "composite" graph layout
+ * (roots in the centre). Depth 0 = a top-level container (no scope parent).
+ * Preconditions: `snapshot.relationships` (if present) carries `scope` edges
+ *   child→parent by decl id; nodes/edges carry `id`.
+ * Postconditions: Map<declId, depth> for every node + edge id. Cycles and
+ *   missing parents are handled (a `seen` guard caps the walk; an unparented
+ *   decl is depth 0). Returns an empty Map for an empty snapshot.
+ */
+export function scopeDepths(snapshot) {
+  const parent = new Map();
+  for (const r of snapshot?.relationships ?? []) {
+    if (r.kind === "scope" && r.from !== r.to) parent.set(r.from, r.to);
+  }
+  const ids = [];
+  for (const n of snapshot?.nodes ?? []) ids.push(n.id);
+  for (const e of snapshot?.edges ?? []) ids.push(e.id);
+  const depthOf = (id) => {
+    let d = 0, cur = id;
+    const seen = new Set();
+    while (parent.has(cur) && !seen.has(cur)) { seen.add(cur); cur = parent.get(cur); d++; }
+    return d;
+  };
+  const out = new Map();
+  for (const id of ids) out.set(id, depthOf(id));
+  return out;
+}
+
+/**
+ * Ids of directed edges that form a bidirectional relation — i.e. whose reverse
+ * (target→source) is also present. Used by the 2D view to render reciprocal
+ * relations (mutual arc references, mutual `<isa>`) as a double-headed /
+ * bowed-apart connector instead of two overlapping one-way arrows.
+ * Preconditions: `edges` is [{ id, source, target }].
+ * Postconditions: a Set of the ids belonging to a reciprocal pair; self-loops
+ *   (source === target) are excluded; a one-way edge is never included.
+ */
+export function bidirectionalEdgeIds(edges) {
+  const present = new Set();
+  for (const e of edges ?? []) present.add(`${e.source} ${e.target}`);
+  const out = new Set();
+  for (const e of edges ?? []) {
+    if (e.source === e.target) continue;
+    if (present.has(`${e.target} ${e.source}`)) out.add(e.id);
+  }
+  return out;
+}
+
+const _xyz = (s) => s.trim().split(/\s+/).map(Number);
+
+/**
+ * Parse a HyMeKo-emitted URDF string into links + joints for a 3D render.
+ * The engine's URDF is machine-generated and regular, so a regex pass is safe
+ * and keeps this dependency-free (works under node --test, no DOMParser).
+ * Preconditions: `urdf` is the string from `ir.to_urdf(name)`.
+ * Postconditions: { links:[{name,geometry|null,origin[3]}],
+ *   joints:[{name,type,parent,child,origin_xyz[3],origin_rpy[3],axis[3]|null}] }.
+ *   Links without <visual> get geometry=null (caller draws a placeholder);
+ *   missing origin/axis default to zero/null — never throws on a sparse URDF.
+ */
+export function parseUrdf(urdf) {
+  const links = [];
+  const linkRe = /<link\s+name="([^"]+)">([\s\S]*?)<\/link>/g;
+  let m;
+  while ((m = linkRe.exec(urdf)) !== null) {
+    const [, name, body] = m;
+    const link = { name, geometry: null, origin: [0, 0, 0] };
+    const vis = /<visual>([\s\S]*?)<\/visual>/.exec(body);
+    if (vis) {
+      const o = /<origin\s+xyz="([^"]+)"(?:\s+rpy="([^"]+)")?/.exec(vis[1]);
+      if (o) link.origin = _xyz(o[1]);
+      const cyl = /<cylinder\s+radius="([^"]+)"\s+length="([^"]+)"/.exec(vis[1]);
+      const box = /<box\s+size="([^"]+)"/.exec(vis[1]);
+      const sph = /<sphere\s+radius="([^"]+)"/.exec(vis[1]);
+      if (cyl) link.geometry = { shape: "cylinder", radius: +cyl[1], length: +cyl[2] };
+      else if (box) link.geometry = { shape: "box", size: _xyz(box[1]) };
+      else if (sph) link.geometry = { shape: "sphere", radius: +sph[1] };
+    }
+    links.push(link);
+  }
+  const joints = [];
+  const jointRe = /<joint\s+name="([^"]+)"\s+type="([^"]+)">([\s\S]*?)<\/joint>/g;
+  while ((m = jointRe.exec(urdf)) !== null) {
+    const [, name, type, body] = m;
+    const o = /<origin\s+xyz="([^"]+)"(?:\s+rpy="([^"]+)")?/.exec(body);
+    const ax = /<axis\s+xyz="([^"]+)"/.exec(body);
+    joints.push({
+      name,
+      type,
+      parent: (/<parent\s+link="([^"]+)"/.exec(body) ?? [])[1] ?? null,
+      child: (/<child\s+link="([^"]+)"/.exec(body) ?? [])[1] ?? null,
+      origin_xyz: o ? _xyz(o[1]) : [0, 0, 0],
+      origin_rpy: o && o[2] ? _xyz(o[2]) : [0, 0, 0],
+      axis: ax ? _xyz(ax[1]) : null,
+    });
+  }
+  return { links, joints };
+}

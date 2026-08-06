@@ -20,8 +20,8 @@ roadmap has produced.
 | File | Status | LOC | Notes |
 | --- | --- | --- | --- |
 | `data/hsikan/sweep_msg_cortical_gomb.hymeko` | **new** | 60 | Sister fixture: same 7 P-graph axes, but `gomb_d{4,8,16}` units instead of `d_hidden_{4,8,16}` |
-| `signedkan_wip/src/cortical_pgraph_mapping.py` | extended | +10 | New `gomb_d*` rows + `backbone` flag (`resnet` / `gomb`) |
-| `signedkan_wip/experiments/runs/run_cortical_msg_sweep.py` | extended | +30 | `_build_backbone()` factory dispatches on `backbone`; `--train` works for both |
+| `hymeko_neuro/experiments/cortical_pgraph_mapping.py` | extended | +10 | New `gomb_d*` rows + `backbone` flag (`resnet` / `gomb`) |
+| `hymeko_neuro/experiments/runs/run_cortical_msg_sweep.py` | extended | +30 | `_build_backbone()` factory dispatches on `backbone`; `--train` works for both |
 
 ## CORE.YAML items touched
 

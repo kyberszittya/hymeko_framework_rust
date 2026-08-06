@@ -484,17 +484,17 @@ The Triton autograd \texttt{forward} is fast and memory-light --- but the \textb
 
 \begin{lstlisting}[language=bash]
 # Full suite (<= 60s)
-python -m pytest signedkan_wip/tests/test_triton_kernels.py -v
+python -m pytest hymeko_neuro/tests/test_triton_kernels.py -v
 
 # Skip the slow end-to-end BA training test (<= 5s)
-python -m pytest signedkan_wip/tests/test_triton_kernels.py -v -k "not end_to_end_ba"
+python -m pytest hymeko_neuro/tests/test_triton_kernels.py -v -k "not end_to_end_ba"
 
 # Sensitivity sweep (~2 min)
-python -m signedkan_wip.src.triton_kernels_sensitivity
+python -m hymeko_neuro.triton_kernels_sensitivity
 
 # Try training with the kernel ON
 # (forward-only OK; backward may OOM on small GPUs until fused-backward lands)
-HSIKAN_TRITON_KERNEL=1 python -m signedkan_wip.src.run_final_cell --dataset bitcoin_alpha
+HSIKAN_TRITON_KERNEL=1 python -m hymeko_neuro.run_final_cell --dataset bitcoin_alpha
 \end{lstlisting}
 
 \end{document}

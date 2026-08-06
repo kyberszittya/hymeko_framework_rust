@@ -1,0 +1,200 @@
+{
+  "config": {
+    "difficulty": 0.3,
+    "steps": 200000,
+    "kind": "sa_hsikan",
+    "eval_every": 25000,
+    "reward": "4-core",
+    "checkpoint": "best-eval",
+    "arch": "DeterministicMultiChannelActor + centralized twin LayerNorm QCritic",
+    "joint_baseline_peak": 0.34
+  },
+  "peak_delivery_median": 0.4,
+  "peak_delivery_per_seed": [
+    0.2,
+    0.4,
+    0.44
+  ],
+  "seeds": {
+    "0": {
+      "peak": {
+        "delivery": 0.4,
+        "step": 175000,
+        "both_contact": 0.0193,
+        "coin_toward_zone": 0.0624
+      },
+      "curve": [
+        {
+          "step": 25000,
+          "delivery": 0.0,
+          "both_contact": 0.0111,
+          "coin_toward_zone": 0.1339
+        },
+        {
+          "step": 50000,
+          "delivery": 0.34,
+          "both_contact": 0.0107,
+          "coin_toward_zone": 0.0606
+        },
+        {
+          "step": 75000,
+          "delivery": 0.14,
+          "both_contact": 0.0036,
+          "coin_toward_zone": 0.1093
+        },
+        {
+          "step": 100000,
+          "delivery": 0.34,
+          "both_contact": 0.0056,
+          "coin_toward_zone": 0.0737
+        },
+        {
+          "step": 125000,
+          "delivery": 0.26,
+          "both_contact": 0.0061,
+          "coin_toward_zone": 0.078
+        },
+        {
+          "step": 150000,
+          "delivery": 0.32,
+          "both_contact": 0.0147,
+          "coin_toward_zone": 0.0639
+        },
+        {
+          "step": 175000,
+          "delivery": 0.4,
+          "both_contact": 0.0193,
+          "coin_toward_zone": 0.0624
+        },
+        {
+          "step": 200000,
+          "delivery": 0.34,
+          "both_contact": 0.0047,
+          "coin_toward_zone": 0.0787
+        }
+      ],
+      "params": 26628,
+      "wall_s": 2042
+    },
+    "1": {
+      "peak": {
+        "delivery": 0.2,
+        "step": 50000,
+        "both_contact": 0.0194,
+        "coin_toward_zone": 0.1107
+      },
+      "curve": [
+        {
+          "step": 25000,
+          "delivery": 0.08,
+          "both_contact": 0.0014,
+          "coin_toward_zone": 0.1429
+        },
+        {
+          "step": 50000,
+          "delivery": 0.2,
+          "both_contact": 0.0194,
+          "coin_toward_zone": 0.1107
+        },
+        {
+          "step": 75000,
+          "delivery": 0.18,
+          "both_contact": 0.0182,
+          "coin_toward_zone": 0.1324
+        },
+        {
+          "step": 100000,
+          "delivery": 0.14,
+          "both_contact": 0.0292,
+          "coin_toward_zone": 0.1368
+        },
+        {
+          "step": 125000,
+          "delivery": 0.06,
+          "both_contact": 0.0026,
+          "coin_toward_zone": 0.1328
+        },
+        {
+          "step": 150000,
+          "delivery": 0.16,
+          "both_contact": 0.0053,
+          "coin_toward_zone": 0.126
+        },
+        {
+          "step": 175000,
+          "delivery": 0.02,
+          "both_contact": 0.004,
+          "coin_toward_zone": 0.1708
+        },
+        {
+          "step": 200000,
+          "delivery": 0.08,
+          "both_contact": 0.0034,
+          "coin_toward_zone": 0.159
+        }
+      ],
+      "params": 26628,
+      "wall_s": 2410
+    },
+    "2": {
+      "peak": {
+        "delivery": 0.44,
+        "step": 150000,
+        "both_contact": 0.0801,
+        "coin_toward_zone": 0.0528
+      },
+      "curve": [
+        {
+          "step": 25000,
+          "delivery": 0.0,
+          "both_contact": 0.0096,
+          "coin_toward_zone": 0.1525
+        },
+        {
+          "step": 50000,
+          "delivery": 0.04,
+          "both_contact": 0.0225,
+          "coin_toward_zone": 0.1492
+        },
+        {
+          "step": 75000,
+          "delivery": 0.16,
+          "both_contact": 0.0522,
+          "coin_toward_zone": 0.131
+        },
+        {
+          "step": 100000,
+          "delivery": 0.22,
+          "both_contact": 0.032,
+          "coin_toward_zone": 0.1197
+        },
+        {
+          "step": 125000,
+          "delivery": 0.12,
+          "both_contact": 0.0477,
+          "coin_toward_zone": 0.1467
+        },
+        {
+          "step": 150000,
+          "delivery": 0.44,
+          "both_contact": 0.0801,
+          "coin_toward_zone": 0.0528
+        },
+        {
+          "step": 175000,
+          "delivery": 0.26,
+          "both_contact": 0.0316,
+          "coin_toward_zone": 0.1115
+        },
+        {
+          "step": 200000,
+          "delivery": 0.3,
+          "both_contact": 0.0356,
+          "coin_toward_zone": 0.0878
+        }
+      ],
+      "params": 26628,
+      "wall_s": 2394
+    }
+  }
+}

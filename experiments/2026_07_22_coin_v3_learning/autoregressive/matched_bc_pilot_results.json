@@ -1,0 +1,107 @@
+{
+ "A_instant": [
+  {
+   "seed": 0,
+   "val_mse": 0.0010627341689541936,
+   "headline_deliver": 0,
+   "headline_grasp": 9,
+   "validation_deliver": 1,
+   "validation_n": 30,
+   "delivered_headline": []
+  },
+  {
+   "seed": 1,
+   "val_mse": 0.0008783903322182596,
+   "headline_deliver": 0,
+   "headline_grasp": 9,
+   "validation_deliver": 2,
+   "validation_n": 30,
+   "delivered_headline": []
+  },
+  {
+   "seed": 2,
+   "val_mse": 0.0008056077640503645,
+   "headline_deliver": 0,
+   "headline_grasp": 9,
+   "validation_deliver": 0,
+   "validation_n": 30,
+   "delivered_headline": []
+  }
+ ],
+ "B_obs_hist": [
+  {
+   "seed": 0,
+   "val_mse": 0.0007157691288739443,
+   "headline_deliver": 0,
+   "headline_grasp": 9,
+   "validation_deliver": 2,
+   "validation_n": 30,
+   "delivered_headline": []
+  },
+  {
+   "seed": 1,
+   "val_mse": 0.0006276548956520855,
+   "headline_deliver": 0,
+   "headline_grasp": 9,
+   "validation_deliver": 4,
+   "validation_n": 30,
+   "delivered_headline": []
+  },
+  {
+   "seed": 2,
+   "val_mse": 0.0007064008968882263,
+   "headline_deliver": 1,
+   "headline_grasp": 9,
+   "validation_deliver": 0,
+   "validation_n": 30,
+   "delivered_headline": [
+    1011
+   ]
+  }
+ ],
+ "C_obs_act_hist": [
+  {
+   "seed": 0,
+   "val_mse": 0.00034487780067138374,
+   "headline_deliver": 0,
+   "headline_grasp": 9,
+   "validation_deliver": 0,
+   "validation_n": 30,
+   "delivered_headline": []
+  },
+  {
+   "seed": 1,
+   "val_mse": 0.00034613138996064663,
+   "headline_deliver": 0,
+   "headline_grasp": 9,
+   "validation_deliver": 2,
+   "validation_n": 30,
+   "delivered_headline": []
+  },
+  {
+   "seed": 2,
+   "val_mse": 0.0003214519238099456,
+   "headline_deliver": 1,
+   "headline_grasp": 9,
+   "validation_deliver": 0,
+   "validation_n": 30,
+   "delivered_headline": [
+    1278
+   ]
+  }
+ ],
+ "D_handoff_baseline": [
+  {
+   "seed": "frozen",
+   "headline_deliver": 3,
+   "headline_grasp": 9,
+   "validation_deliver": 2,
+   "validation_n": 30,
+   "delivered_headline": [
+    1011,
+    1447,
+    1568
+   ]
+  }
+ ]
+}

@@ -1,0 +1,14 @@
+MetaWorldCoffeePush{}
+metaworldcoffeepush
+{
+    progress_score {}
+    approach_error {}
+    contact_fraction {}
+    reward_proxy {}
+
+    @c0{ (+contact_fraction, +progress_score); }
+    @c1{ (+approach_error, -contact_fraction); }
+    @c2{ (+progress_score, +reward_proxy); }
+    @c3{ (+approach_error, -reward_proxy); }
+    @c4{ (+contact_fraction, +reward_proxy); }
+}

@@ -1,0 +1,1 @@
+{"key": "quadruped/sac/hsikan/0", "task": "quadruped", "algo": "sac", "backbone": "hsikan", "seed": 0, "timestamp": "2026-06-25 22:24:26", "curve": [-22.831, -46.074, -41.827, -44.165, -48.513, -37.168, -34.713, -36.404, -38.639, -28.954], "curve_max": -22.831, "final": -28.954, "n_params": 14736}

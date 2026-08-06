@@ -1,0 +1,10 @@
+{"dataset": "bitcoin_alpha", "seed": 0, "head": "real", "shuffle": false, "prop_rounds": 2, "prop_self_weight": 4.0, "test_auroc": 0.8569, "val_auroc": 0.8668, "n_test": 854, "n_params": 2834}
+{"dataset": "bitcoin_alpha", "seed": 0, "head": "complex", "shuffle": false, "prop_rounds": 2, "prop_self_weight": 4.0, "test_auroc": 0.8189, "val_auroc": 0.8145, "n_test": 854, "n_params": 1274}
+{"dataset": "bitcoin_alpha", "seed": 0, "head": "quat", "shuffle": false, "prop_rounds": 2, "prop_self_weight": 4.0, "test_auroc": 0.7268, "val_auroc": 0.7636, "n_test": 854, "n_params": 1274}
+{"dataset": "bitcoin_alpha", "seed": 0, "head": "geodesic", "shuffle": false, "prop_rounds": 2, "prop_self_weight": 4.0, "test_auroc": 0.8005, "val_auroc": 0.804, "n_test": 854, "n_params": 1244}
+{"dataset": "bitcoin_alpha", "seed": 0, "head": "quat", "shuffle": true, "prop_rounds": 2, "prop_self_weight": 4.0, "test_auroc": 0.3917, "val_auroc": 0.3777, "n_test": 854, "n_params": 1274}
+{"dataset": "bitcoin_otc", "seed": 0, "head": "real", "shuffle": false, "prop_rounds": 2, "prop_self_weight": 4.0, "test_auroc": 0.881, "val_auroc": 0.8971, "n_test": 1314, "n_params": 2834}
+{"dataset": "bitcoin_otc", "seed": 0, "head": "complex", "shuffle": false, "prop_rounds": 2, "prop_self_weight": 4.0, "test_auroc": 0.8712, "val_auroc": 0.8849, "n_test": 1314, "n_params": 1274}
+{"dataset": "bitcoin_otc", "seed": 0, "head": "quat", "shuffle": false, "prop_rounds": 2, "prop_self_weight": 4.0, "test_auroc": 0.7236, "val_auroc": 0.7462, "n_test": 1314, "n_params": 1274}
+{"dataset": "bitcoin_otc", "seed": 0, "head": "geodesic", "shuffle": false, "prop_rounds": 2, "prop_self_weight": 4.0, "test_auroc": 0.8204, "val_auroc": 0.8391, "n_test": 1314, "n_params": 1244}
+{"dataset": "bitcoin_otc", "seed": 0, "head": "quat", "shuffle": true, "prop_rounds": 2, "prop_self_weight": 4.0, "test_auroc": 0.4079, "val_auroc": 0.4323, "n_test": 1314, "n_params": 1274}

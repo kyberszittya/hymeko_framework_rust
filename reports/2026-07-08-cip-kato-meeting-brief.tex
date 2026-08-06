@@ -1,0 +1,127 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=1.4em}
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\renewcommand{\to}{\ensuremath{\rightarrow}}
+\renewcommand{\arraystretch}{1.15}
+
+\title{\vspace{-1.5em}\textbf{CIP scenario --- meeting brief for Kato-sensei}}
+\author{}
+\date{2026-07-08 \quad Aiko \quad branch \code{hymeko-neuro-migration}}
+
+\begin{document}
+\maketitle
+\vspace{-2.5em}
+
+\noindent\textbf{One line.} \emph{DirectLiNGAM / CIP running over the machine-verified HyMeKo hypergraph
+substrate --- demonstrated end-to-end on coin-toss (de-risk) and on your MetaWorld coffee-push scenario, with
+every discovered causal graph cross-view-verified against the HyMeKo engine.}
+
+\section*{1.\quad The idea we are testing (the joint)}
+The runtime monitor judges the task (reward-independent); CIP prioritizes reward\,$\leftrightarrow$\,monitor
+disagreement; DirectLiNGAM proposes a causal graph over the rollout variables; \textbf{that graph is declared as a
+\code{.hymeko} signed hypergraph and the HyMeKo engine re-derives its tensor view $+$ a Blake3 canonical hash} ---
+so \emph{the causal model the agent uses is provably the one a human audits} (Kato--LiNGAM joint \#1). The science
+extension on top is \textbf{LiNGAM-SH} (signed-hypergraph LiNGAM) --- the contribution proper, not integration glue.
+
+\begin{center}\small\ttfamily
+rollouts $\to$ HyMeKo monitor $\to$ CIP variables $\to$ DirectLiNGAM $\to$ causal DAG\\
+DAG $\to$ declare as .hymeko $\to$ engine star/clique tensor $+$ Blake3 hash $\to$ cross-view: declared $\equiv$ tensor
+\end{center}
+
+\section*{2.\quad What is built and verified (this week)}
+\begin{center}\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Layer} & \textbf{Status} & \textbf{Evidence}\\
+\midrule
+Runtime monitors (reward-independent) & built & \code{task_monitor/} (coin, coffee-push, dial-turn)\\
+CIP-export bridge (verdict $\to$ CIP vars) & built & \code{cip_export.py}\\
+DirectLiNGAM consumer (numpy/scipy, no \code{lingam}) & built & recovers synthetic ground truth, recall 1.00\\
+\textbf{.hymeko declaration $+$ engine cross-view} & built & \textbf{passed in 100\% of runs}\\
+Coin-toss PoC (de-risk) & done & \code{contact_score}\,\to\,\code{total_reward}; farming candidate\\
+Contact-reward ablation (intervention) & done & removing contact terms collapses the edge\\
+MetaWorld coffee-push / dial-turn (template) & done & recovers the scenario story\\
+MetaWorld coffee-push (real env) $+$ multi-seed & done & reward is proximity-shaped (5/5 batches)\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{3.\quad Results across the scenario}
+\textbf{Coin-toss (de-risk).} \code{contact_score}\,\to\,\code{total_reward} ($+0.69$) is the strongest edge and
+\code{total_reward} is disconnected from \code{delivery_score} $\Rightarrow$ \textbf{reward\_farming\_candidate}.
+The \emph{intervention} (Stage~A, no training): recomputing the reward with the contact terms removed
+\textbf{collapses that edge to $0.0$} and re-parents the reward onto \code{delivery_score} ($+0.88$). Supported at
+the reward-computation level. We did \textbf{not} ``solve'' coin-toss (a physics wall and an imitation gap remain);
+CIP \emph{diagnosed} it.
+
+\medskip
+\textbf{MetaWorld coffee-push (your scenario), multi-seed 5\,$\times$\,80, no training:}
+\begin{itemize}
+  \item \code{near_fraction}\,$\leftrightarrow$\,\code{total_reward}: \textbf{CONFIRMED stable} --- present 5/5,
+    $|w|$ median \textbf{0.973}, IQR $[0.962,0.981]$. The real MetaWorld reward is \textbf{proximity/contact-shaped}.
+    (Honest: LiNGAM flips the direction 3/2 across batches --- coupling solid, direction not uniquely resolved.)
+  \item \code{progress_score}\,\to\,\code{total_reward}: \textbf{rejected} as a direct edge (present 1/5) ---
+    \code{near_fraction} mediates it. \emph{The single run suggested this edge; multi-seed removed it --- the value
+    of aggregation.}
+  \item Cross-view verification \textbf{passed in all 5/5 batches}; pass-rate median $0.51$, disagreement $0.35$.
+\end{itemize}
+
+\begin{figure}[h]\centering
+\includegraphics[width=0.49\linewidth]{figures/2026_07_08_13_32_cip_lingam_coin/discovered_dag_mlp.png}\hfill
+\includegraphics[width=0.49\linewidth]{figures/2026_07_08_15_12_cip_contact_ablation_stageA/dag_mlp_contact_off.png}
+\caption{\small Coin-toss: (left) \code{contact_score}\,\to\,\code{total_reward} discovered; (right) after removing
+the contact reward terms the edge collapses and the reward re-parents onto \code{delivery_score} ($+0.88$).}
+\end{figure}
+
+\begin{figure}[h]\centering
+\includegraphics[width=0.62\linewidth]{figures/2026_07_08_16_00_cip_metaworld_real/dag_coffee_push_real.png}
+\caption{\small Real MetaWorld coffee-push: \code{near_fraction}\,\to\,\code{total_reward} ($+0.97$, stable across
+5 seeds), \code{progress_score} feeding reward via proximity; \code{action_noise} isolated (scripted policy is
+noise-robust). PROPOSED; cross-view-verified.}
+\end{figure}
+
+\section*{4.\quad Behaviour (GIF stills; full GIFs in \code{reports/gifs/metaworld_coffee_push/})}
+\begin{figure}[h]\centering
+\includegraphics[width=0.32\linewidth]{figures/kato_brief_coffee_success_still.png}\hspace{2em}
+\includegraphics[width=0.32\linewidth]{figures/kato_brief_coffee_failure_still.png}
+\caption{\small Scripted \code{SawyerCoffeePushV3Policy} in the real MetaWorld env: (left) clean, noise $0.0$
+$\to$ success; (right) noisy, noise $0.9$ $\to$ miss. Action noise is the observed input the CIP run varies.}
+\end{figure}
+
+\section*{5.\quad Honest scope (say this in the meeting)}
+\begin{itemize}
+  \item Every causal graph is \textbf{PROPOSED}; controlled ablation decides. The cross-view proves
+    \emph{representation} consistency (declared $\equiv$ tensor $\equiv$ hash), \textbf{not} causal truth.
+  \item MetaWorld's env randomization is \textbf{not controlled by the seed} --- single-run order is a point
+    estimate; the coffee-push claim rests on the 5-batch aggregate, not one run.
+  \item Real-env is \textbf{coffee-push only} so far (clean obs$\to$monitor mapping); dial-turn real-env needs a
+    dial-angle extraction (its template is done).
+  \item \textbf{No RL training} was run --- all read-only rollouts of cached / scripted policies.
+\end{itemize}
+
+\section*{6.\quad Proposed next steps (decisions for Kato)}
+\begin{enumerate}
+  \item \textbf{LiNGAM-SH} --- constrain LiNGAM's $B$ to factor through the signed incidence
+    ($B = A_{\mathrm{out}}\,\Sigma\,A_{\mathrm{in}}^{\top}$) so non-Gaussianity identifies the \emph{grouping} (the
+    theorem). Nearest prior art (arXiv:2511.03831, CAM$\to$acyclic hypergraphs, Gaussian) validates the direction,
+    does not pre-empt (no LiNGAM/ICA regime, no signs).
+  \item \textbf{Real-env reward ablation on MetaWorld} --- transfer the coin Stage-A method: decompose the reward,
+    recompute contact-off offline, check the $\to$\,\code{total_reward} edge collapses.
+  \item \textbf{Multi-seed everywhere $+$ dial-turn real-env} for a publishable ranking claim.
+\end{enumerate}
+
+\vspace{0.5em}
+\noindent\footnotesize\textbf{Environment.} metaworld 3.0.0, mujoco 3.10.0 (pinned), gymnasium 1.3.0, scipy 1.17.1;
+native \code{hymeko} engine built via maturin. 90 CIP tests pass; ruff/radon/mypy(strict) clean. Commits
+\code{a39acbb}, \code{b3d56d3}, \code{d9a436f}, \code{52e3af9}. Backing reports: \code{2026-07-08-cip-phase2-coin-poc.md},
+\code{2026-07-08-cip-contact-reward-ablation-setup.md}, \code{2026-07-08-cip-metaworld-templates.md},
+\code{2026-07-08-cip-metaworld-coffee-push-multiseed.md}.
+
+\end{document}

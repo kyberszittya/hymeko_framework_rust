@@ -1,0 +1,26 @@
+Cross-view consistency vs the REAL CLI emitters (hymeko.exe) - 16 kinematic fixtures, views ('urdf', 'sdf', 'mjcf', 'dot', 'mermaid'):
+
+  OK anthropomorphic_arm.hymeko         views=5 links= 7 joints= 6  +d+m+m+s+u
+  OK anthropomorphic_arm_using.hymeko   views=5 links= 7 joints= 6  +d+m+m+s+u
+  OK arm_gripper.hymeko                 views=5 links= 9 joints= 8  +d+m+m+s+u
+  OK arm_gripper_fanuc_import.hymeko    views=5 links= 9 joints= 8  +d+m+m+s+u
+  OK arm_gripper_import.hymeko          views=5 links= 9 joints= 8  +d+m+m+s+u
+  OK fanuc_lrmate.hymeko                views=5 links= 7 joints= 6  +d+m+m+s+u
+  OK galambos_planar.hymeko             views=5 links= 6 joints= 4  +d+m+m+s+u
+  OK gripper.hymeko                     views=5 links= 5 joints= 5  +d+m+m+s+u
+  OK inverted_pendulum.hymeko           views=5 links= 2 joints= 2  +d+m+m+s+u
+  OK mini_arm.hymeko                    views=5 links= 2 joints= 1  +d+m+m+s+u
+  OK quadruped.hymeko                   views=5 links= 9 joints= 9  +d+m+m+s+u
+  OK reach_arm.hymeko                   views=5 links= 5 joints= 4  +d+m+m+s+u
+  OK robot_4wh.hymeko                   views=5 links= 6 joints= 4  +d+m+m+s+u
+  OK robot_4wh_using.hymeko             views=5 links= 6 joints= 4  +d+m+m+s+u
+  OK triad_human.hymeko                 views=5 links= 2 joints= 0  +d+m+m+s+u
+  OK triad_r1.hymeko                    views=5 links= 4 joints= 2  +d+m+m+s+u
+
+  EXACT square (urdf/sdf/mjcf, full numeric invariant): 16/16 fixtures.
+  TOPOLOGICAL square (all 5 independently-parsed views, links+joints+parent/child): 16/16 fixtures.
+  Normalised conventions: (W) synthetic URDF `world` link excluded (mass-bearing links compared); (F) actuated joints compared, fixed root weld reported separately (implicit in MJCF).
+  Graph views (dot/mermaid) carry labels at reduced resolution by design (DOT mass 1dp + unsigned axis letter; Mermaid 2dp) - topology is exact, numeric labels are a documented projection.
+  GLOBAL invariant (kinematic structure is an acyclic single-parent forest): 16/16 fixtures (recovered identically from every view, since all views agree on the chain).
+
+  wrote reports\cross_view_consistency.json

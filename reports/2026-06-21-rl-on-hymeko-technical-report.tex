@@ -1,0 +1,169 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb}\usepackage{booktabs}\usepackage{hyperref}
+\usepackage{enumitem}\usepackage{xcolor}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\title{\textbf{Reinforcement Learning on the HyMeKo Hypergraph}\\[2pt]
+\large A cart-pole testbed, a vectorized PPO baseline, an honest structure ablation,\\
+and the path to storing a trained policy as data}
+\author{Aiko (Claude Code) --- for Dr.\ Csaba Hajdu}
+\date{2026-06-21}
+\begin{document}\maketitle
+
+\begin{abstract}
+\noindent HyMeKo already expresses a Markov Decision Process \emph{as data}: the robot
+(\code{meta\_kinematics}), the scene (\code{meta\_env}), the reward (\code{meta\_reward}), and the
+exploration/optimisation strategy (\code{meta\_strategy}) are all \code{.hymeko} descriptions compiled
+through one signed-incidence-hypergraph IR. This report documents the first end-to-end RL agent on that
+substrate: a HyMeKo-described inverted pendulum whose kinematic hypergraph is read directly by an
+HSiKAN actor--critic, trained by an in-repo PPO. We (i) build and validate the testbed, (ii) make the
+training loop $3.1\times$ faster with a vectorized rollout after a measurement localised the cost, and
+(iii) run the discriminating control that \emph{overturns} an attractive-but-wrong first conclusion: on the
+2-vertex cart-pole the hypergraph structure is \emph{not} load-bearing --- a parameter-matched MLP ties the
+HSiKAN policy. We close with the storage thesis: HyMeKo can hold not only the MDP but the policy network's
+architecture and tensor shapes today (\code{meta\_nn}), and --- with a small, well-defined step --- the
+trained weights, yielding a single content-addressed artifact that is simultaneously spec and model.
+\end{abstract}
+
+\section{The MDP as data}
+The unification HyMeKo targets is ``one source, many products.'' For control this means the entire MDP is a
+set of \code{.hymeko} profiles read by the trainer, with nothing about the task hard-coded in Python:
+\begin{itemize}[nosep]
+  \item \textbf{Robot} --- \code{data/robotics/inverted\_pendulum.hymeko}: a cart on a prismatic rail
+        (\code{AXIS\_X}) and a pole on a continuous hinge (\code{AXIS\_Y}), on the \code{meta\_kinematics}
+        vocabulary. One emit yields the MuJoCo scene \emph{and} the 2-vertex (cart, pole) signed kinematic
+        hypergraph.
+  \item \textbf{Environment / reward / strategy} --- the companion \code{meta\_env}, \code{meta\_reward},
+        \code{meta\_strategy} vocabularies (already used by the Galambos planar-grasp task).
+\end{itemize}
+The kinematic hypergraph is the object the structural policy reads: \code{HypergraphState.from\_mjcf}
+derives the signed adjacency $(A^+,A^-)$ over which the HSiKAN backbone message-passes.
+
+\section{Architecture: a shared-PPO, swappable-backbone actor--critic}
+The plan is \emph{fix the algorithm, ablate the architecture}. One PPO loop trains either backbone; the two
+differ \emph{only} in how they read the observation.
+\begin{itemize}[nosep]
+  \item \textbf{Observation} --- per-vertex features $(N,2)=[q,\dot q]$ on the kinematic hypergraph.
+        Flattened this is the classic $[x,\dot x,\theta,\dot\theta]$, so both backbones read the same signal.
+  \item \textbf{HSiKAN backbone} --- signed message passing over $(A^+,A^-)$ (a dense, batched SGCN variant),
+        mean-pooled to a graph embedding.
+  \item \textbf{MLP backbone} --- the same observation flattened through a \code{tanh} MLP (the ablation
+        baseline).
+  \item \textbf{Actor--critic} --- separate actor and critic backbones (so the value loss cannot corrupt the
+        actor features); diagonal-Gaussian actor with a state-independent learned $\log\sigma$.
+\end{itemize}
+\textbf{Algorithm.} PPO: clipped surrogate, GAE, entropy bonus, and a time-limit \emph{truncation bootstrap}
+($+\gamma V(s')$ folded into the reward on a time-out, not a true terminal) --- the fix that stops PPO
+degrading good policies. The loop depends only on a \code{RolloutEnv} \code{Protocol} (\code{reset}/
+\code{step}), so the same trainer drives the pendulum or the reaching arm.
+
+\section{Engineering: a measurement-led $3.1\times$ speedup}
+A diagnostic phase-timing of one iteration (not a guess) localised the cost:
+the batch-1 policy forward \code{ac.act} is \textbf{87\%} of the rollout ($2.84$\,s) vs \code{env.step}
+($0.41$\,s); the network is trivial (2 vertices), so the cost is per-step \emph{torch dispatch overhead},
+not FLOPs. A forward-vs-batch-size sweep confirmed dispatch-bound behaviour (per-call wall flat to $B{=}8$;
+per-sample $2.19\to0.087$\,ms over $B{=}1\to32$). The fix is a \textbf{vectorized rollout}: run $N$ envs
+lock-step and batch the forward, so a rollout of \code{n\_steps} transitions needs $\lceil$\code{n\_steps}
+$/N\rceil$ ticks. Per-env GAE on each trajectory column; the truncation bootstrap is preserved \emph{per env}.
+
+\begin{table}[h]\centering
+\begin{tabular}{lrrrr}
+\toprule
+ & rollout & update & iter & 120-iter wall \\
+\midrule
+single-env       & $2.47$\,s & $0.61$\,s & $3.08$\,s & $452.7$\,s \\
+vec $N{=}8$      & $0.55$\,s & $0.59$\,s & $1.14$\,s & --- \\
+\textbf{vec $N{=}16$} & $\mathbf{0.36}$\,s & $0.57$\,s & $\mathbf{0.93}$\,s & $\mathbf{147.4}$\,s \\
+\bottomrule
+\end{tabular}
+\caption{Vectorization: rollout $6.8\times$, full run $3.1\times$. Learning preserved (upright-steps
+$144\to161$). The single-env reach path is untouched; its regression suite passes.}
+\end{table}
+
+\noindent A measurement-honesty note: a first end-to-end benchmark showed $N{=}16$ \emph{slower} --- an
+artifact of rebuilding $N$ envs per measured round (each a \code{hymeko} CLI subprocess). Timing the real
+\code{\_collect}/\code{\_collect\_vec}/\code{\_update} and sharing one emitted MJCF exposed the true win.
+
+\section{Results and the discriminating control}
+All numbers: 5 seeds, vectorized ($N{=}16$), 120 iterations, upright-steps out of 200 (full-episode eval).
+Untrained floor $\approx 29$ for every net.
+
+\begin{table}[h]\centering
+\begin{tabular}{lrrl}
+\toprule
+net & params & upright (mean $\pm$ sd) & per-seed / learn rate \\
+\midrule
+HSiKAN                 & $26\,243$ & $192.0 \pm 15.3$ & $161,200,199,200,200$ \quad 5/5 \\
+MLP (original)         & $9\,091$  & $98.6 \pm 74.7$  & $39,38,182,36,198$ \quad\;\; 2/5 \\
+\textbf{MLP param-matched} & $\mathbf{26\,659}$ & $\mathbf{195.2 \pm 8.4}$ & $179,197,200,200,200$ \quad 5/5 \\
+MLP over-param         & $134\,659$ & $200.0 \pm 0.0$ & $200{\times}5$ \quad\quad\;\; 5/5 \\
+\bottomrule
+\end{tabular}
+\caption{Artifacts: \code{reports/2026-06-21-cartpole-\{multiseed,controls\}.jsonl}.}
+\end{table}
+
+\textbf{The honest finding.} The first read --- HSiKAN learns on $5/5$ seeds while the original MLP is bimodal
+($2/5$) --- looked like a \emph{structural robustness} win. The control overturns it: a \emph{parameter-matched}
+MLP ($26.7$k $\approx$ HSiKAN's $26.2$k) ties HSiKAN ($195.2\pm8.4$, $5/5$, lower variance), and an
+over-parameterised MLP is perfect. The original MLP's failures were \textbf{under-parameterisation}
+(hidden$=64$), not the absence of structure. \emph{On the 2-vertex cart-pole the kinematic-hypergraph
+structure is not load-bearing; capacity is.} This matches a prior on-record verdict (the 2026-06-18
+rotor-vs-MLP-embed ablation): a matched-capacity control closed an apparent geometric-prior gap there too.
+
+\textbf{Scope.} A 2-vertex graph has essentially no topology to exploit, so cart-pole \emph{cannot} test the
+structure hypothesis --- this is close to the expected result, not a refutation of structural policies in
+general. The fair test needs a non-trivial graph: the 6-DOF arm-reach or the Galambos two-arm grasper. The
+methodological lesson, now a standing rule: \emph{run the parameter-matched control before crediting
+structure}. The PPO \emph{algorithm} baseline ($192\pm15$) stands as the reference for future
+algorithms (DDPG/TD3/SAC); the \emph{architecture} claim does not.
+
+\section{The storage thesis: from declarative MDP to stored policy}
+HyMeKo's reach for control extends past the environment. Three layers, at different maturity:
+\begin{enumerate}[nosep]
+  \item \textbf{MDP --- already storage.} The whole cart-pole MDP is a \code{.hymeko} project.
+  \item \textbf{Policy architecture + tensor shapes --- already storage.} \code{data/nn/meta\_nn.hymeko}
+        models networks as hypergraphs: tensors are vertices carrying \code{shape}; layers are hypervertices
+        (\code{linear}, \code{signedkan\_layer}, \code{walk\_layer}, \code{arity\_mixer}\,\ldots) carrying
+        GGK kernel specs $K=(B,G,\mu,r)$; \code{@dataflow} hyperedges wire $(+\,\text{in},\sim\text{layer},
+        -\,\text{out})$. \code{mnist\_small.hymeko} is a full MLP that emits a torch \code{nn.Module} via the
+        \code{transforms/torch\_dataflow} backend. Tensors are not bolted on --- the signed-incidence tensor
+        \emph{is} the core substrate.
+  \item \textbf{Trained weights --- the gap.} \code{meta\_nn} captures the shape \emph{contract}, not the
+        learned parameters. Closing it is the step from ``spec'' to ``stored model.'' Three options, in
+        increasing nativeness:
+        \begin{enumerate}[label=(\alph*),nosep]
+          \item weights as \code{List}-valued fields on the tensor/layer vertices (the snapshot serializer
+                now renders \code{List} values --- plumbing exists; fine for small heads);
+          \item a content-addressed weight blob (\code{.safetensors}) keyed by the canonical-IR hash, so
+                architecture and weights share one provenance stamp;
+          \item the structurally-honest one: because the network \emph{is} a signed-incidence hypergraph and
+                the learnable parameters are GGK coefficients on factors/edges, the weights live as
+                edge/factor attribute tensors in the same hypergraph --- one object, no second file.
+        \end{enumerate}
+\end{enumerate}
+The end state is a single \code{.hymeko} project that is simultaneously the environment spec, the network
+spec, and the trained model --- content-addressed by one hash. For the cart-pole the only missing piece is
+describing the actor--critic in \code{meta\_nn} (instead of the hand-coded backbone) and attaching its
+weights.
+
+\section{Conclusion and next steps}
+The testbed works, the loop is fast, and the architecture claim was correctly retired by its own control.
+Forward:
+\begin{itemize}[nosep]
+  \item \textbf{Algorithm breadth} --- off-policy methods (DDPG, TD3, then SAC) for sample efficiency, with a
+        \emph{shared declarative exploration vocabulary} so PPO and DDPG differ only in where noise is
+        injected and in the on-/off-policy core. (Design: the companion architecture \& workflow plan.)
+  \item \textbf{A task that can judge structure} --- run the architecture ablation on the 6-DOF arm or
+        Galambos, where the kinematic graph has real topology.
+  \item \textbf{Policy storage} --- prototype option (c): the cart-pole actor--critic as a \code{meta\_nn}
+        description with weights as factor-tensor fields --- the first ``MDP $+$ trained policy, both in
+        HyMeKo'' artifact.
+\end{itemize}
+
+\paragraph{Per-task reports (full detail).}
+\code{2026-06-21-cartpole-hsikan-wirein.md},
+\code{2026-06-21-vectorized-ppo-rollout.md},
+\code{2026-06-21-editor-\{hyperedge-on-hyperedge,attribute-hud\}.md}.
+\end{document}

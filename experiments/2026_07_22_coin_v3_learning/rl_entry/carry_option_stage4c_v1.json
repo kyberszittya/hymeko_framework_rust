@@ -1,0 +1,58 @@
+{
+ "contract": "CARRY_OPTION_STAGE4C_V1",
+ "date": "2026-07-24",
+ "no_new_campaign": true,
+ "smoke": false,
+ "head": "template_classifier + template_conditioned_residual (multimodality-preserving)",
+ "K": 8,
+ "eval_n": 30,
+ "rounds_run": 2,
+ "b_deploy": 8,
+ "history": [
+  {
+   "round": 0,
+   "b0_k6": 0.0,
+   "b0_exit": 0.1,
+   "b4_k6": 0.167,
+   "b4_exit": 0.0,
+   "b8_k6": 0.1,
+   "b8_exit": 0.1
+  },
+  {
+   "round": 1,
+   "b0_k6": 0.067,
+   "b0_exit": 0.167,
+   "b4_k6": 0.167,
+   "b4_exit": 0.067,
+   "b8_k6": 0.2,
+   "b8_exit": 0.0
+  },
+  {
+   "round": 2,
+   "b0_k6": 0.067,
+   "b0_exit": 0.067,
+   "b4_k6": 0.167,
+   "b4_exit": 0.0,
+   "b8_k6": 0.167,
+   "b8_exit": 0.033
+  }
+ ],
+ "round0": {
+  "round": 0,
+  "b0_k6": 0.0,
+  "b0_exit": 0.1,
+  "b4_k6": 0.167,
+  "b4_exit": 0.0,
+  "b8_k6": 0.1,
+  "b8_exit": 0.1
+ },
+ "best_safe": {
+  "round": 1,
+  "b8_k6": 0.2,
+  "b8_exit": 0.0,
+  "ckpt": "carry_proposal_refined.pt"
+ },
+ "gate_pass": true,
+ "rl_init_checkpoint": "carry_proposal_refined.pt",
+ "verdict": "STAGE4C_REFINEMENT_IMPROVES_SAFE_PROPOSAL"
+}

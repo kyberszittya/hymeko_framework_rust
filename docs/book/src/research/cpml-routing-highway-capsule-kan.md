@@ -1,6 +1,6 @@
 # CPML tiers as **routes**: Highway, Capsule, and KAN views
 
-This note updates the **mathematics** and **design story** for **Concentric‑Pyramid Multi‑Layer (CPML)** inside `signedkan_wip/src/cpml.py` and **`InnerCPMLCore`** (`hymeko_gomb/shells.py`). The default readout is **`topology="route"`**; **`topology="pyramid"`** keeps the legacy inward widening stack.
+This note updates the **mathematics** and **design story** for **Concentric‑Pyramid Multi‑Layer (CPML)** inside `hymeko_neuro/cpml.py` and **`InnerCPMLCore`** (`hymeko_gomb/shells.py`). The default readout is **`topology="route"`**; **`topology="pyramid"`** keeps the legacy inward widening stack.
 
 ---
 
@@ -138,9 +138,9 @@ So each tier is a **KAN‑style** nonlinear readout on a **routed** sub‑hyperg
 
 | Artifact | Path |
 |----------|------|
-| CPML implementation | `signedkan_wip/src/cpml.py` (`CPMLConfig.topology`, `tier_organization`, `capsule_route_hidden`) |
-| Gömb wiring | `signedkan_wip/src/hymeko_gomb/cascade.py`, `shells.py` |
-| Smoke CLI | `python -m signedkan_wip.src.run_gomb_smoke --cpml-topology {route,pyramid} --cpml-tier-organization {structural,capsule_soft}` |
+| CPML implementation | `hymeko_neuro/cpml.py` (`CPMLConfig.topology`, `tier_organization`, `capsule_route_hidden`) |
+| Gömb wiring | `hymeko_neuro/models/hymeko_gomb/cascade.py`, `shells.py` |
+| Smoke CLI | `python -m hymeko_neuro.run_gomb_smoke --cpml-topology {route,pyramid} --cpml-tier-organization {structural,capsule_soft}` |
 | CPML × XHC plan (historical “pyramid” framing) | `docs/plans/2026-05-11-cpml-xhc-architectures/` |
 | NN field guide | [NN variants & layer geometry](./nn-architectures-and-layer-geometry.md) |
 

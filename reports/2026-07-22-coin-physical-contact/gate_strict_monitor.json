@@ -1,0 +1,6 @@
+{"gate":"STRICT_MONITOR_CONTRACT_PASS","date":"2026-07-22",
+ "changes":["delivery_certificate: arm_body_contact is now LEGAL (informational). CLEAN redefined: UNCLEAN only on an excessive body-only-driven sweep (body_progress > body_sweep_max=0.05 m) with NO grasp ever formed (a bulldoze). 'body_shove'=any-arm-contact is retired.",
+            "CertStep: added body_progress + ever_grasped; _cert_step populates them.",
+            "raw_strict_oracle.raw_cert_step: independent CertStep from RAW MuJoCo (geom_xpos coin, site_xpos zone, qvel speed, data.contact fingertip/arm pairs) - no cached planar_metrics."],
+ "tests":"hymeko_rl/tests/test_strict_monitor_contract.py 4/4 PASS: certifier==raw-oracle on rollout (dz<1e-3, v<0.02, verdict equal); arm-link contact not auto-failure; excessive no-grasp sweep unclean; fingertip attribution preserved.",
+ "excessive_sweep_definition":"body_progress (body-only-attributed coin->zone displacement) > 0.05 m AND ever_grasped False"}

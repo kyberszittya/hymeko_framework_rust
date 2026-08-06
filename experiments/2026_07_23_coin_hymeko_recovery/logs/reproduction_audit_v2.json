@@ -1,0 +1,74 @@
+{
+ "gate": "FROZEN_ARTIFACT_RUNTIME_COMPATIBILITY",
+ "rows": [
+  {
+   "item": "1_relay_bridge",
+   "ledger_ref": "coin_bridge_relay (relay bridge)",
+   "expected_path": "experiments/**/relay_bridge*.pt",
+   "status": "ARTIFACT_NOT_PRESENT"
+  },
+  {
+   "item": "2_neutral_bridge",
+   "ledger_ref": "_CKPT_MANIFEST.handoff_transport",
+   "path": "experiments/2026_07_21_coin_neutral_handoff/handoff_best.pt",
+   "sha16": "8955e8db8ac1db24",
+   "status": "FROZEN_ARTIFACT_RUNTIME_COMPATIBLE",
+   "historical_runtime": "loaded (legacy)",
+   "canonical_v2_runtime": "loaded (projection-invariant flat obs)",
+   "actor_input_dim": 41,
+   "step_zero_action_delta": 0.0
+  },
+  {
+   "item": "3_POINT_zeroshot",
+   "ledger_ref": "_CKPT_MANIFEST.e_approach",
+   "path": "experiments/2026_07_08_seed_stabilized/E_valselect_v2.pt",
+   "sha16": "7dbbf1a7782f39f0",
+   "status": "FROZEN_ARTIFACT_RUNTIME_COMPATIBLE",
+   "historical_runtime": "loaded (legacy 6-node graph)",
+   "canonical_v2_runtime": "loaded (v2\u21926-node projection)",
+   "step_zero_action_delta": 0.0,
+   "graph_fp_match": true
+  },
+  {
+   "item": "4_residual_SAC",
+   "ledger_ref": "d4a residual SAC (legacy mode)",
+   "path": "experiments/2026_07_16_d4a/d4a_residual_teacher_only_s0.pt",
+   "sha16": "c3fefef04985a6b4",
+   "status": "FROZEN_ARTIFACT_RUNTIME_COMPATIBLE",
+   "historical_runtime": "loaded (legacy)",
+   "canonical_v2_runtime": "loaded (projection-invariant flat obs)",
+   "actor_input_dim": 48,
+   "step_zero_action_delta": 0.0
+  },
+  {
+   "item": "5_frozen_transport",
+   "ledger_ref": "_CKPT_MANIFEST.frozen_transport",
+   "path": "experiments/2026_07_21_coin_e0_stabilize/learned_delivery_positive.pt",
+   "sha16": "8bd73d8cbea0a9a6",
+   "status": "FROZEN_ARTIFACT_RUNTIME_COMPATIBLE",
+   "historical_runtime": "loaded (legacy)",
+   "canonical_v2_runtime": "loaded (projection-invariant flat obs)",
+   "actor_input_dim": 41,
+   "step_zero_action_delta": 0.0
+  },
+  {
+   "item": "6_corrected_bridge",
+   "ledger_ref": "quarantined full-action (HANDOFF_CORRECTED_V1)",
+   "expected_path": "experiments/**/HANDOFF_CORRECTED_V1.pt",
+   "status": "ARTIFACT_NOT_PRESENT"
+  },
+  {
+   "item": "7_full_action_BC",
+   "ledger_ref": "quarantined full-action (BC_FULL_ACTION_PHYSICAL_V1)",
+   "expected_path": "experiments/**/BC_FULL_ACTION_PHYSICAL_V1.pt",
+   "status": "ARTIFACT_NOT_PRESENT"
+  }
+ ],
+ "reproduced": 4,
+ "absent": [
+  "1_relay_bridge",
+  "6_corrected_bridge",
+  "7_full_action_BC"
+ ],
+ "all_present_reproduce": true
+}

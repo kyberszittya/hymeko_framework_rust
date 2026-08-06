@@ -1,0 +1,14 @@
+// runstop_coarse.hymeko — the COARSE run-stop model: a torso with ONE abstract angular-momentum port.
+// (The abstract port is refined in runstop_refined.hymeko into a foot + arm port — the model hierarchy.)
+runstop_coarse_description {
+    @"port_hamiltonian.hymeko";
+    @"runstop_ports.hymeko";
+}
+
+runstop_coarse: port_hamiltonian.ph.roles.meta_energy_element
+{
+    body:      port_hamiltonian.ph.roles.energy_storage             { mass 18.0; torso_inertia 1.6; }
+    l_damping: port_hamiltonian.ph.roles.dissipation                { coefficient 1.5; }
+    l_control: runstop_ports.rsp.port_kinds.angular_momentum_port   { effort 1.5; }   // the ABSTRACT L-port
+    coupling:  port_hamiltonian.ph.roles.interconnection            {}
+}

@@ -1,0 +1,48 @@
+{
+  "hsikan_hidden": 32,
+  "n_train": 256,
+  "seeds": 3,
+  "epochs": 300,
+  "rows": [
+    {
+      "n_nodes": 4,
+      "hsikan_mse": 0.00067,
+      "mlp_mse": 0.00303,
+      "ratio": 4.522,
+      "hk_params": 3713,
+      "mlp_params": 3771
+    },
+    {
+      "n_nodes": 6,
+      "hsikan_mse": 0.00456,
+      "mlp_mse": 0.0161,
+      "ratio": 3.531,
+      "hk_params": 3713,
+      "mlp_params": 3763
+    },
+    {
+      "n_nodes": 8,
+      "hsikan_mse": 0.00473,
+      "mlp_mse": 0.049,
+      "ratio": 10.359,
+      "hk_params": 3713,
+      "mlp_params": 3753
+    },
+    {
+      "n_nodes": 12,
+      "hsikan_mse": 0.00439,
+      "mlp_mse": 0.10028,
+      "ratio": 22.843,
+      "hk_params": 3713,
+      "mlp_params": 3727
+    },
+    {
+      "n_nodes": 16,
+      "hsikan_mse": 0.00283,
+      "mlp_mse": 0.1161,
+      "ratio": 41.025,
+      "hk_params": 3713,
+      "mlp_params": 3693
+    }
+  ]
+}

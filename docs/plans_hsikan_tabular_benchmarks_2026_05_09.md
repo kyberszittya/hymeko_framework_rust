@@ -115,9 +115,9 @@ Re-run with all signs forced to $+1$ ("unsigned HSiKAN").  Measures whether the 
 
 ## Implementation notes
 
-- New file `signedkan_wip/src/tabular_signed_graph.py` (~150 LOC): protocols P1, P2, P3; `build_signed_graph_from_tabular(X, y=None, k=5, protocol="p1")` returns a `SignedGraph` consumable by the existing pipeline.
+- New file `hymeko_neuro/data/tabular_signed_graph.py` (~150 LOC): protocols P1, P2, P3; `build_signed_graph_from_tabular(X, y=None, k=5, protocol="p1")` returns a `SignedGraph` consumable by the existing pipeline.
 - New cell in `run_final_cell.py`: `cell_tabular(dataset_name, task_kind, ...)` that calls into the tabular constructor and routes to BCE / CE / MSE per task.
-- New runner `signedkan_wip/src/run_tabular_bench.py` (~80 LOC) that loads sklearn datasets, applies the protocol, calls `cell_tabular`, compares to baselines, dumps to JSONL.
+- New runner `hymeko_neuro/run_tabular_bench.py` (~80 LOC) that loads sklearn datasets, applies the protocol, calls `cell_tabular`, compares to baselines, dumps to JSONL.
 - Total: ~300 LOC new code, sklearn already available.
 
 ## Acceptance for the plan as a whole

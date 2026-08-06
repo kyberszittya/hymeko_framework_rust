@@ -1,0 +1,33 @@
+{
+ "critic_train": {
+  "range": [
+   6000,
+   6059
+  ],
+  "n": 60,
+  "sha": "fa3b4c62b69bbc60"
+ },
+ "development_auth": {
+  "range": [
+   7000,
+   7039
+  ],
+  "n": 40,
+  "sha": "67f8376ba8a5d8af",
+  "note": "repeatedly inspected -> tuning panel, NOT final"
+ },
+ "sealed_final": {
+  "range": [
+   7060,
+   7075
+  ],
+  "n": 16,
+  "sha": "1a01a36bfd18509f",
+  "note": "never inspected"
+ },
+ "disjoint": {
+  "train_dev": true,
+  "train_final": true,
+  "dev_final": true
+ }
+}

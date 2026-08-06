@@ -1,0 +1,96 @@
+{
+  "coupling_order": {
+    "sizes": {
+      "k2": 17,
+      "k3": 17,
+      "k4": 17
+    },
+    "representation": {
+      "k2": {
+        "k2": 0.00066,
+        "k3": 0.26261,
+        "k4": 0.30996
+      },
+      "k3": {
+        "k2": 0.1318,
+        "k3": 0.00051,
+        "k4": 0.10648
+      },
+      "k4": {
+        "k2": 0.12194,
+        "k3": 0.16062,
+        "k4": 0.0004
+      }
+    },
+    "control": {
+      "k2": {
+        "k2": 1.0001,
+        "k3": 1.001,
+        "k4": 1.0009
+      },
+      "k3": {
+        "k2": 1.001,
+        "k3": 1.0,
+        "k4": 1.0002
+      },
+      "k4": {
+        "k2": 1.0013,
+        "k3": 1.0012,
+        "k4": 1.0
+      }
+    },
+    "rep_matched_best": {
+      "k2": true,
+      "k3": true,
+      "k4": true
+    },
+    "ctl_matched_best": {
+      "k2": true,
+      "k3": true,
+      "k4": true
+    },
+    "rep_diagonal": {
+      "k2": 0.00066,
+      "k3": 0.00051,
+      "k4": 0.0004
+    }
+  },
+  "balance": {
+    "sizes": {
+      "steiner9": 21,
+      "rand3_12": 21
+    },
+    "representation": {
+      "steiner9": {
+        "steiner9": 0.00052,
+        "rand3_12": 0.02155
+      },
+      "rand3_12": {
+        "steiner9": 0.04845,
+        "rand3_12": 0.00066
+      }
+    },
+    "control": {
+      "steiner9": {
+        "steiner9": 1.0,
+        "rand3_12": 1.0002
+      },
+      "rand3_12": {
+        "steiner9": 1.0004,
+        "rand3_12": 1.0
+      }
+    },
+    "rep_matched_best": {
+      "steiner9": true,
+      "rand3_12": true
+    },
+    "ctl_matched_best": {
+      "steiner9": true,
+      "rand3_12": true
+    },
+    "rep_diagonal": {
+      "steiner9": 0.00052,
+      "rand3_12": 0.00066
+    }
+  }
+}

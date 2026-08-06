@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-17
 **Plan:** [docs/plans/2026-05-16-hymeyolo-stage-c-fpn/](../docs/plans/2026-05-16-hymeyolo-stage-c-fpn/) (tex/pdf/tikz/mmd)
-**Results dir:** [`signedkan_wip/experiments/results/hymeyolo_ladder_c_fpn_20260517T141622Z/`](../signedkan_wip/experiments/results/hymeyolo_ladder_c_fpn_20260517T141622Z/) — 2-level FPN head, ResNet-tiny backbone, A-3-lite levers
+**Results dir:** [`hymeko_neuro/experiments/results/hymeyolo_ladder_c_fpn_20260517T141622Z/`](../hymeko_neuro/experiments/results/hymeyolo_ladder_c_fpn_20260517T141622Z/) — 2-level FPN head, ResNet-tiny backbone, A-3-lite levers
 
 **Sweep window:** 2026-05-17 16:16 → 18:45 CEST (~2 h 30 min wall total, sole-GPU sequential)
 
@@ -111,17 +111,17 @@ Paired mAP_50:95 Δ = mean −0.018 (LOSS at strict IoU). FPN didn't help small-
 
 | Item | Status |
 |---|---|
-| Source: [`signedkan_wip/src/vision/hymeyolo_circles_ricci.py`](../signedkan_wip/src/vision/hymeyolo_circles_ricci.py) (`--fpn 2level` head + dispatcher) | shipped earlier in Stage B work; verified here |
-| Source: [`signedkan_wip/src/vision/train_circles_ricci.py`](../signedkan_wip/src/vision/train_circles_ricci.py) (`--fpn` CLI flag, jsonl row) | shipped earlier; verified here |
-| Orchestrator: [`signedkan_wip/experiments/run_hymeyolo_ladder_5seed.sh`](../signedkan_wip/experiments/run_hymeyolo_ladder_5seed.sh) (c_fpn stage definition) | shipped earlier; used here |
-| Analyser: [`signedkan_wip/experiments/analyse_hymeyolo_ladder_paired.py`](../signedkan_wip/experiments/analyse_hymeyolo_ladder_paired.py) | shipped, used for all 4 paired analyses |
+| Source: [`hymeko_neuro/experiments/vision/hymeyolo_circles_ricci.py`](../hymeko_neuro/experiments/vision/hymeyolo_circles_ricci.py) (`--fpn 2level` head + dispatcher) | shipped earlier in Stage B work; verified here |
+| Source: [`hymeko_neuro/experiments/vision/train_circles_ricci.py`](../hymeko_neuro/experiments/vision/train_circles_ricci.py) (`--fpn` CLI flag, jsonl row) | shipped earlier; verified here |
+| Orchestrator: [`hymeko_neuro/experiments/run_hymeyolo_ladder_5seed.sh`](../hymeko_neuro/experiments/run_hymeyolo_ladder_5seed.sh) (c_fpn stage definition) | shipped earlier; used here |
+| Analyser: [`hymeko_neuro/experiments/analyse_hymeyolo_ladder_paired.py`](../hymeko_neuro/experiments/analyse_hymeyolo_ladder_paired.py) | shipped, used for all 4 paired analyses |
 | Plan dir: [`docs/plans/2026-05-16-hymeyolo-stage-c-fpn/`](../docs/plans/2026-05-16-hymeyolo-stage-c-fpn/) (tex/pdf/tikz/mmd) | 4 formats present |
-| c_fpn smoke results: [`hymeyolo_ladder_c_fpn_20260517T134503Z/`](../signedkan_wip/experiments/results/hymeyolo_ladder_c_fpn_20260517T134503Z/) | 1 jsonl row (seed 0 smoke); mAP_50 = 0.8980, fpn = "2level", in [0,1] |
-| c_fpn 5-seed results: [`hymeyolo_ladder_c_fpn_20260517T141622Z/`](../signedkan_wip/experiments/results/hymeyolo_ladder_c_fpn_20260517T141622Z/) | 5 jsonl rows + orchestrator.log; "5 rows" end-marker present |
+| c_fpn smoke results: [`hymeyolo_ladder_c_fpn_20260517T134503Z/`](../hymeko_neuro/experiments/results/hymeyolo_ladder_c_fpn_20260517T134503Z/) | 1 jsonl row (seed 0 smoke); mAP_50 = 0.8980, fpn = "2level", in [0,1] |
+| c_fpn 5-seed results: [`hymeyolo_ladder_c_fpn_20260517T141622Z/`](../hymeko_neuro/experiments/results/hymeyolo_ladder_c_fpn_20260517T141622Z/) | 5 jsonl rows + orchestrator.log; "5 rows" end-marker present |
 
 ## 6. CORE.YAML items touched
 
-None. All edits internal to `signedkan_wip/src/vision/` were made in the Stage B session; Stage C only adds orchestrator invocation + analysis + this report. No template, no parser, no `lockdown` file edited.
+None. All edits internal to `hymeko_neuro/experiments/vision/` were made in the Stage B session; Stage C only adds orchestrator invocation + analysis + this report. No template, no parser, no `lockdown` file edited.
 
 ## 7. Experiment provenance
 

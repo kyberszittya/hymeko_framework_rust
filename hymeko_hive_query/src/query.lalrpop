@@ -1,0 +1,72 @@
+use hymeko_hive::{
+    AssociationKind, AssociationObject, AssociationQuery, EntitySelector, NodeId, RelationId, Sign,
+};
+
+grammar;
+
+pub Query: AssociationQuery = {
+    <q:AssocQuery> => q,
+    <q:LegacyQuery> => q,
+};
+
+AssocQuery: AssociationQuery = {
+    "assoc" <subject:Subject> <association:Association> <object:Object> => AssociationQuery {
+        subject,
+        association,
+        object,
+    },
+};
+
+LegacyQuery: AssociationQuery = {
+    "KIND" "(" <ty:Name> ")" => AssociationQuery::node_kind(ty),
+    "HASARCREF" "(" <sign:SignRule> "," "KIND" "(" <ty:Name> ")" ")" => {
+        AssociationQuery::relation_endpoint_node_type(sign, ty)
+    },
+};
+
+Subject: EntitySelector = {
+    "node" => EntitySelector::AnyNode,
+    "relation" => EntitySelector::AnyRelation,
+    "node" "(" <id:Name> ")" => EntitySelector::Node(NodeId(id)),
+    "relation" "(" <id:Name> ")" => EntitySelector::Relation(RelationId(id)),
+};
+
+Association: AssociationKind = {
+    "kind" => AssociationKind::Kind,
+    "inherits" => AssociationKind::Inherits,
+    "attr" => AssociationKind::Attribute,
+    "attribute" => AssociationKind::Attribute,
+    "endpoint" => AssociationKind::Endpoint { sign: None },
+    "endpoint" "(" <sign:SignRule> ")" => AssociationKind::Endpoint { sign: Some(sign) },
+};
+
+Object: AssociationObject = {
+    "any" => AssociationObject::Any,
+    "type" "(" <ty:Name> ")" => AssociationObject::Type(ty),
+    "attr" "(" <key:Name> ")" => AssociationObject::Attribute(key),
+    "attribute" "(" <key:Name> ")" => AssociationObject::Attribute(key),
+    "node" "(" <id:Name> ")" => AssociationObject::Node(NodeId(id)),
+    "node" "." "kind" "(" <ty:Name> ")" => AssociationObject::NodeType(ty),
+};
+
+SignRule: Sign = {
+    "+" => Sign::Plus,
+    "-" => Sign::Minus,
+    "~" => Sign::Neutral,
+    "plus" => Sign::Plus,
+    "minus" => Sign::Minus,
+    "neutral" => Sign::Neutral,
+};
+
+Name: String = {
+    <s:Ident> => s,
+    <s:StringLit> => s,
+};
+
+Ident: String = {
+    r"[A-Za-z_][A-Za-z0-9_]*" => <>.to_string(),
+};
+
+StringLit: String = {
+    <s:r#""[^"]*""#> => s[1..s.len() - 1].to_string(),
+};

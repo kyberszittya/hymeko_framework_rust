@@ -1,0 +1,5 @@
+dataset,mean,pstd,n_seeds,provenance,per_seed
+Bitcoin Alpha,,,0,[pending] edge_cr 5-seed (Komondor — not in repo),
+Bitcoin OTC,,,0,[pending] edge_cr (no run found),
+Slashdot,0.9066503714431363,0.003021522016450927,5,HSiKAN edge_cr 5-seed (5 seeds),0.9101 0.9055 0.9016 0.9093 0.9068
+Epinions,0.8464280446016741,0.009466863762991983,5,HSiKAN edge_cr 5-seed (5 seeds),0.8611 0.8496 0.8482 0.8329 0.8403

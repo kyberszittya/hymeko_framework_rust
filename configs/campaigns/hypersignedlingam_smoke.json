@@ -1,0 +1,25 @@
+{
+  "name": "hypersignedlingam_smoke",
+  "defaults": {
+    "domain": "hypersignedlingam",
+    "experiment_name": "signed_hypergraph_causal_discovery",
+    "artifact_root": "experiments/campaign_smoke",
+    "backend": "local",
+    "resource_class": "cpu"
+  },
+  "runs": [
+    {
+      "model_variant": "signed_hyper_lingam",
+      "execution_strategy": "bootstrap_stability",
+      "dataset_or_problem": "signed_interaction_sem",
+      "seed": 0,
+      "domain_options": {
+        "model_variant": "signed_hyper_lingam",
+        "n_vars": 5,
+        "n_samples": 600,
+        "joint_frac": 0.6,
+        "bootstrap": 20
+      }
+    }
+  ]
+}

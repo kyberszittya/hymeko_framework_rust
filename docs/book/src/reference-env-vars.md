@@ -60,7 +60,7 @@ Most `.hymeko`-driven flow respects environment variables for runtime knobs. Two
 
 CLI:
 ```bash
-HSIKAN_TOPK_K=64 HSIKAN_TOPK_PRUNER=balance python -m signedkan_wip.src.run_final_cell ...
+HSIKAN_TOPK_K=64 HSIKAN_TOPK_PRUNER=balance python -m hymeko_neuro.run_final_cell ...
 ```
 
 Or via the walker (set automatically from `training.hymeko` body):

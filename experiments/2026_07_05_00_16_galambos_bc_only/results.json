@@ -1,0 +1,40 @@
+{
+  "demonstrator_delivery": 0.16,
+  "bc_delivery_median": 0.12,
+  "bc_delivery_per_seed": [
+    0.1,
+    0.12,
+    0.18
+  ],
+  "seeds": [
+    {
+      "seed": 0,
+      "bc_loss": 0.00214,
+      "delivery": 0.1,
+      "both_contact": 0.0108
+    },
+    {
+      "seed": 1,
+      "bc_loss": 0.00191,
+      "delivery": 0.18,
+      "both_contact": 0.0189
+    },
+    {
+      "seed": 2,
+      "bc_loss": 0.00186,
+      "delivery": 0.12,
+      "both_contact": 0.0
+    }
+  ],
+  "config": {
+    "difficulty": 0.3,
+    "n_demos": 200,
+    "bc_epochs": 200,
+    "n_eval": 50,
+    "eval_seed": 9000,
+    "demo_transitions": 3204,
+    "actor": "collab sa_hsikan hidden=64",
+    "metric": "DwellMetric(in_zone, success_steps)"
+  },
+  "wall_s": 773.7
+}

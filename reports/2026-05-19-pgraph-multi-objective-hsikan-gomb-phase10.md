@@ -23,9 +23,9 @@ weight vector — same fixture, same model, same data, same seeds.
 | `hymeko_pgraph/src/dump.rs` | extended | +30 | `cost_dimensions`, `cost_weights_echo`, `abb_cost_breakdown` added to `PgraphAnalysisJson`; populated from `LoweredPGraph.cost_dimensions` / `AbbOptions.cost_weights` / per-unit sums |
 | `hymeko_pgraph/tests/axiom_witness.rs` | extended | +50 | +1 test (`dump_dto_phase10_multicost_fields_echo`) pinning the three new fields on the multi-cost fixture |
 | `data/hsikan/sweep_msg_multicost.hymeko` | **new** | 95 | HSIKAN architecture P-graph with 3 cost dimensions per unit; quality_drop numbers derived from Phase 8 measurements |
-| `signedkan_wip/experiments/runs/run_hsikan_msg_sweep.py` | extended | +10 | `--weights "w1,w2,w3"` flag forwarded to dump binary |
-| `signedkan_wip/experiments/runs/run_gomb_msg_sweep.py` | extended | +10 | Same `--weights` flag |
-| `signedkan_wip/tests/test_pgraph_multiobjective_pipeline.py` | **new** | 110 | 7 end-to-end tests: dimensions alphabetised, scalar-fallback echo, three-regime divergence, round-trip echo, breakdown sums, dot-product consistency, axiom-cert independence |
+| `hymeko_neuro/experiments/runs/run_hsikan_msg_sweep.py` | extended | +10 | `--weights "w1,w2,w3"` flag forwarded to dump binary |
+| `hymeko_neuro/experiments/runs/run_gomb_msg_sweep.py` | extended | +10 | Same `--weights` flag |
+| `hymeko_neuro/tests/test_pgraph_multiobjective_pipeline.py` | **new** | 110 | 7 end-to-end tests: dimensions alphabetised, scalar-fallback echo, three-regime divergence, round-trip echo, breakdown sums, dot-product consistency, axiom-cert independence |
 
 ## CORE.YAML items touched
 
@@ -84,7 +84,7 @@ pub struct PgraphAnalysisJson {
 Python drivers:
 
 ```bash
-python -m signedkan_wip.experiments.runs.run_hsikan_msg_sweep \
+python -m hymeko_neuro.experiments.runs.run_hsikan_msg_sweep \
     --pgraph data/hsikan/sweep_msg_multicost.hymeko \
     --algorithm abb --weights "1,5,1" \
     --dataset bitcoin_alpha --seeds 0 1 2 3 4

@@ -21,7 +21,9 @@ pub fn now_ns() -> i128 {
 }
 
 #[cfg(target_arch = "wasm32")]
-pub fn now_ns() -> i128 { 0 }
+pub fn now_ns() -> i128 {
+    0
+}
 
 #[cfg(not(target_arch = "wasm32"))]
 pub fn now_ns_u128() -> u128 {
@@ -32,7 +34,9 @@ pub fn now_ns_u128() -> u128 {
 }
 
 #[cfg(target_arch = "wasm32")]
-pub fn now_ns_u128() -> u128 { 0 }
+pub fn now_ns_u128() -> u128 {
+    0
+}
 
 #[cfg(not(target_arch = "wasm32"))]
 pub fn now_ms() -> i64 {
@@ -43,4 +47,6 @@ pub fn now_ms() -> i64 {
 }
 
 #[cfg(target_arch = "wasm32")]
-pub fn now_ms() -> i64 { 0 }
+pub fn now_ms() -> i64 {
+    0
+}

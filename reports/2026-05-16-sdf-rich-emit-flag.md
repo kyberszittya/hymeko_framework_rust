@@ -82,7 +82,7 @@ $ cargo build --release -p hymeko_cli
     Finished `release` profile [optimized] target(s) in 2.83s
 
 $ env -i HOME=$HOME PATH=/usr/bin:/bin .venv/bin/python -m pytest \
-    signedkan_wip/tests/ -q -k 'ricci or hymeyolo or kcycle or detection_metric'
+    hymeko_neuro/tests/ -q -k 'ricci or hymeyolo or kcycle or detection_metric'
 ========== 76 passed, 461 deselected ==========
 ```
 

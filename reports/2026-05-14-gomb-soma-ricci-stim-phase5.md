@@ -29,9 +29,9 @@ Triangle layers via `prepare()` then `forward()`.
 
 | File | LOC | Notes |
 |---|---|---|
-| [signedkan_wip/src/hymeko_gomb/soma/vision/stim_graph.py](../signedkan_wip/src/hymeko_gomb/soma/vision/stim_graph.py) | 297 | `StimulusGraphBuilder` + `StimulusGraph` dataclass |
-| [signedkan_wip/src/hymeko_gomb/soma/vision/__init__.py](../signedkan_wip/src/hymeko_gomb/soma/vision/__init__.py) | +6 / -0 | re-exports |
-| [signedkan_wip/tests/test_gomb_soma_vision_stim_graph.py](../signedkan_wip/tests/test_gomb_soma_vision_stim_graph.py) | 281 | 20 tests including end-to-end integration with `AdaptiveQuadtree` |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/stim_graph.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/stim_graph.py) | 297 | `StimulusGraphBuilder` + `StimulusGraph` dataclass |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/__init__.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/__init__.py) | +6 / -0 | re-exports |
+| [hymeko_neuro/tests/test_gomb_soma_vision_stim_graph.py](../hymeko_neuro/tests/test_gomb_soma_vision_stim_graph.py) | 281 | 20 tests including end-to-end integration with `AdaptiveQuadtree` |
 
 ## 3. CORE.YAML items touched
 
@@ -98,7 +98,7 @@ the same combined edge list. Used downstream by
 ## 5. Test results
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_vision_stim_graph.py -v
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_vision_stim_graph.py -v
 =========== 20 passed in 1.95s ===========
 ```
 
@@ -212,7 +212,7 @@ Curvature averaging is FP32 mean of small integers — stable.
 ## 10. Static analysis
 
 ```
-$ ruff check signedkan_wip/src/hymeko_gomb/soma/vision/stim_graph.py
+$ ruff check hymeko_neuro/models/hymeko_gomb/soma/vision/stim_graph.py
    (clean)
 ```
 
@@ -259,15 +259,15 @@ worst-case. This addresses the over-squashing problem
 (Topping et al. 2022) on the multi-scale patch hypergraph.
 
 Adds:
-* `signedkan_wip/src/hymeko_gomb/soma/vision/sdrf.py`
-* `signedkan_wip/tests/test_gomb_soma_vision_sdrf.py`
+* `hymeko_neuro/models/hymeko_gomb/soma/vision/sdrf.py`
+* `hymeko_neuro/tests/test_gomb_soma_vision_sdrf.py`
 
 No phase 6 work in this commit, per the one-phase-per-session rule.
 
 ## 14. Reproducibility
 
 ```python
-from signedkan_wip.src.hymeko_gomb.soma.vision import (
+from hymeko_neuro.models.hymeko_gomb.soma.vision import (
     AdaptiveQuadtree, StimulusGraphBuilder,
 )
 

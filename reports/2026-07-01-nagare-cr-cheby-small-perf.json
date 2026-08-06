@@ -1,0 +1,80 @@
+{
+  "engine": "hymeko_nagare",
+  "cases": [
+    {
+      "case": "tiny_descriptor",
+      "n": 1,
+      "channels": 16,
+      "grid": 8,
+      "k": 5,
+      "cr": {
+        "mean_us_per_sample": 1.096200000,
+        "median_us_per_sample": 1.100000000,
+        "max_us_per_sample": 3.900000000
+      },
+      "cheb_cr_train": {
+        "mean_us_per_sample": 2.709600000,
+        "median_us_per_sample": 2.100000000,
+        "max_us_per_sample": 25.200000000
+      },
+      "cheb_deploy": {
+        "mean_us_per_sample": 0.347600000,
+        "median_us_per_sample": 0.400000000,
+        "max_us_per_sample": 0.900000000
+      },
+      "cr_checksum": -0.305777401,
+      "cheb_cr_checksum": 0.748387039,
+      "cheb_deploy_checksum": 0.721331179
+    },
+    {
+      "case": "small_descriptions",
+      "n": 8,
+      "channels": 32,
+      "grid": 12,
+      "k": 5,
+      "cr": {
+        "mean_us_per_sample": 1.031000000,
+        "median_us_per_sample": 1.075000000,
+        "max_us_per_sample": 17.187500000
+      },
+      "cheb_cr_train": {
+        "mean_us_per_sample": 1.142950000,
+        "median_us_per_sample": 0.887500000,
+        "max_us_per_sample": 18.625000000
+      },
+      "cheb_deploy": {
+        "mean_us_per_sample": 0.239925000,
+        "median_us_per_sample": 0.237500000,
+        "max_us_per_sample": 0.600000000
+      },
+      "cr_checksum": -0.524032891,
+      "cheb_cr_checksum": 3.691190720,
+      "cheb_deploy_checksum": 3.792080164
+    },
+    {
+      "case": "toy_point_batch",
+      "n": 4608,
+      "channels": 32,
+      "grid": 12,
+      "k": 5,
+      "cr": {
+        "mean_us_per_sample": 1.019512283,
+        "median_us_per_sample": 1.071657986,
+        "max_us_per_sample": 4.073220486
+      },
+      "cheb_cr_train": {
+        "mean_us_per_sample": 0.924709722,
+        "median_us_per_sample": 1.001258681,
+        "max_us_per_sample": 1.306575521
+      },
+      "cheb_deploy": {
+        "mean_us_per_sample": 0.365503819,
+        "median_us_per_sample": 0.404296875,
+        "max_us_per_sample": 0.549153646
+      },
+      "cr_checksum": -189.766143799,
+      "cheb_cr_checksum": 839.757751465,
+      "cheb_deploy_checksum": 878.328979492
+    }
+  ]
+}

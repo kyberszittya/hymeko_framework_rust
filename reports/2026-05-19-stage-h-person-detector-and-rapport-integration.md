@@ -97,7 +97,7 @@ unification extension):
 ```hymeko
 vision_r1: hri.vision_config {
     detector_kind   "voc_person";
-    checkpoint      "signedkan_wip/experiments/results/stage_h_voc_person_20260518T151704Z/checkpoints/stage_h_voc_person_seed0.pt";
+    checkpoint      "hymeko_neuro/experiments/results/stage_h_voc_person_20260518T151704Z/checkpoints/stage_h_voc_person_seed0.pt";
     score_threshold 0.20;
 }
 ```
@@ -147,16 +147,16 @@ CPU — exactly the rapport pipeline's budget.
 ## 6. Files touched
 
 ### New
-- `signedkan_wip/src/vision/voc_person_dataset.py` (~110 LOC) — person-filtered VOC loader.
-- `signedkan_wip/src/vision/train_voc_person.py` (~175 LOC) — Stage H training entry point.
-- `signedkan_wip/src/rapport_ros2/voc_detector.py` (~190 LOC) — inference wrapper, drop-in for HSV blob detector.
-- `signedkan_wip/tests/test_voc_detector.py` (6 tests) — wrapper smoke + HyMeKo vision_config round-trip.
+- `hymeko_neuro/experiments/vision/voc_person_dataset.py` (~110 LOC) — person-filtered VOC loader.
+- `hymeko_neuro/experiments/vision/train_voc_person.py` (~175 LOC) — Stage H training entry point.
+- `hymeko_neuro/experiments/rapport_ros2/voc_detector.py` (~190 LOC) — inference wrapper, drop-in for HSV blob detector.
+- `hymeko_neuro/tests/test_voc_detector.py` (6 tests) — wrapper smoke + HyMeKo vision_config round-trip.
 
 ### Modified
-- `signedkan_wip/src/rapport/coalition.py` — added `VisionConfig` dataclass + loader.
+- `hymeko_neuro/experiments/rapport/coalition.py` — added `VisionConfig` dataclass + loader.
 - `data/coalitions/meta_hri.hymeko` — added `vision_config` type to schema.
 - `data/coalitions/triad_hri.hymeko` — added `vision_r1` block; switched detector from `hsv_blob` to `voc_person` after smoke validation.
-- `signedkan_wip/src/rapport_ros2/vision_sidecar_node.py` — dispatch on `coalition.vision_configs` (default = HSV; opt in to trained detector via HyMeKo).
+- `hymeko_neuro/experiments/rapport_ros2/vision_sidecar_node.py` — dispatch on `coalition.vision_configs` (default = HSV; opt in to trained detector via HyMeKo).
 - `.venv-rapport-ros2/` — installed CPU `torch 2.12.0+cpu`, `torchvision`, `scipy` (needed for `VocPersonDetector` inference path; the rapport pipeline itself doesn't need torch).
 
 ### CORE.YAML items touched

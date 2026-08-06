@@ -1,0 +1,47 @@
+{
+ "frozen_at_note": "F11/F21 campaign frozen before bridge-relay work",
+ "source_commit": "b615f81ee8ed5b4396c8a8958855a4032d1642e3",
+ "f11_f21_commits": [
+  "92d3fa0",
+  "4ab8275",
+  "b615f81"
+ ],
+ "report": {
+  "path": "reports/2026-07-21-coin-f11-f21-contact-actor-bank.md",
+  "sha256": "fd4c85df4a43b15286dae3ac620c3feb509e68fade2380f3d8964a95535a2a6d"
+ },
+ "manifest": "da1d2c4e8e5e12da2ce4fa5b7590a0f310d69eb865cb4533bbcd09be9351721f",
+ "comparison": "23769dc32e18ab4696a2219e4dc47f45ac331d6efb14ad3f747691368f2dc678",
+ "checkpoints": {
+  "F11_s0r0": "e0f5ef6fd2d2b33baa25b0bef31e11c16e238d0da20cf8d5a9e7b9863369c546",
+  "F11_s0r1": "2d7687014777a448cfeada22b21b6c975cdcddaf475bb980d749e2438bbcd1b4",
+  "F11_s1r0": "12f44b4695cbab4fc642c20af4429dfbf99bfcdec79dc8d1903de1ac22a15e4e",
+  "F11_s1r1": "81f54a193d4adaa14709e6e97652612cd59e18dfb101c127953ac696a436e747",
+  "F11_s2r0": "2fd764846e85d276af353cd1fce3839235e20cde4c39610aad9e93ed463da197",
+  "F11_s2r1": "1d7a6ce77821e1ddb65c81080d33876331c5f975b6043e02cb01bb2ec0f0cdc4",
+  "F11_s3r0": "f3ba1b66155b9c68a3c46257cb9d07434aeb0691a2fb9200dbde4ad181f9d91e",
+  "F11_s3r1": "746c709f8d9c2759ba373fa4c04dd40a78c3ebf7bd61625eafbacd445d6f87f6",
+  "F21_s0r0": "c6caa35fa36c4f1df2db5ad27ff0f3ba0fe04a932902cd1ec8a1ba6c3f260c7b",
+  "F21_s0r1": "a4f7eb347e7e77b30edede72bf0db6878051055313a7a9071cb901b8ec249bb2",
+  "F21_s1r0": "22f3ef8885696f0c9e7088446f33e7cff02d1089ea120d6c62b326d9d6b67137",
+  "F21_s1r1": "4f66c41f32f62038fd0bf4ae2c0ccbe37de0eaa948b443c06b6750ae9e8a4140",
+  "F21_s2r0": "a9ddd8f5ef58159446d248c52185ae2e4fc4ed7444c4e42aa41fdea18329406b",
+  "F21_s2r1": "42d1722a6d27b27291b995888fb8cd97cbbe2ce7f18dc18e98d07d66f05433b9",
+  "F21_s3r0": "28010b179f076d007ebc7dbd2cf9dc805c646a0d270b261db8c6eed4d6663564",
+  "F21_s3r1": "fbc44603c34c0296df998bc0b7a80b8f9c3ac29cb9433f443c5f6383e6ed59d8"
+ },
+ "curriculum_corpora": {
+  "STAGE0_held.pkl": "530a6dbd4c6c9a12614f08275ff7c9407becd507dffd4f5ca1ddb9c90cb482c7",
+  "STAGE0_train.pkl": "1d62178fd0bfdb1cea56840c8e5cb0df908ac55c77f93ce553b62c7f17448158",
+  "STAGE1_held.pkl": "a1de9f4e96d3a255f3e93528dcc4b536cd19154584e58caa6bb74d3650200315",
+  "STAGE1_train.pkl": "3e391ad6747b2789b0b1446fd9b595d94e3e041c1536c310fcfcc399f7bc7b12",
+  "STAGE2_held.pkl": "bb5679b3f39a385e488bdfdbcf0c654dfb79dd0b5c687de8de781837e2d3f3d2",
+  "STAGE2_train.pkl": "2d5d7659778fe793acb3118cb0c6a92af05dcddc8a9065d291b799a75fc3400a",
+  "STAGE3_held.pkl": "36606bb2ee18035f68c3c28bf6753bd7e41984fec69dd9712bdb1d4472159a5f",
+  "STAGE3_train.pkl": "edc768eea06ef6a6a91aafa51093a19872f08e2d3e630f73a919e0f5a7e1a62a"
+ },
+ "source_checkpoint": {
+  "path": "experiments/2026_07_21_coin_clearance_curriculum/run_s0/actor_best.pt",
+  "sha256": "39551de3bbde746546063f9e5e5b7275353545edec6102a2fa16faecfa75b388"
+ }
+}

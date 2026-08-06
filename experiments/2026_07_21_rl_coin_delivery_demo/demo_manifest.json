@@ -1,0 +1,57 @@
+{
+ "commit": "bf625971d10b9e5a7902b56d3c8ac0b1caa722b1",
+ "checkpoint": "experiments/2026_07_20_coin_two_arm_sac_100k/sac_actor_best.pt",
+ "checkpoint_sha256": "003635267481bf5c8dfeaec05774df7ac35f071ba251d0e3ea405b5c57778bf1",
+ "command": "python -m hymeko_rl.experiments.coin_rl_demo --checkpoint experiments/2026_07_20_coin_two_arm_sac_100k/sac_actor_best.pt --state-index 64102 --deterministic --require-strict --render",
+ "state_index": 64102,
+ "state_hash": "4a4abca9a004fea93851fd4e135479f14d9d728a5e8e503449ec9593d4369ee8",
+ "deterministic": true,
+ "result": {
+  "state_index": 64102,
+  "state_hash": "4a4abca9a004fea93851fd4e135479f14d9d728a5e8e503449ec9593d4369ee8",
+  "strict": true,
+  "loose": true,
+  "attribution": 0.616,
+  "best_dwell": 30,
+  "settle_vel": 0.0441,
+  "n_steps": 54
+ },
+ "videos": {
+  "main_mp4": {
+   "path": "experiments/2026_07_21_rl_coin_delivery_demo/learned_rl_coin_delivery_64102.mp4",
+   "sha256": "4be58622790068fa453d046e54a8a292d3fa1208af3a1b8a8aa9cfcd5dc8ca28"
+  },
+  "main_gif": {
+   "path": "experiments/2026_07_21_rl_coin_delivery_demo/learned_rl_coin_delivery_64102.gif",
+   "sha256": "a593966f48af6ee4fb80e4d419f7bb6c89ef97cc2c46184ea7d7982d940fafe4"
+  },
+  "clean_mp4": {
+   "path": "experiments/2026_07_21_rl_coin_delivery_demo/learned_rl_coin_delivery_64102_clean.mp4",
+   "sha256": "4cc305bb2dfcd1a52cc5708566db7cbb35ca1d887e77df15f4a24cf2a10f5d53"
+  },
+  "comparison_mp4": {
+   "path": "experiments/2026_07_21_rl_coin_delivery_demo/rl_coin_delivery_comparison.mp4",
+   "sha256": "5b6e6dc0c67933bceb35dfc6cbe0307e7e3df4135c56dcce792f122c96789836"
+  }
+ },
+ "comparison_states": {
+  "64102": {
+   "strict": true,
+   "loose": true,
+   "hash": "4a4abca9a004fea93851fd4e135479f14d9d728a5e8e503449ec9593d4369ee8",
+   "label": "Certified learned delivery"
+  },
+  "64201": {
+   "strict": true,
+   "loose": true,
+   "hash": "f56e6d40be33e8a47065e71cbc89b03b8db9a53602f3564c794bdc7b93ff91ed",
+   "label": "Certified learned delivery (second state)"
+  },
+  "64111": {
+   "strict": false,
+   "loose": true,
+   "hash": "4f23eecf26e693cd89f02e4bb44da080c5df2cbe05d1abdf04c53c3d87fb7134",
+   "label": "Near-certified failure"
+  }
+ }
+}

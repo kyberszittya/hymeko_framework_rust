@@ -33,8 +33,8 @@ matching)" which the cliques foundation tests don't measure.
 
 ### Files
 
-- New: `signedkan_wip/experiments/cliques_detection_sweep_2026_05_14.py`
-- New: `signedkan_wip/experiments/results/cliques_detection_sweep_20260513T233737Z.jsonl`
+- New: `hymeko_neuro/experiments/cliques_detection_sweep_2026_05_14.py`
+- New: `hymeko_neuro/experiments/results/cliques_detection_sweep_20260513T233737Z.jsonl`
   (289 rows)
 
 ### Methodology
@@ -113,11 +113,11 @@ BK's breaking point.
 
 ### Files
 
-- New: `signedkan_wip/src/demo/cliques_contract.py` (340 LOC)
+- New: `hymeko_neuro/experiments/demo/cliques_contract.py` (340 LOC)
   — `contract_balanced_cliques`, `multiscale_hierarchy`,
     `ContractedBundle`. Full mathematical description in the module
     docstring.
-- New: `signedkan_wip/tests/test_demo_cliques_contract.py` (16 tests)
+- New: `hymeko_neuro/tests/test_demo_cliques_contract.py` (16 tests)
   — covers all 8 invariants from the math docstring + provenance
     preservation.
 
@@ -269,8 +269,8 @@ the demo group).
 
 ## CORE.YAML items touched
 
-**Empty list.** All work in `signedkan_wip/src/demo/` and
-`signedkan_wip/tests/`. No CORE crate, no pinned-dep changes.
+**Empty list.** All work in `hymeko_neuro/experiments/demo/` and
+`hymeko_neuro/tests/`. No CORE crate, no pinned-dep changes.
 
 ## Cross-references
 

@@ -1,25 +1,24 @@
-use std::{
-    collections::HashMap,
-    path::{Path, PathBuf},
-};
-use std::sync::Arc;
-use serde::{Deserialize, Serialize};
-use parser::ast::AstStr;
 use crate::common::ids::SymId;
 use crate::ir::hash::HashId;
 use crate::ir::hash_pass::compute_merkle_hashes;
 use crate::ir::ir::Ir;
 use crate::ir::lower::lower_program_to_ir;
 use crate::module_store::source_provider::SourceProvider;
-use crate::resolution::intern_pass::intern_ast_into_owned;
 use crate::resolution::const_resolve::resolve_consts;
+use crate::resolution::intern_pass::intern_ast_into_owned;
 use crate::resolution::interner::Interner;
-use crate::resolution::resolve::{apply_usings, build_index_sym_with_prefix, Index};
+use crate::resolution::resolve::{Index, apply_usings, build_index_sym_with_prefix};
+use parser::ast::AstStr;
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 
 use crate::sym_ast::AstSym;
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash,
-    Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ModuleKey(pub PathBuf);
 
 #[derive(Debug)]
@@ -52,8 +51,6 @@ pub struct IoDiag {
     pub cwd: Option<PathBuf>,
     pub err: std::io::Error,
 }
-
-
 
 /// A parse-t is kiszervezzük, mert nincs még "main"/egységes entrypoint.
 /// Tesztben adsz neki egy implementációt, ami a LALRPOP parsereidet hívja.
@@ -144,8 +141,7 @@ impl<'a, P: SourceProvider, R: HymekoParser> ModuleStore<P, R> {
             .parse(src.as_ref())
             .map_err(ModuleLoadError::Parse)?;
         // 3) intern (közös internerbe!)
-        let mut ast_sym: AstSym<'static> =
-            intern_ast_into_owned(&ast_str, &mut self.it);
+        let mut ast_sym: AstSym<'static> = intern_ast_into_owned(&ast_str, &mut self.it);
         // 3b) Tier B: resolve top-level `const` decls into numeric
         // literals before downstream passes (resolve / lower) see the
         // AST. Any `Value::Expr` or `Value::Ref(<single-segment-const>)`
@@ -210,7 +206,9 @@ impl<'a, P: SourceProvider, R: HymekoParser> ModuleStore<P, R> {
         for (imp, dep_key) in root_ast.imports.iter().zip(deps.iter()) {
             let dep_ast = self
                 .get(dep_key)
-                .ok_or_else(|| ModuleLoadError::Parse(format!("dep missing: {}", dep_key.0.display())))?
+                .ok_or_else(|| {
+                    ModuleLoadError::Parse(format!("dep missing: {}", dep_key.0.display()))
+                })?
                 .ast
                 .clone();
 
@@ -231,11 +229,24 @@ impl<'a, P: SourceProvider, R: HymekoParser> ModuleStore<P, R> {
                 .map_err(|e| ModuleLoadError::Parse(format!("index dep failed: {e:?}")))?;
         }
 
-
         // 6b) apply using aliases
         let import_ns: Vec<SymId> = imported.iter().map(|(ns, _)| *ns).collect();
         apply_usings(&mut idx, &root_ast.usings, &import_ns, &self.it)
             .map_err(|e| ModuleLoadError::Parse(format!("using alias failed: {e:?}")))?;
+
+        // 6c) cross-profile instance references (APPROVED-CORE-EDIT: xprofile-instance-refs,
+        // 2026-06-19). Also apply each imported *profile*'s own `using` aliases into the shared
+        // index, so its arcs/bases lower and its instance decls become referenceable from the
+        // importer (e.g. `using <desc>.<content> as arr; (+ arr.dist)`). Best-effort and
+        // per-statement: an alias that does not resolve against the available import namespaces is
+        // skipped (a genuinely-needed one surfaces later as a clear UnresolvedRef on the dep's arc),
+        // so this is strictly additive — meta-only imports (no usings) are a no-op, and no existing
+        // program's resolution or canonical hash changes.
+        for (_ns, dep_ast) in imported.iter() {
+            for u in &dep_ast.usings {
+                let _ = apply_usings(&mut idx, std::slice::from_ref(u), &import_ns, &self.it);
+            }
+        }
 
         // 7) lower program IR (2A) + merkle
         let mut ir = lower_program_to_ir(&root_ast, &imported, &idx, &mut self.it)
@@ -248,7 +259,8 @@ impl<'a, P: SourceProvider, R: HymekoParser> ModuleStore<P, R> {
             algo_version: 1,
             flags: 0,
         };
-        let canon_hash = crate::ir::canonical_hash::canonical_program_hash(cfg, &idx, &ir, &self.it);
+        let canon_hash =
+            crate::ir::canonical_hash::canonical_program_hash(cfg, &idx, &ir, &self.it);
 
         // 9) bundle + cache
         let compiled = Arc::new(CompiledProgram {
@@ -267,7 +279,10 @@ impl<'a, P: SourceProvider, R: HymekoParser> ModuleStore<P, R> {
     /// This avoids requiring #[derive(Clone)] on the massive Ir tree.
     pub fn take_last_ir(mut self) -> Result<Ir, String> {
         // Take the Arc out of the Option
-        let arc_prog = self.last_compiled.take().ok_or("No program was compiled.")?;
+        let arc_prog = self
+            .last_compiled
+            .take()
+            .ok_or("No program was compiled.")?;
 
         // Attempt to unwrap the Arc to get ownership of the CompiledProgram
         match Arc::try_unwrap(arc_prog) {
@@ -294,7 +309,6 @@ fn io_diag(op: &'static str, path: &Path, e: String) -> ModuleLoadError {
         err: std::io::Error::new(std::io::ErrorKind::Other, e),
     })
 }
-
 
 fn make_build_id(created_at_unix_ns: i128) -> [u8; 16] {
     let mut h = blake3::Hasher::new();

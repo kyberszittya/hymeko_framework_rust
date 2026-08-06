@@ -31,10 +31,10 @@ every JSONL training row.
 | `docs/plans/2026-05-19-pgraph-integration-hsikan-gomb/plan.{tex,pdf,mmd,tikz}` | new | 4-format plan (3 pp PDF) | Compiled before code |
 | `hymeko_pgraph/src/dump.rs` | extended | +200 | `AxiomCertificateJson` DTO + `canonical_full` / `extension_full` / `canonical_abb_subschema` / `extension_abb_subschema` / `strict_no_excess` fields + helpers (`name`, `cert_pass`, `canonical_cert`, `extension_cert`, `project_subschema`, `empty_cert_with`); both early-return paths and `analyze_lowered_with_full_options` populate the new fields |
 | `hymeko_pgraph/tests/axiom_witness.rs` | extended | +60 | 3 new tests pinning the DTO behaviour on the by-product fixture under strict / relaxed modes + MSG-only algorithm |
-| `signedkan_wip/src/hsikan_pgraph_mapping.py` | **new** | 100 | `HSIKAN_UNIT_TO_KNOBS` table + `merge_structure_knobs` + `run_one_kwargs` |
-| `signedkan_wip/experiments/runs/run_hsikan_msg_sweep.py` | **new** | 175 | Parallel structure to the Gömb driver; dry-run by default, `--train` flag for actual training |
-| `signedkan_wip/experiments/runs/run_gomb_msg_sweep.py` | extended | +60 | `--relaxed-msg` flag forwarded to the binary, `_cert_brief` / `_print_certificate_summary` / `_certificate_fields` helpers, certificate fields stamped onto every JSONL row |
-| `signedkan_wip/tests/test_hsikan_pgraph_mapping.py` | **new** | 80 | 7 unit tests for the mapping table |
+| `hymeko_neuro/experiments/hsikan_pgraph_mapping.py` | **new** | 100 | `HSIKAN_UNIT_TO_KNOBS` table + `merge_structure_knobs` + `run_one_kwargs` |
+| `hymeko_neuro/experiments/runs/run_hsikan_msg_sweep.py` | **new** | 175 | Parallel structure to the Gömb driver; dry-run by default, `--train` flag for actual training |
+| `hymeko_neuro/experiments/runs/run_gomb_msg_sweep.py` | extended | +60 | `--relaxed-msg` flag forwarded to the binary, `_cert_brief` / `_print_certificate_summary` / `_certificate_fields` helpers, certificate fields stamped onto every JSONL row |
+| `hymeko_neuro/tests/test_hsikan_pgraph_mapping.py` | **new** | 80 | 7 unit tests for the mapping table |
 
 Total: ~700 LOC.
 
@@ -71,13 +71,13 @@ pub struct PgraphAnalysisJson {
 
 ```bash
 # Gömb (existing driver, now with --relaxed-msg)
-python -m signedkan_wip.experiments.runs.run_gomb_msg_sweep \
+python -m hymeko_neuro.experiments.runs.run_gomb_msg_sweep \
     --pgraph data/hsikan/sweep_msg_gomb.hymeko \
     --algorithm abb \
     --relaxed-msg
 
 # HSIKAN (new driver)
-python -m signedkan_wip.experiments.runs.run_hsikan_msg_sweep \
+python -m hymeko_neuro.experiments.runs.run_hsikan_msg_sweep \
     --pgraph data/hsikan/sweep_msg.hymeko \
     --algorithm abb \
     --dataset bitcoin_alpha \
@@ -256,7 +256,7 @@ None. All existing.
 - **Build:** `cargo build --release -p hymeko_pgraph --bin
   hymeko_pgraph_dump` ran cleanly (4.19 s).
 - **Tests:** `cargo test -p hymeko_pgraph` (90 pass / 1 ignored
-  doctest); `pytest signedkan_wip/tests/test_hsikan_pgraph_mapping.py`
+  doctest); `pytest hymeko_neuro/tests/test_hsikan_pgraph_mapping.py`
   (7 pass).
 - **Smoke runs:** the HSIKAN driver ran successfully on
   `data/hsikan/sweep_msg.hymeko` (strict mode) and

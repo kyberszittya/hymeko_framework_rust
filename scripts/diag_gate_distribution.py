@@ -16,10 +16,10 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from signedkan_wip.src.vision.hymeyolo_circles_ricci import (
+from hymeko_neuro.experiments.vision.hymeyolo_circles_ricci import (
     RicciHyMeYOLOMulti,
 )
-from signedkan_wip.src.vision.voc_dataset import (
+from hymeko_neuro.experiments.vision.voc_dataset import (
     VOC_CLASSES, load_voc_hungarian,
 )
 

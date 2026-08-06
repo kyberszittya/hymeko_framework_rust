@@ -67,7 +67,7 @@ Each driver appends one row per (selection, seed) when given
 `--output path.jsonl`:
 
 ```bash
-python -m signedkan_wip.experiments.runs.run_hsikan_msg_sweep \
+python -m hymeko_neuro.experiments.runs.run_hsikan_msg_sweep \
     --pgraph data/hsikan/sweep_msg_byproduct_dominated.hymeko \
     --algorithm abb \
     --dataset bitcoin_alpha \

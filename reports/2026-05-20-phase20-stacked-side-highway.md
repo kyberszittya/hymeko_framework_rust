@@ -22,8 +22,8 @@ depth: without them, `sside_N4L4_res` produces 0.7734 ± **0.0827**
 
 | File | Status | LOC |
 | --- | --- | --- |
-| `signedkan_wip/src/core/side_signedkan.py` | extended | +130 (`StackedSideSignedKANConfig` + `StackedSideSignedKAN` class) |
-| `signedkan_wip/experiments/runs/run_compare.py` | extended | +35 (dispatch + `_SSK_marker` import + M_vt path) |
+| `hymeko_neuro/hyperedge/side_signedkan.py` | extended | +130 (`StackedSideSignedKANConfig` + `StackedSideSignedKAN` class) |
+| `hymeko_neuro/experiments/runs/run_compare.py` | extended | +35 (dispatch + `_SSK_marker` import + M_vt path) |
 
 ## CORE.YAML items touched
 

@@ -1,0 +1,232 @@
+"""Deterministic mechanism factorization ``B ≈ A_out · Σ · A_inᵀ`` — LiNGAM-SH step 3A (spec §5).
+
+Given the pairwise LiNGAM coefficient matrix ``B`` and a **fixed candidate set** of proposed mechanisms
+(:class:`~hymeko_rl.eval.causal.mechanism_proposal.MechanismProposal` from step 2), evaluate the signed-incidence
+factorization: each mechanism ``k`` is a rank-1 block ``A_out[:,k] · Σ[k,k] · A_in[:,k]ᵀ`` contributing its
+strength·sign to every tail×head pairwise entry of ``B_hat``. **No search, no optimization, no discovery** — the
+structure (``A_in``, ``A_out``) is the proposal support and ``Σ`` comes straight from the proposal scores. This is
+the deterministic evaluation that Step 3B (group-sparse fit / selection) will optimize over.
+
+Convention: ``B[effect, cause] = weight`` (rows = effects, cols = causes), matching DirectLiNGAM's ``adjacency``.
+Overlapping mechanisms that touch the same ``(effect, cause)`` entry **sum** their contributions (spec §8).
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Mapping, Sequence
+
+import numpy as np
+
+from .hymeko_emit import CausalHypergraph
+from .mechanism_proposal import MechanismProposal, proposals_to_causal_hypergraph
+
+
+@dataclass(frozen=True, eq=False)
+class MechanismFactorization:
+    """The evaluated factorization ``B_hat = A_out · Σ · A_inᵀ`` over a fixed proposal set (eq disabled: arrays)."""
+
+    variables: tuple[str, ...]
+    mechanisms: tuple[MechanismProposal, ...]
+    a_in: np.ndarray                    # (d, m): A_in[i,k] != 0 iff variable i is a TAIL of mechanism k
+    a_out: np.ndarray                   # (d, m): A_out[j,k] != 0 iff variable j is a HEAD of mechanism k
+    sigma: np.ndarray                   # (m, m) diagonal: Σ[k,k] = sign·strength (scaled if normalized)
+    b_hat: np.ndarray                   # (d, d) reconstruction, B_hat[effect, cause]
+    residual: np.ndarray                # (d, d) = B - B_hat
+    metrics: Mapping[str, float]
+
+    def to_causal_hypergraph(self, name: str) -> CausalHypergraph:
+        """The mechanism-form :class:`CausalHypergraph` for this factorization's proposals (star-expand + verify)."""
+        return proposals_to_causal_hypergraph(self.variables, self.mechanisms, name=name)
+
+
+def build_pairwise_b(variables: "Sequence[str]", pairwise_edges: "Sequence[tuple[str, str, float]]") -> np.ndarray:
+    """Assemble the pairwise coefficient matrix with ``B[effect, cause] = weight`` (duplicates sum).
+
+    # Preconditions every edge's cause/effect is in ``variables``. # Postconditions shape ``(d, d)``.
+    """
+    idx = {v: i for i, v in enumerate(variables)}
+    d = len(variables)
+    b = np.zeros((d, d), dtype=np.float64)
+    for cause, effect, weight in pairwise_edges:
+        b[idx[effect], idx[cause]] += float(weight)     # B[effect, cause]; overlapping edges accumulate
+    return b
+
+
+def _variable_universe(variables: "Sequence[str]", pairwise_edges: "Sequence[tuple[str, str, float]]",
+                       proposals: "Sequence[MechanismProposal]") -> list[str]:
+    """Caller variables first, then any variable referenced by an edge or proposal (deterministic order)."""
+    referenced = [v for c, e, _w in pairwise_edges for v in (c, e)]
+    referenced += [v for p in proposals for v in (*p.tail, *p.head)]
+    return list(dict.fromkeys([*variables, *referenced]))
+
+
+def _build_factors(variables: "Sequence[str]", proposals: "Sequence[MechanismProposal]", *, normalize: bool,
+                   ) -> "tuple[np.ndarray, np.ndarray, np.ndarray]":
+    """Build ``(A_in, A_out, Σ)``. ``normalize`` unit-scales the incidence columns (Σ absorbs the scale) — a pure
+    representation choice; ``B_hat`` is identical either way."""
+    idx = {v: i for i, v in enumerate(variables)}
+    d, m = len(variables), len(proposals)
+    a_in = np.zeros((d, m), dtype=np.float64)
+    a_out = np.zeros((d, m), dtype=np.float64)
+    sig = np.zeros(m, dtype=np.float64)
+    for k, p in enumerate(proposals):
+        scale = float(p.sign) * abs(float(p.strength))
+        tnorm = np.sqrt(len(p.tail)) if normalize else 1.0
+        hnorm = np.sqrt(len(p.head)) if normalize else 1.0
+        for t in p.tail:
+            a_in[idx[t], k] = 1.0 / tnorm
+        for h in p.head:
+            a_out[idx[h], k] = 1.0 / hnorm
+        sig[k] = scale * tnorm * hnorm                  # (=scale when not normalized) → B_hat invariant
+    return a_in, a_out, np.diag(sig)
+
+
+def score_mechanism_set(b: np.ndarray, b_hat: np.ndarray, *, n_mechanisms: int,
+                        n_parameters: int) -> dict[str, float]:
+    """Reconstruction metrics of ``b_hat`` vs ``b`` (baseline ``b_hat = 0``).
+
+    Returns ``fro_error``, ``fro_error_baseline`` (``‖B‖``), ``relative_error``, ``explained_energy``
+    (``1 − ‖resid‖²/‖B‖²``), ``n_mechanisms``, ``n_parameters``, and a rough ``bic_like_score``
+    (``n·ln(RSS/n) + k·ln(n)`` over the ``n = d²`` matrix entries).
+    """
+    resid = b - b_hat
+    fro_error = float(np.linalg.norm(resid))
+    fro_baseline = float(np.linalg.norm(b))
+    b_energy = float(np.sum(b * b))
+    resid_energy = float(np.sum(resid * resid))
+    n = max(1, b.size)
+    rss = max(resid_energy, 1e-12)
+    bic_like = float(n * np.log(rss / n) + n_parameters * np.log(n))
+    return {
+        "fro_error": round(fro_error, 6),
+        "fro_error_baseline": round(fro_baseline, 6),
+        "relative_error": round(fro_error / fro_baseline, 6) if fro_baseline > 0 else 0.0,
+        "explained_energy": round(1.0 - resid_energy / b_energy, 6) if b_energy > 0 else 0.0,
+        "n_mechanisms": float(n_mechanisms),
+        "n_parameters": float(n_parameters),
+        "bic_like_score": round(bic_like, 6),
+    }
+
+
+def factorize_from_proposals(variables: "Sequence[str]", pairwise_edges: "Sequence[tuple[str, str, float]]",
+                             proposals: "Sequence[MechanismProposal]", *, normalize: bool = True,
+                             ) -> MechanismFactorization:
+    """Evaluate ``B ≈ A_out · Σ · A_inᵀ`` for the fixed proposal set (deterministic; no fit/search).
+
+    # Postconditions ``b_hat == a_out @ sigma @ a_in.T``; ``b_hat``'s nonzero support is the pairwise projection
+      of the proposed mechanisms; overlapping mechanisms sum into shared entries.
+    """
+    universe = _variable_universe(variables, pairwise_edges, proposals)
+    b = build_pairwise_b(universe, pairwise_edges)
+    a_in, a_out, sigma = _build_factors(universe, proposals, normalize=normalize)
+    b_hat = a_out @ sigma @ a_in.T
+    residual = b - b_hat
+    metrics = score_mechanism_set(b, b_hat, n_mechanisms=len(proposals), n_parameters=len(proposals))
+    return MechanismFactorization(variables=tuple(universe), mechanisms=tuple(proposals), a_in=a_in, a_out=a_out,
+                                  sigma=sigma, b_hat=b_hat, residual=residual, metrics=metrics)
+
+
+def fit_sigma_least_squares(variables: "Sequence[str]", pairwise_edges: "Sequence[tuple[str, str, float]]",
+                            proposals: "Sequence[MechanismProposal]") -> MechanismFactorization:
+    """Solve the mechanism strengths ``Σ`` by (deterministic, closed-form) least squares instead of using the
+    proposal ``sign·strength`` verbatim.
+
+    One rank-1 basis ``A_out[:,k] · A_in[:,k]ᵀ`` per proposal (0/1 incidence); ``Σ`` = ``lstsq`` solution of
+    ``Σ_k σ_k · basis_k ≈ B``. The proposal signs are preserved as metadata; the *fitted* ``σ`` may disagree —
+    ``metrics["n_sign_mismatch"]`` counts the mechanisms whose fitted sign contradicts the proposed sign.
+    """
+    universe = _variable_universe(variables, pairwise_edges, proposals)
+    b = build_pairwise_b(universe, pairwise_edges)
+    d, m = len(universe), len(proposals)
+    a_in, a_out, _default = _build_factors(universe, proposals, normalize=False)   # 0/1 indicator incidence
+    if m == 0:
+        b_hat = np.zeros((d, d), dtype=np.float64)
+        metrics = {**score_mechanism_set(b, b_hat, n_mechanisms=0, n_parameters=0), "n_sign_mismatch": 0.0}
+        return MechanismFactorization(tuple(universe), (), a_in, a_out, np.zeros((0, 0)), b_hat, b, metrics)
+    basis = np.stack([np.outer(a_out[:, k], a_in[:, k]).ravel() for k in range(m)], axis=1)  # (d², m)
+    sigma_fit, *_ = np.linalg.lstsq(basis, b.ravel(), rcond=None)
+    b_hat = (basis @ sigma_fit).reshape(d, d)
+    n_mismatch = sum(1 for k, p in enumerate(proposals)
+                     if sigma_fit[k] != 0.0 and int(np.sign(sigma_fit[k])) != p.sign)
+    metrics = {**score_mechanism_set(b, b_hat, n_mechanisms=m, n_parameters=m), "n_sign_mismatch": float(n_mismatch)}
+    return MechanismFactorization(tuple(universe), tuple(proposals), a_in, a_out, np.diag(sigma_fit), b_hat,
+                                  b - b_hat, metrics)
+
+
+def _tail_columns(variables: "Sequence[str]", proposals: "Sequence[MechanismProposal]",
+                  ) -> "tuple[list[tuple[int, str]], np.ndarray, dict[str, int]]":
+    """Per-(mechanism, tail-var) loading bases: each column reconstructs ``head_indicator ⊗ e_tail`` (one loading
+    per tail, shared across the mechanism's heads). Returns ``(keys, design (d²×n_loadings), idx)``."""
+    idx = {v: i for i, v in enumerate(variables)}
+    d = len(variables)
+    keys: list[tuple[int, str]] = []
+    columns: list[np.ndarray] = []
+    for k, p in enumerate(proposals):
+        for t in p.tail:
+            mat = np.zeros((d, d), dtype=np.float64)
+            for h in p.head:
+                mat[idx[h], idx[t]] = 1.0
+            keys.append((k, t))
+            columns.append(mat.ravel())
+    design = np.stack(columns, axis=1) if columns else np.zeros((d * d, 0))
+    return keys, design, idx
+
+
+def _declared_loading(proposal: MechanismProposal, tail_var: str) -> "float | None":
+    """The declared per-tail loading from a proposal's evidence (``evidence['loadings'][tail]``), else ``None``."""
+    loadings = (proposal.evidence or {}).get("loadings")
+    if isinstance(loadings, dict) and tail_var in loadings:
+        return float(loadings[tail_var])
+    return None
+
+
+def fit_loadings_least_squares(variables: "Sequence[str]", pairwise_edges: "Sequence[tuple[str, str, float]]",
+                               proposals: "Sequence[MechanismProposal]", *, use_declared: bool = False,
+                               ) -> MechanismFactorization:
+    """**Weighted** mechanism fit: real-valued per-tail loadings (``A_in`` real, ``Σ = I``), so one mechanism
+    can carry asymmetric tail contributions. ``B_hat = A_out · A_inᵀ``; for a single-output mechanism the fitted
+    loading of tail ``x`` equals ``B[y, x]`` (exact — the per-tail generalization of the shared strength).
+
+    ``use_declared`` uses each proposal's declared loadings (``evidence['loadings']``, from the HyMeKo reward SoT)
+    instead of fitting. ``metrics['n_sign_mismatch']`` counts tails whose fitted loading sign contradicts the
+    declared one. The mechanism *structure* is unchanged — loadings are metadata, not new DAG edges.
+    """
+    universe = _variable_universe(variables, pairwise_edges, proposals)
+    b = build_pairwise_b(universe, pairwise_edges)
+    d, m = len(universe), len(proposals)
+    keys, design, idx = _tail_columns(universe, proposals)
+    a_in = np.zeros((d, m), dtype=np.float64)
+    a_out = np.zeros((d, m), dtype=np.float64)
+    for k, p in enumerate(proposals):
+        for h in p.head:
+            a_out[idx[h], k] = 1.0
+    if not keys:
+        b_hat = np.zeros((d, d), dtype=np.float64)
+        metrics = {**score_mechanism_set(b, b_hat, n_mechanisms=m, n_parameters=0), "n_sign_mismatch": 0.0}
+        return MechanismFactorization(tuple(universe), tuple(proposals), a_in, a_out, np.eye(m), b_hat, b, metrics)
+    if use_declared:
+        loadings = np.array([_declared_loading(proposals[k], t) or 0.0 for k, t in keys], dtype=np.float64)
+    else:
+        loadings, *_ = np.linalg.lstsq(design, b.ravel(), rcond=None)
+    for (k, t), load in zip(keys, loadings):
+        a_in[idx[t], k] = float(load)
+    b_hat = a_out @ a_in.T                       # Σ = I; loadings live in A_in
+    metrics = {**score_mechanism_set(b, b_hat, n_mechanisms=m, n_parameters=len(keys)),
+               "n_sign_mismatch": float(_count_loading_sign_mismatch(proposals, keys, loadings))}
+    return MechanismFactorization(tuple(universe), tuple(proposals), a_in, a_out, np.eye(m), b_hat, b - b_hat,
+                                  metrics)
+
+
+def _count_loading_sign_mismatch(proposals: "Sequence[MechanismProposal]", keys: "list[tuple[int, str]]",
+                                 loadings: np.ndarray) -> int:
+    """Tails whose fitted loading sign contradicts the proposal's declared loading (``evidence['loadings']``)."""
+    n = 0
+    for (k, t), load in zip(keys, loadings):
+        declared = _declared_loading(proposals[k], t)
+        if load != 0.0 and declared is not None and int(np.sign(load)) != int(np.sign(declared)):
+            n += 1
+    return n
+
+
+__all__ = ["MechanismFactorization", "build_pairwise_b", "score_mechanism_set", "factorize_from_proposals",
+           "fit_sigma_least_squares", "fit_loadings_least_squares"]

@@ -424,19 +424,23 @@ fn run_command(cmd: Commands) {
                 .with_name(&name)
                 .with_option("world_name", &world);
 
-            // --rich path: bypass the template-driven pipeline and
-            // call the registered transform's stub `emit()`, which
-            // for kinematic formats routes to the rich Rust-side
-            // `generate_sdf_from_model` / `generate_urdf_from_model`
-            // that emits joint axis, origin, and limits.
+            // Kinematic formats (mjcf/urdf/sdf) always use the model-based emitter.
+            // The static `transforms/<fmt>/` templates are degenerate for robots —
+            // B-004 (the MJCF template emits NO `<joint>` elements at all) and B-005
+            // (URDF/SDF templates hardcode `axis="0 0 1"` for every joint). The model
+            // path (`extract_kinematic` → registered `emit()` →
+            // `emit_mjcf`/`generate_urdf_from_model`/`generate_sdf_from_model`) emits
+            // nested bodies, per-joint axes, origins, and limits. `--rich` is now the
+            // default for these formats and is retained only for backward compatibility.
             //
-            // For non-kinematic formats we fall through to the
-            // template path (the stub does not exist there).
+            // Non-kinematic formats (dot, mermaid, gazebo, ros2_launch, …) keep the
+            // template path, which is canonical for them.
             //
-            // Plan/report:
-            // docs/plans/2026-05-16-sdf-rich-emit-flag/,
-            // reports/2026-05-16-sdf-rich-emit-flag.md.
-            let result: String = if rich {
+            // History: docs/plans/2026-05-16-sdf-rich-emit-flag/,
+            // reports/2026-05-16-sdf-rich-emit-flag.md (the original opt-in flag);
+            // docs/BUGS.md B-004/B-005 (why it is now the default).
+            let _ = rich;
+            let result: String = {
                 let Some(t) = reg.get(&format) else {
                     eprintln!(
                         "Unknown format: `{format}`. Registered: {:?}",
@@ -444,51 +448,43 @@ fn run_command(cmd: Commands) {
                     );
                     std::process::exit(1);
                 };
-                if t.accepts() == ModelKind::Kinematic {
+                // Kinematic transforms with a real Rust emitter (urdf/sdf/mjcf/dot) take the model
+                // path. A transform that is *template-only* (emit() returns None but it declares a
+                // `template_dir`, e.g. requirements_sysml/requirements_dot) falls through to the file
+                // templates. Only a kinematic transform with neither output nor a template_dir is a
+                // genuine extraction failure.
+                let model_output = if t.accepts() == ModelKind::Kinematic {
                     let model_view = extract_kinematic(&compiled.ir, &ms.it, &name);
-                    match t.emit(&model_view, &cfg) {
-                        Some(s) => s,
-                        None => {
+                    t.emit(&model_view, &cfg)
+                } else {
+                    None
+                };
+                match model_output {
+                    Some(rendered) => rendered,
+                    None if t.accepts() == ModelKind::Kinematic && t.template_dir().is_none() => {
+                        eprintln!(
+                            "Emit for `{format}` returned no output (model extraction failed)."
+                        );
+                        std::process::exit(1);
+                    }
+                    None => {
+                        let transforms_root = PathBuf::from(&transforms_dir);
+                        reg.render_from_templates(
+                            &format, &compiled.ir, &ms.it, &cfg, &transforms_root,
+                        )
+                        .unwrap_or_else(|| {
                             eprintln!(
-                                "Rich emit for `{format}` returned no output (model extraction failed)."
+                                "Unknown format: `{format}`. Registered template-driven formats: {:?}",
+                                reg.available()
                             );
                             std::process::exit(1);
-                        }
+                        })
+                        .unwrap_or_else(|e| {
+                            eprintln!("Render failed: {e}");
+                            std::process::exit(1);
+                        })
                     }
-                } else {
-                    // Non-kinematic format: --rich has no effect; fall back to the
-                    // template path so the user-visible behaviour is the same.
-                    let transforms_root = PathBuf::from(&transforms_dir);
-                    reg.render_from_templates(
-                        &format, &compiled.ir, &ms.it, &cfg, &transforms_root,
-                    )
-                    .unwrap_or_else(|| {
-                        eprintln!(
-                            "Unknown format: `{format}`. Registered template-driven formats: {:?}",
-                            reg.available()
-                        );
-                        std::process::exit(1);
-                    })
-                    .unwrap_or_else(|e| {
-                        eprintln!("Render failed: {e}");
-                        std::process::exit(1);
-                    })
                 }
-            } else {
-                let transforms_root = PathBuf::from(&transforms_dir);
-                reg
-                    .render_from_templates(&format, &compiled.ir, &ms.it, &cfg, &transforms_root)
-                    .unwrap_or_else(|| {
-                        eprintln!(
-                            "Unknown format: `{format}`. Registered template-driven formats: {:?}",
-                            reg.available()
-                        );
-                        std::process::exit(1);
-                    })
-                    .unwrap_or_else(|e| {
-                        eprintln!("Render failed: {e}");
-                        std::process::exit(1);
-                    })
             };
 
             match output {

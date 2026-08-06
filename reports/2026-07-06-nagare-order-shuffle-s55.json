@@ -1,0 +1,179 @@
+{
+  "engine": "nagare-holonomy-learn",
+  "n_train": 192,
+  "n_test": 96,
+  "n_points": 32,
+  "epochs": 50,
+  "local_rows": [
+    {
+      "task": "moons",
+      "acc": 1.000000,
+      "loss": 0.001397,
+      "clifford_error": 0.000007,
+      "median_us_per_sample": 2.918750,
+      "params": 60
+    },
+    {
+      "task": "spiral",
+      "acc": 1.000000,
+      "loss": 0.005074,
+      "clifford_error": 0.000067,
+      "median_us_per_sample": 2.955208,
+      "params": 60
+    },
+    {
+      "task": "xor",
+      "acc": 1.000000,
+      "loss": 0.006347,
+      "clifford_error": 0.000093,
+      "median_us_per_sample": 2.841667,
+      "params": 60
+    }
+  ],
+  "stress_rows": [
+    {
+      "task": "moons",
+      "stress": "clean",
+      "entropy_loss": 0.001397,
+      "constant_loss": 0.000428,
+      "projection_loss": 0.000429,
+      "projection_params": 228
+    },
+    {
+      "task": "moons",
+      "stress": "noisy",
+      "entropy_loss": 0.001979,
+      "constant_loss": 0.000642,
+      "projection_loss": 0.000649,
+      "projection_params": 228
+    },
+    {
+      "task": "moons",
+      "stress": "missing",
+      "entropy_loss": 0.002108,
+      "constant_loss": 0.000737,
+      "projection_loss": 0.000746,
+      "projection_params": 228
+    },
+    {
+      "task": "moons",
+      "stress": "fewshot_noisy_missing",
+      "entropy_loss": 0.011320,
+      "constant_loss": 0.005255,
+      "projection_loss": 0.005299,
+      "projection_params": 228
+    },
+    {
+      "task": "moons",
+      "stress": "shuffled",
+      "entropy_loss": 0.001777,
+      "constant_loss": 0.000574,
+      "projection_loss": 0.000577,
+      "projection_params": 228
+    },
+    {
+      "task": "moons",
+      "stress": "shuffled_fewshot",
+      "entropy_loss": 0.009277,
+      "constant_loss": 0.004052,
+      "projection_loss": 0.004062,
+      "projection_params": 228
+    },
+    {
+      "task": "spiral",
+      "stress": "clean",
+      "entropy_loss": 0.005076,
+      "constant_loss": 0.001854,
+      "projection_loss": 0.001866,
+      "projection_params": 228
+    },
+    {
+      "task": "spiral",
+      "stress": "noisy",
+      "entropy_loss": 0.021138,
+      "constant_loss": 0.016992,
+      "projection_loss": 0.017273,
+      "projection_params": 228
+    },
+    {
+      "task": "spiral",
+      "stress": "missing",
+      "entropy_loss": 0.042895,
+      "constant_loss": 0.045769,
+      "projection_loss": 0.053645,
+      "projection_params": 228
+    },
+    {
+      "task": "spiral",
+      "stress": "fewshot_noisy_missing",
+      "entropy_loss": 0.174305,
+      "constant_loss": 0.168937,
+      "projection_loss": 0.180604,
+      "projection_params": 228
+    },
+    {
+      "task": "spiral",
+      "stress": "shuffled",
+      "entropy_loss": 0.021794,
+      "constant_loss": 0.014062,
+      "projection_loss": 0.013719,
+      "projection_params": 228
+    },
+    {
+      "task": "spiral",
+      "stress": "shuffled_fewshot",
+      "entropy_loss": 0.268784,
+      "constant_loss": 0.278232,
+      "projection_loss": 0.281202,
+      "projection_params": 228
+    },
+    {
+      "task": "xor",
+      "stress": "clean",
+      "entropy_loss": 0.006330,
+      "constant_loss": 0.002419,
+      "projection_loss": 0.002414,
+      "projection_params": 228
+    },
+    {
+      "task": "xor",
+      "stress": "noisy",
+      "entropy_loss": 0.006763,
+      "constant_loss": 0.002678,
+      "projection_loss": 0.002702,
+      "projection_params": 228
+    },
+    {
+      "task": "xor",
+      "stress": "missing",
+      "entropy_loss": 0.008005,
+      "constant_loss": 0.003253,
+      "projection_loss": 0.003264,
+      "projection_params": 228
+    },
+    {
+      "task": "xor",
+      "stress": "fewshot_noisy_missing",
+      "entropy_loss": 0.033215,
+      "constant_loss": 0.021539,
+      "projection_loss": 0.021763,
+      "projection_params": 228
+    },
+    {
+      "task": "xor",
+      "stress": "shuffled",
+      "entropy_loss": 0.006229,
+      "constant_loss": 0.002392,
+      "projection_loss": 0.002393,
+      "projection_params": 228
+    },
+    {
+      "task": "xor",
+      "stress": "shuffled_fewshot",
+      "entropy_loss": 0.049630,
+      "constant_loss": 0.034367,
+      "projection_loss": 0.034813,
+      "projection_params": 228
+    }
+  ]
+}

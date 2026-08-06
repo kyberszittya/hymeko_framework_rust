@@ -1,0 +1,218 @@
+Bootstrap: docker
+From: nvidia/cuda:12.6.0-cudnn-runtime-ubuntu24.04
+
+# Ubuntu 24.04 (Noble) ships python3.12 in default apt. Ubuntu 22.04
+# only had python3.10, and python3.12-venv is not in the 22.04
+# repositories. The local environment uses Python 3.13.5 (Anaconda),
+# but 3.12 is ABI-compatible for the pinned wheels (torch 2.11.0 ships
+# 3.10-3.13 wheels; pip picks the right one for the active interpreter).
+# CUDA 12.6 is forward-compatible with the cu124 torch wheels below.
+
+# Singularity definition for the hymeko_neuro experiment env.
+# Spec is the standard Singularity .def syntax; works with Apptainer
+# (identical syntax) if ever needed.
+#
+# Komondor has Singularity (NOT Apptainer); command is `singularity`.
+#
+# Design choice: bake the Python deps (torch 2.11 + sklearn + numpy +
+# scipy + networkx + supporting wheels), but DO NOT bake the repo. The
+# repo is bind-mounted at /workspace at run time so code changes don't
+# trigger image rebuilds.
+#
+# Build (on Komondor login node, ~10-15 min depending on docker.io
+# network availability):
+#   cd /scratch/<PROJECT>/hymeko/hymeko_framework_rust
+#   module load singularity
+#   singularity build --fakeroot --fix-perms \
+#       hymeko_signedkan.sif \
+#       docs/komondor_setup/hymeko_signedkan.def
+#
+# Run (smoke, on a GPU compute node):
+#   module load singularity
+#   singularity exec --nv \
+#     --bind /scratch/<PROJECT>/hymeko/hymeko_framework_rust:/workspace \
+#     hymeko_signedkan.sif \
+#     bash -c "cd /workspace && PYTHONPATH=. python -m hymeko_neuro.experiments.runs.run_final_cell --dataset bitcoin_alpha --model SGCN --hidden 32 --seed 0 --n-epochs 120"
+#
+# The image hash (`singularity inspect --labels hymeko_signedkan.sif`
+# → `org.hymeko.*` labels + base-image digest) is the citation pin for
+# the NComms reproducibility Methods section.
+#
+# Why not use Komondor's `pytorch` module instead? Cluster has
+# pytorch/{2.2.2, 2.4.1, 2.6.0}; local pinned env is torch 2.11.0. The
+# container path keeps "identical env across local + HPC + future
+# re-runs" for the audit's reproducibility guarantee.
+
+%labels
+    org.hymeko.project          hymeko_neuro
+    org.hymeko.purpose          NComms Phase B + HSiKAN-family experiments
+    org.hymeko.python           3.12  (base ubuntu24.04; venv at /opt/venv)
+    org.hymeko.torch            2.6.0  (cu124; cluster-pragmatic; local is 2.11.0+cu130)
+    org.hymeko.cuda             12.6  (image runtime); 12.4 (torch wheel build)
+    org.hymeko.build_date       2026-06-02
+    org.hymeko.note             local-vs-container torch differ; SGCN unaffected; revisit for production NComms run
+
+%environment
+    export LC_ALL=C.UTF-8
+    export LANG=C.UTF-8
+    export PYTHONUNBUFFERED=1
+    export PYTHONDONTWRITEBYTECODE=1
+    # Disable PyTorch's CUBLAS workspace warning chatter
+    export CUBLAS_WORKSPACE_CONFIG=:4096:8
+    # Make tqdm play nice in non-tty SLURM logs
+    export TQDM_DISABLE=1
+    # hymeko_neuro's repo will be bind-mounted at /workspace
+    export PYTHONPATH=/workspace:$PYTHONPATH
+    # Use the in-container venv (avoids debian's system pip + PEP-668)
+    export PATH=/opt/venv/bin:$PATH
+
+    # ── CPU thread-workspace caps (memory bug fix, 2026-06-02) ──
+    # Without these, OMP / MKL / OpenBLAS each allocate per-thread
+    # workspaces scaled to visible CPU count. On Komondor's 64-core
+    # EPYC 7763, that runs to 60+ GB of CPU RAM per process, triggering
+    # cgroup OOM at --mem=64G. Local workstation never noticed this
+    # because of fewer CPUs + native (non-container) malloc behavior.
+    # Capping to 4 brings the workload's RSS down to ~2 GB (matching
+    # local). See diagnosis in reports/2026-06-02-komondor-sgcn-audit.md
+    # follow-up.
+    export OMP_NUM_THREADS=4
+    export MKL_NUM_THREADS=4
+    export OPENBLAS_NUM_THREADS=4
+    export NUMEXPR_NUM_THREADS=4
+    export BLIS_NUM_THREADS=4
+    # Cap glibc malloc arenas (default = 8 × CPU count, each ~64 MB +
+    # headroom; on a 64-core box this is gigabytes of overhead before
+    # the program does anything).
+    export MALLOC_ARENA_MAX=4
+    # PyTorch CUDA caching allocator: prefer expandable segments over
+    # large reservations, and bound max split for less fragmentation.
+    export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,max_split_size_mb:256
+
+%files
+    # 2026-06-04: hymeko Rust extension wheel is baked into the image
+    # so the Singularity container can run the cycle / walk enumerators
+    # without falling back to the unbounded pure-Python DFS that
+    # OOM-killed every probe before this ship (jobs 13883866 / 13883876
+    # / 13883886). Build locally with:
+    #
+    #   cd hymeko_py
+    #   maturin build --release --interpreter python3.12
+    #
+    # producing a manylinux_2_34 wheel under target/wheels/. The wheel
+    # is copied into /tmp inside the build container; %post installs
+    # it into the venv.
+    # Source path is relative to the build-time CWD on Komondor:
+    # /scratch/pr_szevis/hajdu/hymeko/hymeko_framework_rust/. Two
+    # constraints on the destination:
+    #
+    # 1. NOT /tmp — Singularity 4.x with --fakeroot resets /tmp between
+    #    %files and %post, dropping the wheel.
+    # 2. The FULL wheel filename (`hymeko-0.1.0-cp312-cp312-manylinux_2_34_x86_64.whl`)
+    #    must be preserved at the destination — pip parses metadata out of
+    #    the filename (name-version-build-python-abi-platform parts), so
+    #    a single-part rename like `hymeko.whl` fails with "Invalid wheel
+    #    filename (wrong number of parts)" before pip can read PKG-INFO.
+    ./target/wheels/hymeko-0.1.0-cp312-cp312-manylinux_2_34_x86_64.whl /opt/hymeko-0.1.0-cp312-cp312-manylinux_2_34_x86_64.whl
+
+%post
+    # /bin/sh in Ubuntu = dash; no pipefail support. set -eu is enough;
+    # nothing in this script relies on detecting failures inside a pipe.
+    set -eu
+    export DEBIAN_FRONTEND=noninteractive
+
+    # ─── System packages ──────────────────────────────────────────
+    apt-get update
+    apt-get install -y --no-install-recommends \
+        python3.12 python3.12-venv \
+        build-essential git curl ca-certificates \
+        libgomp1 libopenblas0
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+    # ─── Python venv (sidesteps debian's package-managed pip + PEP-668) ──
+    # Debian's system pip can't be `pip install --upgrade`d (lacks the
+    # RECORD file), and Ubuntu 24.04 blocks system-wide pip per PEP-668.
+    # A venv avoids both problems and is the canonical container pattern.
+    python3.12 -m venv /opt/venv
+    /opt/venv/bin/pip install --upgrade pip setuptools wheel
+
+    # ─── Project Python deps ──────────────────────────────────────
+    # torch 2.6.0+cu124 is the highest version on the cu124 wheel index;
+    # local is torch 2.11.0+cu130. Trade-off: container is NOT
+    # byte-identical to local — but cu124 wheels work on any host driver
+    # supporting CUDA >= 12.4, which Komondor confirms via its own
+    # pytorch/2.6.0 module. For SGCN (basic GCN, no torch.compile, no
+    # 2.7+ features), this version diff is observationally null.
+    # Revisit once cluster GPU-node driver version is confirmed (likely
+    # supports cu128 too, which would unlock matching local torch 2.11).
+    /opt/venv/bin/pip install --no-cache-dir \
+        torch==2.6.0 \
+        --index-url https://download.pytorch.org/whl/cu124
+
+    # Tight pins on numerically-critical deps (torch already pinned
+    # above; numpy/scipy/sklearn affect AUC computations and seeded
+    # ops). Looser pins on UI/utility deps so pip can pick the latest
+    # Python 3.12 wheel without fighting patch-version availability.
+    /opt/venv/bin/pip install --no-cache-dir \
+        numpy==2.4.4 \
+        scipy==1.17.1 \
+        scikit-learn==1.8.0 \
+        networkx \
+        pandas \
+        pyyaml \
+        tqdm
+    # matplotlib intentionally NOT installed in this image — only
+    # needed for figure rendering, which happens on the workstation,
+    # not on HPC compute nodes. Adds ~250 MB if we ever need it.
+
+    # ─── hymeko Rust extension (2026-06-04 ship) ───────────────────
+    # The wheel was copied into /tmp via %files above; install it into
+    # the venv. Without this step, every cycle / walk enumeration call
+    # in hymeko_neuro silently falls through to the unbounded pure-
+    # Python DFS, which OOM-killed every prior Komondor probe at
+    # 32 GB MaxRSS (see reports/2026-06-03-*-pimentel-* + the reservoir
+    # fallback memory note).
+    /opt/venv/bin/pip install --no-cache-dir \
+        /opt/hymeko-0.1.0-cp312-cp312-manylinux_2_34_x86_64.whl
+    /opt/venv/bin/python -c "import hymeko; print('hymeko ok:', hymeko.__file__)"
+
+    # No symlinks: `ln -sf /opt/venv/bin/python /usr/local/bin/python`
+    # breaks venv detection (Python looks for pyvenv.cfg next to
+    # sys.executable; a symlink in /usr/local/bin has no nearby
+    # pyvenv.cfg, so Python falls back to system site-packages and
+    # `import torch` fails). Instead, %environment puts /opt/venv/bin
+    # first in PATH at runtime — `singularity exec ... python` resolves
+    # directly to the venv's python with full venv context.
+
+    # ─── Verify the install (build-time sanity) ──────────────────
+    # Call the venv's python EXPLICITLY here — during %post the
+    # %environment PATH isn't yet active.
+    /opt/venv/bin/python - <<'PYCHECK'
+import torch, numpy, scipy, sklearn, networkx, pandas
+print("torch       =", torch.__version__, "cuda_available?", torch.cuda.is_available())
+print("numpy       =", numpy.__version__)
+print("scipy       =", scipy.__version__)
+print("scikit-learn=", sklearn.__version__)
+print("networkx    =", networkx.__version__)
+print("pandas      =", pandas.__version__)
+PYCHECK
+
+%runscript
+    # Default behaviour when the container is invoked without a sub-command.
+    # `singularity run hymeko_signedkan.sif` prints the env summary.
+    echo ">>> hymeko_signedkan singularity image"
+    echo ">>> Workspace expected at /workspace (bind-mount the repo there)"
+    echo ">>> Example:"
+    echo ">>>   singularity exec --nv --bind \$PWD:/workspace hymeko_signedkan.sif python -m hymeko_neuro.experiments.runs.run_final_cell --dataset bitcoin_alpha --model SGCN --hidden 32 --seed 0 --n-epochs 120"
+    # %environment is active in %runscript (unlike %post / %test), so
+    # bare `python` resolves to /opt/venv/bin/python via PATH.
+    python -c "import torch; print('torch=', torch.__version__, 'cuda=', torch.cuda.is_available())"
+
+%test
+    # Run at build time to confirm the install is sane.
+    # Explicit venv path — %environment isn't active during %test either.
+    /opt/venv/bin/python - <<'PYTEST'
+import torch
+assert torch.__version__.startswith("2.6"), f"torch version drift: {torch.__version__}"
+print("OK: image self-test passed (torch", torch.__version__, ")")
+PYTEST

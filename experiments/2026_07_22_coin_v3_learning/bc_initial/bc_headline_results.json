@@ -1,0 +1,57 @@
+[
+ {
+  "seed": 0,
+  "val_loss": 0.0006424236344173551,
+  "headline_deliver": 1,
+  "headline_fc": 9,
+  "headline_grasp": 9,
+  "delivered_seeds": [
+   1011
+  ],
+  "per_phase_val": {
+   "APPROACH": 0.0003,
+   "CONTACT_ACQUISITION": 0.00142,
+   "BILATERAL_OR_STABLE_CONTACT": 0.00173,
+   "TRANSPORT": 0.00063,
+   "TARGET_ENTRY": 0.00071,
+   "SETTLING": 0.00063,
+   "STRICT_DWELL": 0.00045
+  }
+ },
+ {
+  "seed": 1,
+  "val_loss": 0.000539100612513721,
+  "headline_deliver": 0,
+  "headline_fc": 9,
+  "headline_grasp": 9,
+  "delivered_seeds": [],
+  "per_phase_val": {
+   "APPROACH": 0.00024,
+   "CONTACT_ACQUISITION": 0.00132,
+   "BILATERAL_OR_STABLE_CONTACT": 0.00213,
+   "TRANSPORT": 0.00048,
+   "TARGET_ENTRY": 0.00052,
+   "SETTLING": 0.00035,
+   "STRICT_DWELL": 0.0004
+  }
+ },
+ {
+  "seed": 2,
+  "val_loss": 0.0006054617115296423,
+  "headline_deliver": 1,
+  "headline_fc": 9,
+  "headline_grasp": 9,
+  "delivered_seeds": [
+   1278
+  ],
+  "per_phase_val": {
+   "APPROACH": 0.00022,
+   "CONTACT_ACQUISITION": 0.00113,
+   "BILATERAL_OR_STABLE_CONTACT": 0.00289,
+   "TRANSPORT": 0.00048,
+   "TARGET_ENTRY": 0.00055,
+   "SETTLING": 0.00073,
+   "STRICT_DWELL": 0.00052
+  }
+ }
+]

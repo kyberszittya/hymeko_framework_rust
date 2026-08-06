@@ -1,0 +1,44 @@
+{
+ "bundle": "coin_hymeko_v2_canonical",
+ "robot_spec": {
+  "file": "data/robotics/galambos_planar_v2.hymeko",
+  "sha16": "3c899487eff45cf3"
+ },
+ "emitted_mjcf_sha16": "7d88bd76371dcd30",
+ "physical_model_fp": {
+  "nbody": 10,
+  "ngeom": 10,
+  "geom_size_sha16": "e827e24a85199d71"
+ },
+ "semantic_graph_fp": "sem:469094de1fba54b2ff481706ca2e09ce",
+ "semantic_vertices": [
+  "base_left",
+  "link1_left",
+  "link2_left",
+  "base_right",
+  "link1_right",
+  "link2_right"
+ ],
+ "actor_input_dim": 48,
+ "action_to_actuator_order": [
+  "left",
+  "left",
+  "right",
+  "right"
+ ],
+ "control_contract": {
+  "joint_range": 4.0,
+  "ctrl_range": 4.0,
+  "damping": 1.5,
+  "kp": 40.0,
+  "kv": 4.0
+ },
+ "scene_spec": {
+  "file": "data/robotics/galambos_env.hymeko",
+  "sha16": "8be8246bb2af1a3c"
+ },
+ "reward_spec": {
+  "file": "data/robotics/galambos_task_deliver_v3.hymeko",
+  "sha16": "d42c9cbfbe5e343e"
+ }
+}

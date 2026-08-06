@@ -116,13 +116,16 @@ mod test_generation_engine {
             let engine = QueryEngine::new(&compiled.ir, &store.it);
             let model = extract_kinematic_model(&engine, "moveo");
 
+            // Canonical anthropomorphic arm: world axes Z,Y,Y,Z,Y,Z (shoulder ∥ elbow). The
+            // local AXIS_* tokens are Z,X,X,Z,X,Z — link_1..tool carry j1's 90°-about-Z frame
+            // twist, so local X reads as world Y for j2/j4 and local Z stays world Z for j3.
             let expected_axes: Vec<(&str, [f64; 3])> = vec![
-                ("j0", [0.0, 0.0, 1.0]),    // Z
-                ("j1", [1.0, 0.0, 0.0]),    // X
-                ("j2", [0.0, 0.0, 1.0]),    // Z
-                ("j3", [1.0, 0.0, 0.0]),    // X
-                ("j4", [0.0, 1.0, 0.0]),    // Y
-                ("jtool", [0.0, 0.0, 1.0]), // Z
+                ("j0", [0.0, 0.0, 1.0]),    // Z  (waist)
+                ("j1", [1.0, 0.0, 0.0]),    // X  -> world Y (shoulder pitch)
+                ("j2", [1.0, 0.0, 0.0]),    // X  -> world Y (elbow pitch, ∥ shoulder)
+                ("j3", [0.0, 0.0, 1.0]),    // Z  -> world Z (forearm roll)
+                ("j4", [1.0, 0.0, 0.0]),    // X  -> world Y (wrist pitch)
+                ("jtool", [0.0, 0.0, 1.0]), // Z  (tool roll)
             ];
 
             for (jname, expected_axis) in &expected_axes {
@@ -330,12 +333,13 @@ mod test_generation_engine {
                 axis_count
             );
 
-            // Z axis for j0
+            // Z axis for j0/j3/jtool
             assert!(urdf.contains("<axis xyz=\"0 0 1\"/>"));
-            // X axis for j1
+            // X axis for j1/j2/j4
             assert!(urdf.contains("<axis xyz=\"1 0 0\"/>"));
-            // Y axis for j4
-            assert!(urdf.contains("<axis xyz=\"0 1 0\"/>"));
+            // the canonical anthropomorphic arm (shoulder ∥ elbow) uses only X and Z locally —
+            // no Y axis token (world Y is produced by j1's 90° twist acting on local X).
+            assert!(!urdf.contains("<axis xyz=\"0 1 0\"/>"));
         }
 
         #[test]

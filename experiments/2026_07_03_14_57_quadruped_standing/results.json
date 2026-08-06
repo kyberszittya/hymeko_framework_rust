@@ -1,0 +1,42 @@
+{
+  "config": {
+    "base": "free",
+    "task": "stand",
+    "max_steps": 250,
+    "stand_hold": 200,
+    "algo": "td3 (pure, sa_hsikan, LayerNorm, vec-8)",
+    "steps": 150000,
+    "metric": "DwellMetric('standing', 200) \u2014 upright-at-height held >=200 consecutive steps"
+  },
+  "rows": [
+    {
+      "seed": 0,
+      "stand_rate_untrained": 0.0,
+      "survival_untrained": 230.9,
+      "stand_rate": 0.0,
+      "survival_frames": 216.5,
+      "gif_seed": 7000,
+      "wall_s": 984
+    },
+    {
+      "seed": 1,
+      "stand_rate_untrained": 0.0,
+      "survival_untrained": 248.5,
+      "stand_rate": 0.02,
+      "survival_frames": 244.6,
+      "gif_seed": 7000,
+      "wall_s": 955
+    },
+    {
+      "seed": 2,
+      "stand_rate_untrained": 0.0,
+      "survival_untrained": 203.0,
+      "stand_rate": 0.0,
+      "survival_frames": 244.0,
+      "gif_seed": 7000,
+      "wall_s": 932
+    }
+  ],
+  "stand_rate_median": 0.0,
+  "survival_frames_median": 244.0
+}

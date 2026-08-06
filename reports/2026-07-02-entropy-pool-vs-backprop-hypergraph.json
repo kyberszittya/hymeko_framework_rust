@@ -1,0 +1,56 @@
+{
+  "engine": "hymeko_nagare",
+  "comparison": "entropy_pool_local_vs_backprop_like_holonomy",
+  "n_train": 192,
+  "n_test": 96,
+  "n_points": 32,
+  "hidden": 24,
+  "epochs": 50,
+  "rows": [
+    {
+      "task": "moons",
+      "local_acc": 1.000000,
+      "local_loss": 0.001513,
+      "local_entropy": 0.015819,
+      "local_clifford_error": 0.000007,
+      "local_median_us_per_sample": 5.794792,
+      "local_mean_us_per_sample": 5.532118,
+      "local_max_us_per_sample": 8.888542,
+      "backprop_acc": 1.000000,
+      "backprop_loss": 0.000129,
+      "backprop_median_us_per_sample": 143.314583,
+      "local_params": 60,
+      "backprop_params": 2836
+    },
+    {
+      "task": "spiral",
+      "local_acc": 1.000000,
+      "local_loss": 0.004486,
+      "local_entropy": 0.041033,
+      "local_clifford_error": 0.000044,
+      "local_median_us_per_sample": 5.832292,
+      "local_mean_us_per_sample": 5.710903,
+      "local_max_us_per_sample": 6.600000,
+      "backprop_acc": 1.000000,
+      "backprop_loss": 0.000001,
+      "backprop_median_us_per_sample": 138.425000,
+      "local_params": 60,
+      "backprop_params": 2836
+    },
+    {
+      "task": "xor",
+      "local_acc": 1.000000,
+      "local_loss": 0.006714,
+      "local_entropy": 0.056046,
+      "local_clifford_error": 0.000137,
+      "local_median_us_per_sample": 6.023958,
+      "local_mean_us_per_sample": 5.949549,
+      "local_max_us_per_sample": 7.046875,
+      "backprop_acc": 1.000000,
+      "backprop_loss": 0.000094,
+      "backprop_median_us_per_sample": 136.826042,
+      "local_params": 60,
+      "backprop_params": 2836
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "config": "gradclipoff",
+  "n_seeds_stable_contact": 1,
+  "PASS_3of4": false,
+  "per_seed": [
+    {
+      "seed": 0,
+      "contact_curve": [
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "min_d_curve": [
+        0.1038,
+        0.0702,
+        0.0634,
+        0.0707,
+        0.077
+      ],
+      "stable_contact_final3": 0.667,
+      "Q_minus_MC_bias_final": 2.55
+    },
+    {
+      "seed": 1,
+      "contact_curve": [
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "min_d_curve": [
+        0.1188,
+        0.0737,
+        0.075,
+        0.0824,
+        0.0825
+      ],
+      "stable_contact_final3": 0.0,
+      "Q_minus_MC_bias_final": 6.03
+    },
+    {
+      "seed": 2,
+      "contact_curve": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "min_d_curve": [
+        0.1759,
+        0.0881,
+        0.1101,
+        0.1005,
+        0.0913
+      ],
+      "stable_contact_final3": 0.0,
+      "Q_minus_MC_bias_final": 5.82
+    },
+    {
+      "seed": 3,
+      "contact_curve": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "min_d_curve": [
+        0.1126,
+        0.0934,
+        0.0845,
+        0.0921,
+        0.0895
+      ],
+      "stable_contact_final3": 0.0,
+      "Q_minus_MC_bias_final": 6.22
+    }
+  ]
+}

@@ -130,7 +130,7 @@ The `>10%` improvement attribution rule (§3) is satisfied: profile shows the wo
 | Rust toolchain | rustc 1.92.0 (ded5c06cf 2025-12-08) |
 | Profiler | `cargo flamegraph 0.6.12` (perf backend; `kernel.perf_event_paranoid=1` for the session) |
 | Random seed | LCG seeds 11/12/13/14/21/22/23 in `tests/abb_global_topk.rs`; production scoring is deterministic over the cycle structure |
-| Dataset | `signedkan_wip/data/epinions.txt` — sha256 `8120d06a0bb4e65d4b821eba1072647ef3429e4e0a3c02e72bf0c534664f6fee`; 131 828 vertices, 840 799 edges, 14.7% negative |
+| Dataset | `hymeko_neuro/assets/data/epinions.txt` — sha256 `8120d06a0bb4e65d4b821eba1072647ef3429e4e0a3c02e72bf0c534664f6fee`; 131 828 vertices, 840 799 edges, 14.7% negative |
 | Workload config | $k_{\text{len}} = 4$, $K_{\text{keep}} = 10\,000$, `CartwrightHararyPruner(OnlyBalanced)`, `FractionNegativeScorer` |
 | Benchmark protocol | 5 iterations after warm-up (build); 1 process per iteration so no cache-warmth bias; reported median + IQR + worst per CLAUDE.md §3 |
 | Suppressions added | None |

@@ -1,0 +1,15 @@
+{"model": "gomb_soma_cheby", "seed": 0, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 2170, "test_acc": 0.474, "wall_s": 288.9753066999838}
+{"model": "gomb_soma_cheby", "seed": 1, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 2170, "test_acc": 0.576, "wall_s": 283.4066325999738}
+{"model": "gomb_soma_cheby", "seed": 2, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 2170, "test_acc": 0.583, "wall_s": 280.33334469998954}
+{"model": "gomb_soma_cheby", "seed": 3, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 2170, "test_acc": 0.592, "wall_s": 277.0147763999994}
+{"model": "gomb_soma_cheby", "seed": 4, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 2170, "test_acc": 0.54, "wall_s": 273.02592660000664}
+{"model": "gomb_soma_flat", "seed": 0, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 9690, "test_acc": 0.955, "wall_s": 131.89429910000763}
+{"model": "gomb_soma_flat", "seed": 1, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 9690, "test_acc": 0.939, "wall_s": 133.90451510000275}
+{"model": "gomb_soma_flat", "seed": 2, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 9690, "test_acc": 0.952, "wall_s": 131.0441390000051}
+{"model": "gomb_soma_flat", "seed": 3, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 9690, "test_acc": 0.937, "wall_s": 135.4319697000028}
+{"model": "gomb_soma_flat", "seed": 4, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 9690, "test_acc": 0.942, "wall_s": 135.19452200000524}
+{"model": "gomb_soma_cheby_flat", "seed": 0, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 9850, "test_acc": 0.95, "wall_s": 276.4268366000033}
+{"model": "gomb_soma_cheby_flat", "seed": 1, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 9850, "test_acc": 0.95, "wall_s": 278.93159239998204}
+{"model": "gomb_soma_cheby_flat", "seed": 2, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 9850, "test_acc": 0.933, "wall_s": 281.62525830001687}
+{"model": "gomb_soma_cheby_flat", "seed": 3, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 9850, "test_acc": 0.95, "wall_s": 348.44659589999355}
+{"model": "gomb_soma_cheby_flat", "seed": 4, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 9850, "test_acc": 0.955, "wall_s": 412.02812610002}

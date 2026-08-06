@@ -1,10 +1,15 @@
 #[cfg(test)]
-pub mod test_helpers{
+pub mod test_helpers {
     use parser::ast::{NodeDecl, Value};
 
     pub fn assert_tags<'a>(n: &NodeDecl<'a, &'a str>, expected: &[&str]) {
         let got = &n.anno.tags;
-        assert_eq!(got.len(), expected.len(), "Tag count mismatch for {}", n.inner.name);
+        assert_eq!(
+            got.len(),
+            expected.len(),
+            "Tag count mismatch for {}",
+            n.inner.name
+        );
         for (g, e) in got.iter().zip(expected.iter()) {
             // Directly compare the string slices
             assert_eq!(*g, *e, "Tag mismatch for {}", n.inner.name);
@@ -20,14 +25,25 @@ pub mod test_helpers{
                 x,
                 expected
             ),
-            other => panic!("Expected numeric value for {}, got {:?}", n.inner.name, other),
+            other => panic!(
+                "Expected numeric value for {}, got {:?}",
+                n.inner.name, other
+            ),
         }
     }
 
     pub fn assert_str_value<'a>(n: &NodeDecl<'a, &'a str>, expected: &str) {
         match &n.anno.value {
-            Some(Value::Str(s)) => assert_eq!(s.as_ref(), expected, "String value mismatch for {}", n.inner.name),
-            other => panic!("Expected string value for {}, got {:?}", n.inner.name, other),
+            Some(Value::Str(s)) => assert_eq!(
+                s.as_ref(),
+                expected,
+                "String value mismatch for {}",
+                n.inner.name
+            ),
+            other => panic!(
+                "Expected string value for {}, got {:?}",
+                n.inner.name, other
+            ),
         }
     }
 
@@ -43,7 +59,12 @@ pub mod test_helpers{
     pub fn assert_list_nums<'a>(n: &NodeDecl<'a, &'a str>, expected: &[f64]) {
         match &n.anno.value {
             Some(Value::List(xs)) => {
-                assert_eq!(xs.len(), expected.len(), "List length mismatch for {}", n.inner.name);
+                assert_eq!(
+                    xs.len(),
+                    expected.len(),
+                    "List length mismatch for {}",
+                    n.inner.name
+                );
                 for (i, (x, e)) in xs.iter().zip(expected.iter()).enumerate() {
                     match x {
                         Value::Num(v) => assert!(

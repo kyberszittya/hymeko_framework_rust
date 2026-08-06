@@ -29,9 +29,9 @@ existing Phase 1–3-G behaviour.
 
 | File | LOC | Notes |
 |---|---|---|
-| [signedkan_wip/src/hymeko_gomb/soma/hg_conv_bochner.py](../signedkan_wip/src/hymeko_gomb/soma/hg_conv_bochner.py) | 168 | `BochnerHypergraphConv` wrapper |
-| [signedkan_wip/src/hymeko_gomb/soma/__init__.py](../signedkan_wip/src/hymeko_gomb/soma/__init__.py) | +4 / -0 | re-export |
-| [signedkan_wip/tests/test_gomb_soma_bochner_conv.py](../signedkan_wip/tests/test_gomb_soma_bochner_conv.py) | 263 | 11 tests including the regression contract |
+| [hymeko_neuro/models/hymeko_gomb/soma/hg_conv_bochner.py](../hymeko_neuro/models/hymeko_gomb/soma/hg_conv_bochner.py) | 168 | `BochnerHypergraphConv` wrapper |
+| [hymeko_neuro/models/hymeko_gomb/soma/__init__.py](../hymeko_neuro/models/hymeko_gomb/soma/__init__.py) | +4 / -0 | re-export |
+| [hymeko_neuro/tests/test_gomb_soma_bochner_conv.py](../hymeko_neuro/tests/test_gomb_soma_bochner_conv.py) | 263 | 11 tests including the regression contract |
 
 ## 3. CORE.YAML items touched
 
@@ -80,7 +80,7 @@ At $d_\text{in} = d_\text{out} = 8$: overhead = 2 + 2·(64 + 8) = 146 parameters
 ## 5. Test results
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_bochner_conv.py -v
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_bochner_conv.py -v
 =========== 11 passed in 1.93s ===========
 ```
 
@@ -138,7 +138,7 @@ The α=β=0 regression test passes at `torch.equal` (bit-level exact), which is 
 ## 8. Static analysis
 
 ```
-$ ruff check signedkan_wip/src/hymeko_gomb/soma/hg_conv_bochner.py
+$ ruff check hymeko_neuro/models/hymeko_gomb/soma/hg_conv_bochner.py
    (clean)
 ```
 
@@ -203,18 +203,18 @@ Walk / Polygon / Triangle layers consume:
 - Walk / polygon / triangle enumeration over the anchors (capped).
 
 Adds:
-* `signedkan_wip/src/hymeko_gomb/soma/vision/stim_graph.py`
-* `signedkan_wip/tests/test_gomb_soma_vision_stim_graph.py`
+* `hymeko_neuro/models/hymeko_gomb/soma/vision/stim_graph.py`
+* `hymeko_neuro/tests/test_gomb_soma_vision_stim_graph.py`
 
 No phase 5 work in this commit, per the one-phase-per-session rule.
 
 ## 13. Reproducibility
 
 ```python
-from signedkan_wip.src.hymeko_gomb.soma import (
+from hymeko_neuro.models.hymeko_gomb.soma import (
     BochnerHypergraphConv, WalkConvLayer, HypergraphConvConfig,
 )
-from signedkan_wip.src.hymeko_gomb.soma.vision import HodgeLaplacian
+from hymeko_neuro.models.hymeko_gomb.soma.vision import HodgeLaplacian
 
 cfg = HypergraphConvConfig(in_features=16, out_features=16, k_arity=3)
 inner = WalkConvLayer(cfg)

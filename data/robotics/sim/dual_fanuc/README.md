@@ -165,7 +165,7 @@ a thin Python script (no `hymeko emit` core changes; runs entirely
 through the PyO3 parser):
 
 ```bash
-python -m signedkan_wip.scripts.emit_handover_bt \
+python -m hymeko_neuro.assets.scripts.emit_handover_bt \
     data/robotics/sim/dual_fanuc/handover_task.hymeko \
     --out data/robotics/sim/dual_fanuc/handover_task.bt.xml
 ```
@@ -191,7 +191,7 @@ order:
 emit `<Action ID="TODO" raw_kind="..."/>` placeholders + a
 top-of-tree comment listing them. See the script's module
 docstring for the full coverage matrix and the
-`signedkan_wip/tests/test_emit_handover_bt.py` 10-test pin.
+`hymeko_neuro/tests/test_emit_handover_bt.py` 10-test pin.
 
 The next-tier evolution is to fold this logic into
 `transforms/bt/` as a `queries.hymeko` + `template.bt.xml` pair

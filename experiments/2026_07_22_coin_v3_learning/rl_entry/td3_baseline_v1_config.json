@@ -1,0 +1,765 @@
+{
+ "campaign": "PHASE_SWITCHED_TD3_BASELINE_V1",
+ "date": "2026-07-23",
+ "arm": "A (pi_late = exact pi_0 copy)",
+ "pi0_sha": "1902454c",
+ "amendments": {
+  "target_smoothing": {
+   "std": 0.1,
+   "clip": 0.25,
+   "units": "full-action",
+   "note": "local critic regularization, NOT broad exploration"
+  },
+  "historical_scaled_default_control_only": {
+   "smoothing_std": 0.8,
+   "smoothing_clip": 2.0,
+   "status": "control-only; do not run unless a preregistered ablation requires it"
+  },
+  "merged_family": "settling + dwell -> settling_dwell",
+  "deferred": "contact_loss_reacquisition -> separate recovery curriculum after a basic late controller improves"
+ },
+ "exploration_schedule": {
+  "type": "temporally_coherent",
+  "std_init": 0.15,
+  "std_max": 0.3,
+  "hold_steps": [
+   2,
+   4
+  ],
+  "note": "SEPARATE from target smoothing; frozen before training"
+ },
+ "td3_contract": {
+  "gamma": 0.99,
+  "tau": 0.005,
+  "batch_size": 256,
+  "actor_lr": 0.0003,
+  "critic_lr": 0.0003,
+  "n_step_set": [
+   4,
+   8
+  ],
+  "policy_delay": 2,
+  "smoothing_std_full_action": 0.1,
+  "smoothing_clip_full_action": 0.25,
+  "exploration_std_init": 0.15,
+  "exploration_std_max": 0.3,
+  "coherent_noise_hold": [
+   2,
+   4
+  ],
+  "critic_warmup_steps": 2000,
+  "checkpoints": [
+   0,
+   1000,
+   3000,
+   6000,
+   10000,
+   20000,
+   40000
+  ],
+  "grad_clip": 1.0,
+  "historical_scaled_default_smoothing": {
+   "smoothing_std": 0.8,
+   "smoothing_clip": 2.0,
+   "status": "control-only; do not run unless a preregistered ablation requires it"
+  },
+  "note": "PRIMARY target smoothing 0.10/0.25 (full-action, local regularization \u2014 NOT the scaled 0.8/2.0); exploration is SEPARATE (coherent noise, std 0.15\u21920.30, held 2\u20134 steps); terminated/truncated masked separately"
+ },
+ "stage1": {
+  "pi_late_init": "exact pi_0 copy",
+  "horizon": 30,
+  "n_step": 4,
+  "families": [
+   "target_entry",
+   "braking",
+   "settling_dwell"
+  ],
+  "critic_warmup_steps": 2000,
+  "policy_delay": 2,
+  "phase_balanced_replay": true,
+  "total_updates": 8000,
+  "collect_every": 500,
+  "episodes_per_collect": 24,
+  "checkpoints": [
+   0,
+   2000,
+   4000,
+   6000,
+   8000
+  ],
+  "dev_eval_at_checkpoints": true
+ },
+ "stage2": {
+  "horizon": 60,
+  "families": [
+   "target_entry",
+   "braking",
+   "settling_dwell",
+   "transport",
+   "overshoot"
+  ],
+  "note": "entered ONLY after Stage 1 passes; same controller/reward/gate/action contracts"
+ },
+ "stage1_stop_conditions": [
+  "two CONSECUTIVE dev checkpoints improve strict-K6 success OR the preregistered max-dwell metric vs frozen pi_0 continuation",
+  "no material increase in target_exit (<= +0.05 vs pi_0)",
+  "no material degradation in contact_retention (>= -0.05 vs pi_0)",
+  "stable Q1/Q2 calibration (finite, |Q1-Q2| bounded, no divergence)"
+ ],
+ "eval_metrics": [
+  "strict_K6_success",
+  "max_dwell",
+  "target_entry",
+  "target_exit",
+  "contact_retention",
+  "return_vs_frozen_pi0_continuation",
+  "Q1_Q2_calibration",
+  "actor_action_drift_from_update0"
+ ],
+ "banks": {
+  "late_train": {
+   "seed_range": [
+    6000,
+    6100
+   ],
+   "n": 42,
+   "coverage": {
+    "transport": 8,
+    "target_entry": 6,
+    "overshoot": 8,
+    "braking": 8,
+    "settling_dwell": 4,
+    "contact_retention": 8
+   },
+   "families": [
+    "transport",
+    "target_entry",
+    "overshoot",
+    "braking",
+    "settling_dwell",
+    "contact_retention"
+   ],
+   "sha16": "422eb63f91eaa30a",
+   "rows": [
+    [
+     6000,
+     53,
+     "contact_retention",
+     "c6e542600dee",
+     "1482c5cf4aa2",
+     "f42a64912330"
+    ],
+    [
+     6000,
+     61,
+     "transport",
+     "02ea7fa4a73d",
+     "c144155e4903",
+     "36b3929fcd23"
+    ],
+    [
+     6001,
+     69,
+     "contact_retention",
+     "0512dfaa0f11",
+     "472d887271ef",
+     "6c36009e9cac"
+    ],
+    [
+     6001,
+     74,
+     "transport",
+     "af43c24bdd63",
+     "8ddb6ac03c9e",
+     "0a4f40b7976e"
+    ],
+    [
+     6002,
+     44,
+     "contact_retention",
+     "286164f80191",
+     "f2bcedbf01cf",
+     "c4d68f8aff09"
+    ],
+    [
+     6002,
+     52,
+     "braking",
+     "66570a7f8467",
+     "2b62be8dc3ab",
+     "011551941e2c"
+    ],
+    [
+     6002,
+     70,
+     "transport",
+     "f1105412cd1a",
+     "4a3f2d430048",
+     "8e8a219ad6c5"
+    ],
+    [
+     6003,
+     38,
+     "contact_retention",
+     "80dd60d3fdbc",
+     "0cdb2ca99cb5",
+     "a4fef37b1347"
+    ],
+    [
+     6003,
+     59,
+     "transport",
+     "46da7c7b8b29",
+     "bc08b0b09edf",
+     "d88f8c9433a6"
+    ],
+    [
+     6004,
+     35,
+     "contact_retention",
+     "12ca0858ed4d",
+     "239f4a4b61c4",
+     "97fcae987ed1"
+    ],
+    [
+     6004,
+     44,
+     "transport",
+     "b058d0af4436",
+     "a34ef1b2501e",
+     "763414f1777f"
+    ],
+    [
+     6005,
+     37,
+     "contact_retention",
+     "5a826b26a64f",
+     "b5b5805bb55c",
+     "03fdac3c3727"
+    ],
+    [
+     6005,
+     91,
+     "overshoot",
+     "b78ce042e15b",
+     "a0d63f86e3fa",
+     "9e93e6c80845"
+    ],
+    [
+     6006,
+     39,
+     "contact_retention",
+     "8b99fe8a4937",
+     "4e10d25fc502",
+     "dacda7befdb0"
+    ],
+    [
+     6006,
+     46,
+     "transport",
+     "9158496f459e",
+     "d16dcfaa1232",
+     "c5e907e0a23d"
+    ],
+    [
+     6008,
+     34,
+     "contact_retention",
+     "11d05302332a",
+     "7f89438b829e",
+     "831329c276f2"
+    ],
+    [
+     6008,
+     44,
+     "transport",
+     "cbb1c59eeb58",
+     "a9dd0c90d494",
+     "ce9c3bb064ca"
+    ],
+    [
+     6009,
+     14,
+     "transport",
+     "1634b52a33b6",
+     "3b843715d553",
+     "9be10f2b1ddc"
+    ],
+    [
+     6013,
+     104,
+     "braking",
+     "fd940539b691",
+     "e23a48bbcfe8",
+     "d80e6976ca1c"
+    ],
+    [
+     6013,
+     228,
+     "overshoot",
+     "2e3c619f6696",
+     "d4199658a944",
+     "0bd28e8637eb"
+    ],
+    [
+     6018,
+     95,
+     "overshoot",
+     "57301f1eeb54",
+     "68f8575bb098",
+     "eca580134f15"
+    ],
+    [
+     6019,
+     83,
+     "braking",
+     "df56e74f6ba9",
+     "f7b9fe82b5a9",
+     "815a638b934e"
+    ],
+    [
+     6021,
+     101,
+     "braking",
+     "e5f1ee0e3ab8",
+     "4cbb9e247a9e",
+     "d3b40c402683"
+    ],
+    [
+     6022,
+     50,
+     "braking",
+     "51f679798e74",
+     "00b9f4a087bd",
+     "8a6b6f890453"
+    ],
+    [
+     6022,
+     74,
+     "target_entry",
+     "2313f4a528eb",
+     "b964e4389d06",
+     "3f93930b36e0"
+    ],
+    [
+     6022,
+     217,
+     "overshoot",
+     "790b3aeaec0c",
+     "f78bae57277f",
+     "5074ebbdeb20"
+    ],
+    [
+     6023,
+     38,
+     "braking",
+     "9ab546712eda",
+     "48e8ab577ce2",
+     "a9c6e46e5a8f"
+    ],
+    [
+     6026,
+     57,
+     "braking",
+     "227fb517fe77",
+     "725bd1c2fda4",
+     "300d7fd57c81"
+    ],
+    [
+     6029,
+     164,
+     "settling_dwell",
+     "f0aab6dbc67b",
+     "781b00a2a267",
+     "00e7b7c27449"
+    ],
+    [
+     6030,
+     64,
+     "settling_dwell",
+     "b9a5a8eaac0f",
+     "82faf14dffd1",
+     "c97f27e1269b"
+    ],
+    [
+     6032,
+     246,
+     "target_entry",
+     "4b09d5cddf3a",
+     "6f6eafd6970b",
+     "72fb894e5dae"
+    ],
+    [
+     6035,
+     121,
+     "braking",
+     "9972ff31f6a7",
+     "256f7d43ef7c",
+     "c68fa6bc8f92"
+    ],
+    [
+     6040,
+     200,
+     "overshoot",
+     "db1b37d98523",
+     "9d18c7ebed27",
+     "59425d57f036"
+    ],
+    [
+     6059,
+     276,
+     "target_entry",
+     "d4cccd2c56bb",
+     "50ca3a6328e6",
+     "faadb677b928"
+    ],
+    [
+     6063,
+     85,
+     "overshoot",
+     "25a2a076131c",
+     "996e15b881a5",
+     "5c35f00d4567"
+    ],
+    [
+     6065,
+     90,
+     "target_entry",
+     "39b56726e179",
+     "9add739759c2",
+     "d7c64922b0a1"
+    ],
+    [
+     6065,
+     158,
+     "settling_dwell",
+     "da2735deb32f",
+     "83a48d914828",
+     "1be69803e207"
+    ],
+    [
+     6069,
+     71,
+     "overshoot",
+     "3559ff55b2b6",
+     "856774395f13",
+     "c92feaaae08b"
+    ],
+    [
+     6072,
+     105,
+     "overshoot",
+     "f09a2a89f519",
+     "0cd63d279a9e",
+     "a73b475a8e1e"
+    ],
+    [
+     6074,
+     109,
+     "target_entry",
+     "ef075a070269",
+     "76161e094258",
+     "0bbb68bf2406"
+    ],
+    [
+     6074,
+     153,
+     "settling_dwell",
+     "d562e4b546be",
+     "dd7911618ae0",
+     "589d4c9c6a51"
+    ],
+    [
+     6088,
+     196,
+     "target_entry",
+     "cac9021de559",
+     "af3245440a86",
+     "0279376d2e74"
+    ]
+   ]
+  },
+  "late_dev": {
+   "seed_range": [
+    6100,
+    6160
+   ],
+   "n": 30,
+   "coverage": {
+    "transport": 6,
+    "target_entry": 1,
+    "overshoot": 6,
+    "braking": 6,
+    "settling_dwell": 5,
+    "contact_retention": 6
+   },
+   "families": [
+    "transport",
+    "target_entry",
+    "overshoot",
+    "braking",
+    "settling_dwell",
+    "contact_retention"
+   ],
+   "sha16": "da7a29fbbc697282",
+   "rows": [
+    [
+     6100,
+     50,
+     "transport",
+     "349fa9e57abd",
+     "ef2f48c04e78",
+     "734196f33dc0"
+    ],
+    [
+     6100,
+     52,
+     "braking",
+     "b1d8a43ad42a",
+     "2bc5f37e0130",
+     "4a6b1327a2cf"
+    ],
+    [
+     6100,
+     56,
+     "contact_retention",
+     "d9ddf953b246",
+     "a7c6581723a3",
+     "654ce3fa6fe2"
+    ],
+    [
+     6101,
+     37,
+     "contact_retention",
+     "e371c39d3bac",
+     "6745b5cbe616",
+     "4856f19aa948"
+    ],
+    [
+     6101,
+     42,
+     "braking",
+     "6fba50d7948f",
+     "cade5f1d12f4",
+     "dc8860117678"
+    ],
+    [
+     6101,
+     73,
+     "transport",
+     "fd9cd622ba1e",
+     "136f9cd49709",
+     "688b87305270"
+    ],
+    [
+     6101,
+     75,
+     "settling_dwell",
+     "e2930dac955f",
+     "7757b197840b",
+     "f6066706c82c"
+    ],
+    [
+     6102,
+     35,
+     "contact_retention",
+     "a0e8caaf745c",
+     "9c73107dbff1",
+     "4f201e7197cb"
+    ],
+    [
+     6102,
+     36,
+     "transport",
+     "f6e37cc39cea",
+     "8d29e879c9cd",
+     "527eec10eefa"
+    ],
+    [
+     6103,
+     44,
+     "braking",
+     "a32c8f96ad9d",
+     "e038de23a1eb",
+     "acb5ad93d9f9"
+    ],
+    [
+     6103,
+     45,
+     "contact_retention",
+     "1b3406dc0249",
+     "f5c029df237a",
+     "1cba476cbe65"
+    ],
+    [
+     6103,
+     48,
+     "transport",
+     "09ecb8d18d40",
+     "6336143466df",
+     "5b8450d35dac"
+    ],
+    [
+     6103,
+     84,
+     "overshoot",
+     "bee4b8178758",
+     "7202ebb9a7c8",
+     "af661351281d"
+    ],
+    [
+     6104,
+     45,
+     "contact_retention",
+     "54b12601c463",
+     "3092cd7fc8f3",
+     "efbe8d9b3d95"
+    ],
+    [
+     6104,
+     52,
+     "transport",
+     "bc7b4a00c8dc",
+     "c7b5bb86eb70",
+     "60b285e88d4f"
+    ],
+    [
+     6105,
+     39,
+     "transport",
+     "5b2ddcc1863a",
+     "05ada3a05b97",
+     "c494cbe47d11"
+    ],
+    [
+     6105,
+     46,
+     "contact_retention",
+     "6ccbf796aab1",
+     "3dcc0b52e5e9",
+     "b51b373581b5"
+    ],
+    [
+     6107,
+     240,
+     "settling_dwell",
+     "9adff708ced2",
+     "ef8a9697aae6",
+     "4ac1badab2a4"
+    ],
+    [
+     6113,
+     308,
+     "overshoot",
+     "fc137dd74c4d",
+     "5072d860f0b5",
+     "fcd11dd8505d"
+    ],
+    [
+     6114,
+     87,
+     "braking",
+     "c77723b0ff32",
+     "94ad3f945796",
+     "a2c209d9d93e"
+    ],
+    [
+     6116,
+     195,
+     "braking",
+     "e65d2169ca86",
+     "f239f093cf64",
+     "81fbbaee3aa8"
+    ],
+    [
+     6119,
+     96,
+     "overshoot",
+     "602ec7252478",
+     "96e5a2aa1bf7",
+     "4e253167f82f"
+    ],
+    [
+     6123,
+     159,
+     "overshoot",
+     "8502186cb239",
+     "8f99fc786392",
+     "b91d96afb681"
+    ],
+    [
+     6125,
+     61,
+     "overshoot",
+     "2783a744272a",
+     "13d135bb45c2",
+     "46ca1f7b8297"
+    ],
+    [
+     6127,
+     184,
+     "braking",
+     "54843d400ec4",
+     "6fc1558ef427",
+     "bde82c48c65a"
+    ],
+    [
+     6136,
+     204,
+     "settling_dwell",
+     "870274b9349d",
+     "b582a44f709f",
+     "d2812cf5aefa"
+    ],
+    [
+     6138,
+     116,
+     "overshoot",
+     "76b8efdd2f7b",
+     "cd0dce6d76b0",
+     "686784abde8b"
+    ],
+    [
+     6142,
+     17,
+     "target_entry",
+     "5a3202536f43",
+     "60ac1947b519",
+     "6caf772fd033"
+    ],
+    [
+     6142,
+     76,
+     "settling_dwell",
+     "e5f81fa79046",
+     "02e1ed513807",
+     "55fefbc687d8"
+    ],
+    [
+     6148,
+     52,
+     "settling_dwell",
+     "be785bf322bd",
+     "e82e7dcb8914",
+     "b3bb03a4e643"
+    ]
+   ]
+  }
+ },
+ "rng_seeds": {
+  "torch": 0,
+  "numpy_collect": 0,
+  "numpy_replay": 1
+ },
+ "reward": "data/robotics/galambos_task_deliver_v3.hymeko (UNCHANGED)",
+ "gate": "STABLE_OBJECT_ENGAGEMENT_V1 (7633dd3c, UNCHANGED)",
+ "no": [
+  "neutral-reset composed eval before a late-start stage passes",
+  "Arm B planner warm-start",
+  "SAC",
+  "open final-test bank (8000-8049)",
+  "modify reward/gate/frozen pi_0",
+  "residual-critic route"
+ ],
+ "config_sha": "d4cf53aeb735294f"
+}

@@ -1,0 +1,17 @@
+// Editor profile root — SysML requirements trace. The vocabulary is imported
+// from meta_sysml_trace.hymeko (kept in the shared "space"), not inlined.
+sysml_cell_description {
+    @"meta_sysml_trace.hymeko";
+    using sysml_trace as st;
+}
+
+sysml_cell: st.elements {
+    R1_safe_stop:    st.elements.requirement { text "Cell halts within 200 ms on E-stop."; }
+    R2_pos_accuracy: st.elements.requirement { text "Positioning error <= 0.5 mm."; }
+
+    SafetyController: st.elements.block {}
+    MotionPlanner:    st.elements.block {}
+
+    @sat_safe: st.satisfies { (+ SafetyController, - R1_safe_stop); }
+    @sat_pos:  st.satisfies { (+ MotionPlanner, - R2_pos_accuracy); }
+}

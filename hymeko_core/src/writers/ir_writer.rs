@@ -1,5 +1,5 @@
+use crate::ir::ir::{DeclKind, Ir};
 use std::io::{self, Write};
-use crate::ir::ir::{Ir, DeclKind};
 
 use crate::common::ids::DeclId;
 use crate::resolution::interner::Interner;

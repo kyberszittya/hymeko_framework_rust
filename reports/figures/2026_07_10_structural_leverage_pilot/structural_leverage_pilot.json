@@ -1,0 +1,163 @@
+{
+  "config": {
+    "seeds": 3,
+    "hsikan_hidden": 32,
+    "n_layers": 2,
+    "n_train": 256,
+    "n_test": 1024,
+    "epochs": 300,
+    "scramble_seed": 0,
+    "swaps_per_edge": 20
+  },
+  "hsikan_hidden": 32,
+  "mlp_hidden": 56,
+  "hk_params": 3713,
+  "mlp_params": 3697,
+  "scramble_stats": {
+    "n_vertices": 7,
+    "n_pos_edges": 5,
+    "n_neg_edges": 3,
+    "signed_degree_preserved": true,
+    "n_edges_changed": 3,
+    "frac_incidence_changed": 0.375,
+    "accepted_swaps": 3
+  },
+  "per_target": {
+    "structural": {
+      "mlp_mse": 0.40676,
+      "hsikan_original_mse": 0.28735,
+      "hsikan_scrambled_mse": 0.8474,
+      "gap_original": 0.1194,
+      "gap_scrambled": -0.44064,
+      "ratio_mlp_over_hsikan_original": 1.416,
+      "ratio_mlp_over_hsikan_scrambled": 0.48,
+      "collapse_abs": 0.56005,
+      "collapse_frac": 4.69,
+      "structure_benefit": 2.949
+    },
+    "bag": {
+      "mlp_mse": 0.07528,
+      "hsikan_original_mse": 0.00418,
+      "hsikan_scrambled_mse": 0.00447,
+      "gap_original": 0.0711,
+      "gap_scrambled": 0.07081,
+      "ratio_mlp_over_hsikan_original": 17.996,
+      "ratio_mlp_over_hsikan_scrambled": 16.851,
+      "collapse_abs": 0.00028,
+      "collapse_frac": 0.004,
+      "structure_benefit": 1.068
+    }
+  },
+  "cells": {
+    "structural/mlp": {
+      "mean": 0.40676,
+      "std": 0.07589,
+      "per_seed": [
+        0.38645,
+        0.50817,
+        0.32565
+      ],
+      "n_params": 3697
+    },
+    "structural/hsikan_original": {
+      "mean": 0.28735,
+      "std": 0.07003,
+      "per_seed": [
+        0.23859,
+        0.23708,
+        0.38639
+      ],
+      "n_params": 3713
+    },
+    "structural/hsikan_scrambled": {
+      "mean": 0.8474,
+      "std": 0.0631,
+      "per_seed": [
+        0.7755,
+        0.83757,
+        0.92913
+      ],
+      "n_params": 3713
+    },
+    "bag/mlp": {
+      "mean": 0.07528,
+      "std": 0.00496,
+      "per_seed": [
+        0.07045,
+        0.07328,
+        0.08211
+      ],
+      "n_params": 3697
+    },
+    "bag/hsikan_original": {
+      "mean": 0.00418,
+      "std": 0.0005,
+      "per_seed": [
+        0.00463,
+        0.00349,
+        0.00443
+      ],
+      "n_params": 3713
+    },
+    "bag/hsikan_scrambled": {
+      "mean": 0.00447,
+      "std": 0.00148,
+      "per_seed": [
+        0.00614,
+        0.00255,
+        0.00471
+      ],
+      "n_params": 3713
+    }
+  },
+  "scramble_robustness": {
+    "n_scramble_seeds": 5,
+    "hsikan_true_mse": 0.28735,
+    "mlp_mse": 0.40676,
+    "hsikan_scrambled_per_seed": [
+      0.8474,
+      0.71229,
+      0.80631,
+      0.75094,
+      1.10104
+    ],
+    "hsikan_scrambled_median": 0.80631,
+    "hsikan_scrambled_iqr": 0.09646,
+    "all_scrambles_degrade": true,
+    "worst_case_still_degrades": true
+  },
+  "verdict": {
+    "primary": "scramble_framing (architecture-controlled)",
+    "primary_label": "SUPPORTED",
+    "mlp_gap_framing": {
+      "label": "FALSIFIED",
+      "checks": {
+        "structural_advantage": false,
+        "scramble_collapses_advantage": true,
+        "flat_control_tie": false,
+        "flat_no_fabricated_advantage": false
+      },
+      "thresholds": {
+        "adv_ratio_min": 1.5,
+        "collapse_frac_min": 0.5,
+        "flat_band": [
+          0.7,
+          1.5
+        ]
+      }
+    },
+    "scramble_framing": {
+      "label": "SUPPORTED",
+      "checks": {
+        "structure_helps_on_structural": true,
+        "structure_irrelevant_on_flat": true,
+        "robust_across_scrambles": true
+      },
+      "thresholds": {
+        "struct_benefit_min": 1.5,
+        "struct_benefit_flat_max": 1.25
+      }
+    },
+    "note": "MLP-gap framing is confounded: HSiKAN also wins the structure-FREE bag target for per-node architecture reasons. The scramble framing (same net, only structure differs) isolates the causal structural effect."
+  }
+}

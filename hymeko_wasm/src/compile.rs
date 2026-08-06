@@ -31,18 +31,37 @@ impl HymekoParser for LalrpopParser {
 /// `wasm_bindgen` façade) the browser.
 pub struct CompiledDoc {
     pub compiled: Arc<CompiledProgram>,
-    pub strings:  StringTable,
+    pub strings: StringTable,
 }
 
 /// Parse a single-file `.hymeko` source string and return a compiled IR.
 ///
 /// The virtual filename used internally is `inline.hymeko`; it's
-/// exposed here so the error messages are predictable.
+/// exposed here so the error messages are predictable. Thin wrapper over
+/// [`compile_sources`] for the common single-file case.
 pub fn compile_source(source: &str) -> Result<CompiledDoc, String> {
+    compile_sources("inline.hymeko", &[("inline.hymeko", source)])
+}
+
+/// Parse a multi-file `.hymeko` "space" and compile the file at `root`.
+///
+/// Every `(name, source)` pair is registered in the in-memory
+/// [`MemProvider`] under `name`, so a `@"name"` include in any file resolves
+/// against the space. This is what lets the browser editor keep meta
+/// vocabularies (profiles) in separate files outside the current context.
+///
+/// # Preconditions
+/// `root` must be one of the provided file names.
+/// # Errors
+/// Returns the compile error (parse / resolve / unresolved include) as a
+/// string; never panics on a missing include.
+pub fn compile_sources(root: &str, files: &[(&str, &str)]) -> Result<CompiledDoc, String> {
     let mut store = ModuleStore::new(MemProvider::default(), LalrpopParser);
-    store.provider_mut().insert_file("inline.hymeko", source);
+    for (name, src) in files {
+        store.provider_mut().insert_file(*name, *src);
+    }
     let compiled = store
-        .compile(std::path::Path::new("inline.hymeko"))
+        .compile(std::path::Path::new(root))
         .map_err(|e| format!("compile error: {e:?}"))?;
     let strings = StringTable::from_interner(&store.it);
     Ok(CompiledDoc { compiled, strings })
@@ -58,9 +77,15 @@ pub fn compile_source(source: &str) -> Result<CompiledDoc, String> {
 pub use hymeko_formats::snapshot::{ArcDto, NodeDto, SnapshotDto};
 
 impl CompiledDoc {
-    pub fn node_count(&self) -> usize { self.compiled.ir.nodes.len() }
-    pub fn edge_count(&self) -> usize { self.compiled.ir.edges.len() }
-    pub fn arc_count(&self) -> usize  { self.compiled.ir.arcs.len() }
+    pub fn node_count(&self) -> usize {
+        self.compiled.ir.nodes.len()
+    }
+    pub fn edge_count(&self) -> usize {
+        self.compiled.ir.edges.len()
+    }
+    pub fn arc_count(&self) -> usize {
+        self.compiled.ir.arcs.len()
+    }
 
     pub fn snapshot(&self) -> SnapshotDto {
         hymeko_formats::snapshot::snapshot(&self.compiled.ir, &self.strings)
@@ -79,9 +104,28 @@ impl CompiledDoc {
     }
 
     pub fn to_dot(&self, graph_name: &str) -> String {
-        hymeko_formats::snapshot::emit_dot_graph(
-            &self.compiled.ir, &self.strings, graph_name,
-        )
+        hymeko_formats::snapshot::emit_dot_graph(&self.compiled.ir, &self.strings, graph_name)
+    }
+
+    /// SysML 2 textual concrete syntax for the compiled model.
+    ///
+    /// The SysML codegen is template-driven (`transforms/sysml/`); the FS-based
+    /// registry path (`generate_description`) cannot run in WASM (no filesystem),
+    /// so the query + template sources are embedded with `include_str!` and fed
+    /// straight to the in-process `execute_transform`. This is the editor's
+    /// SysML lens (SMC #5 Phase 2).
+    pub fn to_sysml(&self, model_name: &str) -> String {
+        use hymeko_query::rewrite::template::{TransformSpec, execute_transform};
+        let spec = TransformSpec {
+            name: "sysml".to_string(),
+            query_source: include_str!("../../transforms/sysml/queries.hymeko").to_string(),
+            template_source: include_str!("../../transforms/sysml/template.sysml").to_string(),
+        };
+        let mut cfg: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+        cfg.insert("robot_name".to_string(), model_name.to_string());
+        cfg.insert("world_name".to_string(), "empty".to_string());
+        execute_transform(&self.compiled.ir, &self.strings, &spec, &cfg)
+            .unwrap_or_else(|e| format!("// SysML generation error: {e}"))
     }
 
     // ------------------------ predicate queries ------------------------

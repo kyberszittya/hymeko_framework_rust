@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use hymeko::common::ids::{DeclId, EdgeId, NodeId, SymId};
     use super::*;
+    use hymeko::common::ids::{DeclId, EdgeId, NodeId, SymId};
 
     #[test]
     fn test_none_sentinel() {

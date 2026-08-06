@@ -23,7 +23,7 @@ This part of the book is for **humans and agents**: one place for **abbreviation
 | Evidence rules + anchors | `docs/RESULTS_DISCIPLINE.md` |
 | SOTA charts (duplicate of book chapter source) | `docs/SOTA_RESULTS.md` |
 | Repo cold start | `COLD_START.md` (repo root) |
-| Experiment file manifest | `signedkan_wip/experiments/results/AGGREGATE_index.md` |
+| Experiment file manifest | `hymeko_neuro/experiments/results/AGGREGATE_index.md` |
 | Report / overnight manifest | `reports/AGGREGATE_index.md` |
 
 The book chapters **include** those files where possible so agents editing the repo update a **single** markdown source; rebuild mdBook after edits.

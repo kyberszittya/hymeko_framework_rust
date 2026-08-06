@@ -1,0 +1,45 @@
+{
+  "name": "galambos_coord_ab_deliver",
+  "select": "delivery",
+  "total_steps": 3000,
+  "delivery_median": 0.0,
+  "delivery_per_seed": [
+    0.0
+  ],
+  "seeds": [
+    {
+      "seed": 0,
+      "peak": {
+        "delivery": 0.0,
+        "step": 0.0,
+        "stage": "bc_step0",
+        "both_contact": 0.0,
+        "coin_vel_to_zone": 0.002
+      },
+      "curve": [
+        {
+          "step": 0.0,
+          "stage": "bc_step0",
+          "delivery": 0.0,
+          "both_contact": 0.0,
+          "coin_vel_to_zone": 0.002
+        },
+        {
+          "step": 1500.0,
+          "stage": "rl_refined",
+          "delivery": 0.0,
+          "both_contact": 0.0,
+          "coin_vel_to_zone": 0.002
+        },
+        {
+          "step": 3000.0,
+          "stage": "rl_refined",
+          "delivery": 0.0,
+          "both_contact": 0.0,
+          "coin_vel_to_zone": 0.002
+        }
+      ],
+      "wall_s": 40.9
+    }
+  ]
+}

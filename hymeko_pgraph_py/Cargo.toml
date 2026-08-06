@@ -1,0 +1,16 @@
+[package]
+name = "hymeko_pgraph_py"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+# Python package name: "hymeko_pgraph". The Rust crate name carries
+# the _py suffix to avoid clashing with the algorithm crate.
+name = "hymeko_pgraph_py"
+crate-type = ["cdylib"]
+
+[dependencies]
+hymeko_core   = { path = "../hymeko_core" }
+hymeko_pgraph = { path = "../hymeko_pgraph" }
+parser        = { path = "../parser" }
+pyo3 = { version = "0.28.2", features = ["extension-module"] }

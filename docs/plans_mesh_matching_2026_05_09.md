@@ -99,13 +99,13 @@ For correspondence:
 
 ## Implementation notes
 
-- New module `signedkan_wip/src/mesh_signed_graph.py` (~200 LOC):
+- New module `hymeko_neuro/mesh_signed_graph.py` (~200 LOC):
   - Mesh loader (PLY / OBJ via `trimesh`)
   - Face-normal sign assignment per edge
   - Triangle → SignedNTuple converter
   - HKS / WKS descriptor (use `pyshot` or compute inline)
 - Extend `run_final_cell.py` with `cell_mesh_correspondence` (~150 LOC)
-- New runner `signedkan_wip/src/run_faust.py` (~100 LOC)
+- New runner `hymeko_neuro/run_faust.py` (~100 LOC)
 - Eval harness for geodesic error (~80 LOC; standard `compute_geodesic` via Dijkstra over the mesh graph)
 - Sinkhorn implementation (~40 LOC; standard)
 - Total: ~600 LOC new code, no new dependencies (trimesh + numpy + torch all already present)
@@ -160,7 +160,7 @@ Total: ~4-5 weeks for a venue-ready submission.
 
 - Phase A entropy regularisers (`docs/plans_entropy_learning_2026_05_08.md`) — the α-entropy aux loss could lift mesh-correspondence training stability.
 - Tabular benchmarks (`docs/plans_hsikan_tabular_benchmarks_2026_05_09.md`) — successful mesh matching is a *different* universality demonstration; together they argue HSiKAN as a unified architecture.
-- BO controller (`signedkan_wip/src/run_optuna_search.py`) — directly applicable for tuning the mesh-matching hyperparameters.
+- BO controller (`hymeko_neuro/run_optuna_search.py`) — directly applicable for tuning the mesh-matching hyperparameters.
 
 ## Why this is venue-grade novel
 

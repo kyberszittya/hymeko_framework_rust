@@ -1,0 +1,23 @@
+{
+  "k1": {
+    "n_expanded": 17,
+    "struct_holonomy_mse": 3e-05,
+    "hsikan_mse": 0.00038,
+    "mlp_mse": 0.23251,
+    "struct_holonomy_us": 990.7
+  },
+  "k2": {
+    "n_expanded": 17,
+    "struct_holonomy_mse": 0.05558,
+    "hsikan_mse": 0.00079,
+    "mlp_mse": 0.06997,
+    "struct_holonomy_us": 1059.5
+  },
+  "k3": {
+    "n_expanded": 17,
+    "struct_holonomy_mse": 0.021,
+    "hsikan_mse": 0.00064,
+    "mlp_mse": 0.03675,
+    "struct_holonomy_us": 978.8
+  }
+}

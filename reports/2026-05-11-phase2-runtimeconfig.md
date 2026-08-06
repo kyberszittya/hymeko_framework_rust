@@ -7,7 +7,7 @@
 ## Summary
 
 Migrated every read of an `HSIKAN_*` / `HYMEKO_*` environment variable in
-`signedkan_wip/src/` to go through `runtime_config.RuntimeConfig`.
+`hymeko_neuro/` to go through `runtime_config.RuntimeConfig`.
 **Final count of scattered reads outside `runtime_config.py`: 0.**
 Subprocess-orchestrator *writes* (`os.environ[X] = Y` /
 `os.environ.setdefault`) preserved because they communicate config to
@@ -16,7 +16,7 @@ child code that re-parses env on its own — that pattern is *not* the
 
 ## What changed
 
-### `signedkan_wip/src/runtime_config.py` (extended, +120 LOC)
+### `hymeko_neuro/runtime/runtime_config.py` (extended, +120 LOC)
 
 Added three new frozen sub-dataclasses + 4 per-section parsers:
 
@@ -68,7 +68,7 @@ None.
 
 ## Test results
 
-`signedkan_wip/tests/test_hymeko_gomb.py -p no:randomly`: **15/15 passed in 2.73 s**.
+`hymeko_neuro/tests/test_hymeko_gomb.py -p no:randomly`: **15/15 passed in 2.73 s**.
 
 End-to-end smoke (`run_gomb_smoke --dataset bitcoin_otc --seed 0 --n-epochs 10`):
 val_auc_best = **0.6823** (vs pre-migration **0.6823**, identical to the
@@ -78,8 +78,8 @@ val_auc_best = **0.6823** (vs pre-migration **0.6823**, identical to the
 
 | Criterion | Result |
 |---|---|
-| `grep -rE 'os\.environ.*(HSIKAN|HYMEKO)' signedkan_wip/src/ --include='*.py'` outside `runtime_config.py` returns scattered READS | **0 reads** ✓ |
-| `pytest signedkan_wip/tests/test_hymeko_gomb.py` green | **15/15** ✓ |
+| `grep -rE 'os\.environ.*(HSIKAN|HYMEKO)' hymeko_neuro/ --include='*.py'` outside `runtime_config.py` returns scattered READS | **0 reads** ✓ |
+| `pytest hymeko_neuro/tests/test_hymeko_gomb.py` green | **15/15** ✓ |
 | Bitcoin OTC smoke reproduces ±0.001 AUC | **identical AUC 0.6823** ✓ |
 | No new §6.5 anti-patterns introduced | confirmed ✓ |
 
@@ -87,18 +87,18 @@ val_auc_best = **0.6823** (vs pre-migration **0.6823**, identical to the
 
 | File | +/- |
 |---|---|
-| `signedkan_wip/src/runtime_config.py` | +120 / 0 |
-| `signedkan_wip/src/cycle_cache.py` | +6 / -38 |
-| `signedkan_wip/src/signedkan.py` | +8 / -10 |
-| `signedkan_wip/src/triton_kernels.py` | +14 / -4 |
-| `signedkan_wip/src/splines.py` | +6 / -4 |
-| `signedkan_wip/src/profile_hsikan_memory.py` | +5 / -5 |
-| `signedkan_wip/src/run_final_cell.py` | +14 / -24 |
-| `signedkan_wip/src/hymeko_train_walker.py` | +2 / -1 |
-| `signedkan_wip/src/mixed_arity_signedkan.py` | +2 / -1 |
-| `signedkan_wip/src/run_synthetic_baseline.py` | +2 / -1 |
-| `signedkan_wip/src/run_multi_domain_perf_deep.py` | +2 / -1 |
-| `signedkan_wip/src/run_multi_domain_perf_bench.py` | +4 / -2 |
+| `hymeko_neuro/runtime/runtime_config.py` | +120 / 0 |
+| `hymeko_neuro/graph/cycle_cache.py` | +6 / -38 |
+| `hymeko_neuro/signedkan.py` | +8 / -10 |
+| `hymeko_neuro/kernels/triton_kernels.py` | +14 / -4 |
+| `hymeko_neuro/splines.py` | +6 / -4 |
+| `hymeko_neuro/profile_hsikan_memory.py` | +5 / -5 |
+| `hymeko_neuro/run_final_cell.py` | +14 / -24 |
+| `hymeko_neuro/experiments/hymeko_train_walker.py` | +2 / -1 |
+| `hymeko_neuro/models/mixed_arity_signedkan.py` | +2 / -1 |
+| `hymeko_neuro/run_synthetic_baseline.py` | +2 / -1 |
+| `hymeko_neuro/run_multi_domain_perf_deep.py` | +2 / -1 |
+| `hymeko_neuro/run_multi_domain_perf_bench.py` | +4 / -2 |
 
 Net: **+185 / -91** across 12 files. Most of the +185 is in
 `runtime_config.py` (the new typed-config surface); migrated files

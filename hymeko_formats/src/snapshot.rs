@@ -11,7 +11,7 @@
 //! negligible compared to serde_json::to_string at the same call site.
 
 use hymeko::common::ids::DeclId;
-use hymeko::ir::ir::{DeclKind, Ir};
+use hymeko::ir::ir::{DeclKind, Ir, ValueR};
 use hymeko::resolution::string_table::StringTable;
 
 use serde::{Deserialize, Serialize};
@@ -37,8 +37,67 @@ pub struct NodeDto {
     pub bases: Vec<String>,
     /// Annotation tags attached at declaration (e.g. `<temperature>`).
     pub tags: Vec<String>,
+    /// The decl's rendered field value, if any (e.g. `"m"`, `[1, 0, 0]`, `1.5`, or a referenced
+    /// decl's name). Lets a viewer show leaf "attribute" decls on a node's HUD instead of as
+    /// separate vertices. `None` when the decl carries no value.
+    #[serde(default)]
+    pub value: Option<String>,
     /// Signed arc references — populated only for Edge decls.
     pub arcs: Vec<ArcDto>,
+}
+
+/// Render a field value to a compact display string for a node's HUD. Pure; refs resolve to the
+/// target decl's name (the structural link is already in `relationships`).
+fn render_value(v: &ValueR, ir: &Ir, st: &StringTable) -> String {
+    match v {
+        ValueR::Str(s) => format!("\"{}\"", st.resolve(*s)),
+        ValueR::Num(n) => {
+            if n.fract() == 0.0 && n.abs() < 1e15 {
+                format!("{}", *n as i64)
+            } else {
+                format!("{n}")
+            }
+        }
+        ValueR::List(items) => {
+            let parts: Vec<String> = items.iter().map(|it| render_value(it, ir, st)).collect();
+            format!("[{}]", parts.join(", "))
+        }
+        ValueR::Ref(d) => {
+            if d.is_none() {
+                "?".to_string()
+            } else {
+                st.resolve(ir.decl_nodes[d.0].name).to_string()
+            }
+        }
+    }
+}
+
+/// A named, annotated relationship between two decls, by `DeclId`.
+/// `kind`:
+///   "scope" — containment: child → enclosing parent;
+///   "isa"   — template/inheritance: decl → first-level base type;
+///   "ref"   — field reference (`a -> b`): decl → the decl its value points at.
+/// Signed hyperedge *membership* stays in `NodeDto::arcs` (the primary
+/// hyperedge structure); these are the *secondary* structural relations.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct RelDto {
+    pub kind: String,
+    pub from: usize,
+    pub to: usize,
+}
+
+/// Collect every `Ref(DeclId)` target reachable inside a field value
+/// (a bare ref, or refs nested in a list).
+fn collect_ref_targets(v: &ValueR, out: &mut Vec<DeclId>) {
+    match v {
+        ValueR::Ref(d) => out.push(*d),
+        ValueR::List(items) => {
+            for it in items {
+                collect_ref_targets(it, out);
+            }
+        }
+        _ => {}
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -50,6 +109,8 @@ pub struct SnapshotDto {
     pub nodes: Vec<NodeDto>,
     /// All `Edge` decls (hyperedges).
     pub edges: Vec<NodeDto>,
+    /// Named, annotated relationships (scope + isa) keyed by `DeclId`.
+    pub relationships: Vec<RelDto>,
 }
 
 
@@ -108,7 +169,8 @@ pub fn snapshot(ir: &Ir, st: &StringTable) -> SnapshotDto {
                 }
             }
         }
-        NodeDto { id: did.0, name, kind: kind_str.to_string(), bases, tags, arcs }
+        let value = decl.anno.value.as_ref().map(|v| render_value(v, ir, st));
+        NodeDto { id: did.0, name, kind: kind_str.to_string(), bases, tags, value, arcs }
     };
 
     let mut nodes = Vec::with_capacity(ir.nodes.len());
@@ -116,12 +178,56 @@ pub fn snapshot(ir: &Ir, st: &StringTable) -> SnapshotDto {
     for rec in &ir.nodes { nodes.push(mk(rec.decl, false)); }
     for rec in &ir.edges { edges.push(mk(rec.decl, true)); }
 
+    // Named relationships keyed by DeclId. Endpoints that aren't drawn vertices
+    // are filtered consumer-side.
+    //   scope — every Node/Edge decl → its enclosing parent (containment);
+    //   ref   — a decl whose field value points at another (`a -> b`);
+    //   isa   — node/edge → each first-level base type (inheritance).
+    let mut relationships: Vec<RelDto> = Vec::new();
+    for (did_idx, decl) in ir.decl_nodes.iter().enumerate() {
+        if !matches!(decl.kind, DeclKind::Node | DeclKind::Edge) {
+            continue;
+        }
+        let parent = decl.parent;
+        if !parent.is_none() {
+            relationships.push(RelDto { kind: "scope".to_string(), from: did_idx, to: parent.0 });
+        }
+        if let Some(val) = &decl.anno.value {
+            let mut targets = Vec::new();
+            collect_ref_targets(val, &mut targets);
+            for t in targets {
+                if !t.is_none() {
+                    relationships.push(RelDto { kind: "ref".to_string(), from: did_idx, to: t.0 });
+                }
+            }
+        }
+    }
+    for rec in &ir.nodes {
+        if let Some(nid) = ir.as_node(rec.decl) {
+            for b in &ir.nodes[nid.0].bases {
+                if !b.target().is_none() {
+                    relationships.push(RelDto { kind: "isa".to_string(), from: rec.decl.0, to: b.target().0 });
+                }
+            }
+        }
+    }
+    for rec in &ir.edges {
+        if let Some(eid) = ir.as_edge(rec.decl) {
+            for b in &ir.edges[eid.0].bases {
+                if !b.target().is_none() {
+                    relationships.push(RelDto { kind: "isa".to_string(), from: rec.decl.0, to: b.target().0 });
+                }
+            }
+        }
+    }
+
     SnapshotDto {
         node_count: ir.nodes.len(),
         edge_count: ir.edges.len(),
         arc_count:  ir.arcs.len(),
         nodes,
         edges,
+        relationships,
     }
 }
 

@@ -12,7 +12,13 @@
 //! BCE-with-logits).
 
 pub mod adam;
+pub mod catmull_rom;
+pub mod cayley_rotor;
 pub mod clifford_fir;
+pub mod fsr_mixer;
+pub mod fused_entropy_update;
 pub mod linear;
 pub mod loss;
+pub mod project_alpha_mix;
 pub mod scatter;
+pub mod signed_scatter;

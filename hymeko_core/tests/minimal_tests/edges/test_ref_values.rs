@@ -1,43 +1,53 @@
 #![cfg(test)]
-mod test_ref_values
-{
+mod test_ref_values {
     use hymeko::common::ids::DeclId;
     use hymeko::common::pathkey::PathKey;
     use hymeko::ir::ir::{RefAtomR, SignedRefR, ValueR};
     use hymeko::ir::lower::lower_to_ir;
-    use hymeko::resolution::intern_pass::{intern_ast, Interned};
+    use hymeko::resolution::intern_pass::{Interned, intern_ast};
     use hymeko::resolution::interner::Interner;
-    use hymeko::resolution::resolve::{build_index_sym, Index};
+    use hymeko::resolution::resolve::{Index, build_index_sym};
 
-    use parser::ast::*;
     use crate::minimal_tests::constants::*;
     use crate::test_helpers::{log_test_footer, log_test_header};
     use log::info;
+    use parser::ast::*;
     use std::time::Instant;
 
-
     fn find_node<'a>(items: &'a [HyperItem<'a, &'a str>], name: &str) -> &'a NodeDecl<'a, &'a str> {
-        items.iter().find_map(|item| match item {
-            HyperItem::Node(n) if n.inner.name == name => Some(n),
-            _ => None,
-        }).expect("expected node to be present")
+        items
+            .iter()
+            .find_map(|item| match item {
+                HyperItem::Node(n) if n.inner.name == name => Some(n),
+                _ => None,
+            })
+            .expect("expected node to be present")
     }
 
     fn find_edge<'a>(items: &'a [HyperItem<'a, &'a str>], name: &str) -> &'a EdgeDecl<'a, &'a str> {
-        items.iter().find_map(|item| match item {
-            HyperItem::Edge(e) if e.inner.name == name => Some(e),
-            _ => None,
-        }).expect("expected edge to be present")
+        items
+            .iter()
+            .find_map(|item| match item {
+                HyperItem::Edge(e) if e.inner.name == name => Some(e),
+                _ => None,
+            })
+            .expect("expected edge to be present")
     }
 
     fn edge_arcs<'a>(edge: &'a EdgeDecl<'a, &'a str>) -> Vec<&'a HyperArc<'a, &'a str>> {
-        edge.inner.body.iter().filter_map(|item| match item {
-            HyperItem::Arc(a) => Some(a),
-            _ => None,
-        }).collect()
+        edge.inner
+            .body
+            .iter()
+            .filter_map(|item| match item {
+                HyperItem::Arc(a) => Some(a),
+                _ => None,
+            })
+            .collect()
     }
 
-    fn dir_and_atom<'a>(signed: &'a SignedRef<'a, &'a str>) -> (&'static str, &'a RefAtom<'a, &'a str>) {
+    fn dir_and_atom<'a>(
+        signed: &'a SignedRef<'a, &'a str>,
+    ) -> (&'static str, &'a RefAtom<'a, &'a str>) {
         match signed {
             SignedRef::Plus(atom) => ("+", atom),
             SignedRef::Minus(atom) => ("-", atom),
@@ -57,7 +67,12 @@ mod test_ref_values
         };
 
         // 3. Verify arity and precision
-        assert_eq!(actual_slice.len(), expected.len(), "weight arity mismatch for {:?}", atom.target.path);
+        assert_eq!(
+            actual_slice.len(),
+            expected.len(),
+            "weight arity mismatch for {:?}",
+            atom.target.path
+        );
 
         let mut collected = Vec::with_capacity(actual_slice.len());
         for (value, exp) in actual_slice.iter().zip(expected.iter()) {
@@ -65,7 +80,10 @@ mod test_ref_values
                 Value::Num(n) => *n,
                 other => panic!("expected numeric weight, got {:?}", other),
             };
-            assert!((num - exp).abs() < 1e-9, "weight mismatch: got {num}, expected {exp}");
+            assert!(
+                (num - exp).abs() < 1e-9,
+                "weight mismatch: got {num}, expected {exp}"
+            );
             collected.push(num);
         }
         collected
@@ -88,7 +106,10 @@ mod test_ref_values
                 ValueR::Num(n) => *n,
                 other => panic!("expected numeric weight, got {:?}", other),
             };
-            assert!((num - exp).abs() < 1e-9, "weight mismatch: got {num}, expected {exp}");
+            assert!(
+                (num - exp).abs() < 1e-9,
+                "weight mismatch: got {num}, expected {exp}"
+            );
             collected.push(num);
         }
         collected
@@ -101,16 +122,25 @@ mod test_ref_values
             "Parses the minimal edge fixture and validates AST-level references.",
         );
         let start = Instant::now();
-        let source_code = parser::read_source_file(EDGE_REF_VALUES_PATH).expect("failed to read source file");
+        let source_code =
+            parser::read_source_file(EDGE_REF_VALUES_PATH).expect("failed to read source file");
 
         // 2. Parse it, tying the AST lifetimes to the String
         let d = parser::parse_description(&source_code).unwrap();
         assert_eq!(d.name, DESC_MINIMAL_EXAMPLE_NAME);
 
         let context = find_node(&d.items, CONTEXT_NODE_NAME);
-        let ctx_body = context.inner.body.as_ref().expect("context should contain nested items");
+        let ctx_body = context
+            .inner
+            .body
+            .as_ref()
+            .expect("context should contain nested items");
         let node_lev_1 = find_node(ctx_body, NODE_LEVEL1_NAME);
-        let lev1_body = node_lev_1.inner.body.as_ref().expect("node_lev_1 should contain nested items");
+        let lev1_body = node_lev_1
+            .inner
+            .body
+            .as_ref()
+            .expect("node_lev_1 should contain nested items");
 
         let edge = find_edge(lev1_body, EDGE_E0_NAME);
         let arcs = edge_arcs(edge);
@@ -122,15 +152,29 @@ mod test_ref_values
         let mut flattened_weights = Vec::new();
         for (signed, expectation) in refs.iter().zip(EDGE_REF_EXPECTATIONS.iter()) {
             let (actual_dir, atom) = dir_and_atom(signed);
-            assert_eq!(actual_dir, expectation.dir, "unexpected reference direction");
-            assert_eq!(atom.target.path.as_slice(), expectation.path, "reference path mismatch");
+            assert_eq!(
+                actual_dir, expectation.dir,
+                "unexpected reference direction"
+            );
+            assert_eq!(
+                atom.target.path.as_slice(),
+                expectation.path,
+                "reference path mismatch"
+            );
             let nums = assert_weights(atom, expectation.weights);
             flattened_weights.extend(nums);
         }
 
-        assert_eq!(flattened_weights.len(), EDGE_REF_FLAT_WEIGHTS.len(), "flattened weights length mismatch (AST)");
+        assert_eq!(
+            flattened_weights.len(),
+            EDGE_REF_FLAT_WEIGHTS.len(),
+            "flattened weights length mismatch (AST)"
+        );
         for (actual, expected) in flattened_weights.iter().zip(EDGE_REF_FLAT_WEIGHTS.iter()) {
-            assert!((*actual - *expected).abs() < 1e-9, "AST flattened weight mismatch: got {actual}, expected {expected}");
+            assert!(
+                (*actual - *expected).abs() < 1e-9,
+                "AST flattened weight mismatch: got {actual}, expected {expected}"
+            );
         }
         info!("Validated AST refs for edge {}", EDGE_E0_NAME);
         log_test_footer(
@@ -147,7 +191,8 @@ mod test_ref_values
             "Lowers the fixture to IR and checks reference targets/weights.",
         );
         let start = Instant::now();
-        let source_code = parser::read_source_file(EDGE_REF_VALUES_PATH).expect("failed to read source file");
+        let source_code =
+            parser::read_source_file(EDGE_REF_VALUES_PATH).expect("failed to read source file");
 
         // 2. Parse it, tying the AST lifetimes to the String
         let desc = parser::parse_description(&source_code).unwrap();
@@ -156,13 +201,35 @@ mod test_ref_values
         let ir = lower_to_ir(&ast, &idx, &mut interner).unwrap();
 
         let did_context = decl_id_for_path(&mut interner, &idx, &[CONTEXT_NODE_NAME]);
-        let did_node_lev_0 = decl_id_for_path(&mut interner, &idx, &[CONTEXT_NODE_NAME, NODE_LEVEL0_NAME]);
-        let did_node_lev_1 = decl_id_for_path(&mut interner, &idx, &[CONTEXT_NODE_NAME, NODE_LEVEL1_NAME]);
-        let did_node_lev1_node0 = decl_id_for_path(&mut interner, &idx, &[CONTEXT_NODE_NAME, NODE_LEVEL1_NAME, NODE0_NAME]);
-        let did_node_lev0_node0 = decl_id_for_path(&mut interner, &idx, &[CONTEXT_NODE_NAME, NODE_LEVEL0_NAME, NODE0_NAME]);
-        let did_node_lev0_node1 = decl_id_for_path(&mut interner, &idx, &[CONTEXT_NODE_NAME, NODE_LEVEL0_NAME, NODE1_NAME]);
-        let did_node_lev0_node2 = decl_id_for_path(&mut interner, &idx, &[CONTEXT_NODE_NAME, NODE_LEVEL0_NAME, NODE2_NAME]);
-        let did_e0 = decl_id_for_path(&mut interner, &idx, &[CONTEXT_NODE_NAME, NODE_LEVEL1_NAME, EDGE_E0_NAME]);
+        let did_node_lev_0 =
+            decl_id_for_path(&mut interner, &idx, &[CONTEXT_NODE_NAME, NODE_LEVEL0_NAME]);
+        let did_node_lev_1 =
+            decl_id_for_path(&mut interner, &idx, &[CONTEXT_NODE_NAME, NODE_LEVEL1_NAME]);
+        let did_node_lev1_node0 = decl_id_for_path(
+            &mut interner,
+            &idx,
+            &[CONTEXT_NODE_NAME, NODE_LEVEL1_NAME, NODE0_NAME],
+        );
+        let did_node_lev0_node0 = decl_id_for_path(
+            &mut interner,
+            &idx,
+            &[CONTEXT_NODE_NAME, NODE_LEVEL0_NAME, NODE0_NAME],
+        );
+        let did_node_lev0_node1 = decl_id_for_path(
+            &mut interner,
+            &idx,
+            &[CONTEXT_NODE_NAME, NODE_LEVEL0_NAME, NODE1_NAME],
+        );
+        let did_node_lev0_node2 = decl_id_for_path(
+            &mut interner,
+            &idx,
+            &[CONTEXT_NODE_NAME, NODE_LEVEL0_NAME, NODE2_NAME],
+        );
+        let did_e0 = decl_id_for_path(
+            &mut interner,
+            &idx,
+            &[CONTEXT_NODE_NAME, NODE_LEVEL1_NAME, EDGE_E0_NAME],
+        );
 
         let edge_id = ir.decl_to_edge[did_e0.0].expect("e0 not lowered as edge");
         let edge_rec = &ir.edges[edge_id.0];
@@ -187,9 +254,16 @@ mod test_ref_values
             flattened_weights.extend(nums);
         }
 
-        assert_eq!(flattened_weights.len(), EDGE_REF_FLAT_WEIGHTS.len(), "flattened weights length mismatch");
+        assert_eq!(
+            flattened_weights.len(),
+            EDGE_REF_FLAT_WEIGHTS.len(),
+            "flattened weights length mismatch"
+        );
         for (actual, expected) in flattened_weights.iter().zip(EDGE_REF_FLAT_WEIGHTS.iter()) {
-            assert!((*actual - *expected).abs() < 1e-9, "flattened weight mismatch: got {actual}, expected {expected}");
+            assert!(
+                (*actual - *expected).abs() < 1e-9,
+                "flattened weight mismatch: got {actual}, expected {expected}"
+            );
         }
 
         // Ensure the context node still maps to a DeclId to avoid unused warnings
@@ -206,6 +280,8 @@ mod test_ref_values
 
     fn decl_id_for_path(interner: &mut Interner, idx: &Index, segments: &[&str]) -> DeclId {
         let path_syms: Vec<_> = segments.iter().map(|seg| interner.intern(seg)).collect();
-        *idx.by_path.get(&PathKey(path_syms)).expect("missing declaration for path")
+        *idx.by_path
+            .get(&PathKey(path_syms))
+            .expect("missing declaration for path")
     }
 }

@@ -1,0 +1,4 @@
+config,median_ms,iqr_ms,worst_ms,n_iters,kind
+C1_hypergraph_inproc,0.838500,0.052500,1.110700,200,measured
+C2_binary_mock_inproc,0.009000,0.000100,0.024900,200,measured
+C3_subprocess,464.000000,0.0,464.000000,0,analytic

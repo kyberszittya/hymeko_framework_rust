@@ -1,6 +1,8 @@
 use crate::common::ids::SymId;
 use crate::resolution::interner::Interner;
-use crate::resolution::resolve::{build_index_sym_with_prefix, validate_all_refs_sym_with_prefix, Index, ResolveError};
+use crate::resolution::resolve::{
+    Index, ResolveError, build_index_sym_with_prefix, validate_all_refs_sym_with_prefix,
+};
 use crate::sym_ast::AstSym;
 
 pub struct ModuleView<'a> {

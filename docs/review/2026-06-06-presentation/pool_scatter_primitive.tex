@@ -1,0 +1,60 @@
+% Pool-scatter primitive detail with bidirectional asymmetry
+\begin{tikzpicture}[
+  every node/.style={font=\small\sffamily, align=center},
+  anchor/.style ={circle, draw, very thick, fill=blue!15,
+                  minimum size=6mm},
+  cand/.style   ={circle, draw, very thick, fill=red!10,
+                  minimum size=5mm},
+  qkv/.style    ={rectangle, draw, thick, fill=gray!10,
+                  minimum height=5mm, minimum width=10mm},
+  cr/.style     ={rectangle, draw, very thick, rounded corners=2pt,
+                  minimum height=6mm, minimum width=18mm, fill=yellow!20},
+  pool/.style   ={->, >=stealth, thick, blue!70!black},
+  scat/.style   ={->, >=stealth, thick, red!70!black, dashed},
+]
+
+% Anchor position i
+\node[anchor] (i) at (0, 0) {$i$};
+\node[font=\scriptsize, above=1mm of i] {anchor};
+
+% Candidates j_1, j_2, j_3
+\node[cand] (j1) at (-3, -2) {$j_1$};
+\node[cand] (j2) at ( 0, -2) {$j_2$};
+\node[cand] (j3) at ( 3, -2) {$j_3$};
+\node[font=\scriptsize, below=1mm of j2] {$\mathrm{local}[i, k]$};
+
+% Pool direction (down arrows: candidates -> anchor)
+\draw[pool] (j1.north east) to[bend left=15] node[above, sloped, font=\tiny]{pool} (i.south west);
+\draw[pool] (j2.north)      to                                                (i.south);
+\draw[pool] (j3.north west) to[bend right=15] node[above, sloped, font=\tiny]{}       (i.south east);
+
+% Scatter direction (up arrows from anchor)
+\draw[scat] (i.south west) to[bend right=22] node[below, sloped, font=\tiny]{scatter} (j1.north east);
+\draw[scat] (i.south)      to[bend right=8]                                            (j2.north);
+\draw[scat] (i.south east) to[bend left=22]                                           (j3.north west);
+
+% Pool computation
+\node[qkv, right=20mm of i] (Qi) {$Q_i$};
+\node[qkv, below=2mm of Qi] (Kj) {$K_j$};
+\node[cr, right=4mm of Qi, yshift=-3mm] (Spool) {$S = \mathrm{CR}(Q_i \cdot K_j)$};
+\draw[->, thick] (Qi.east) to[bend left=10] (Spool.west |- Qi.east);
+\draw[->, thick] (Kj.east) to[bend right=10] (Spool.west |- Kj.east);
+
+% Scatter computation
+\node[qkv, below=12mm of Kj] (Qj) {$Q_j$};
+\node[qkv, below=2mm of Qj] (Ki) {$K_i$};
+\node[cr, right=4mm of Qj, yshift=-3mm] (Sscat) {$S = \mathrm{CR}(Q_j \cdot K_i)$};
+\draw[->, thick] (Qj.east) to[bend left=10] (Sscat.west |- Qj.east);
+\draw[->, thick] (Ki.east) to[bend right=10] (Sscat.west |- Ki.east);
+
+% Labels
+\node[font=\scriptsize\itshape, above=2mm of Qi] {pool direction};
+\node[font=\scriptsize\itshape, above=2mm of Qj] {scatter direction};
+
+% Note: Hamilton non-commutativity
+\node[font=\scriptsize\itshape, below=14mm of Sscat, text width=55mm, anchor=north]
+  {$Q\otimes K \ne K\otimes Q$\\[1pt]
+   (Hamilton product non-commutative)\\[1pt]
+   $\Rightarrow$ bidirectional asymmetry};
+
+\end{tikzpicture}

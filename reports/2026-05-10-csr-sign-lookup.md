@@ -67,7 +67,7 @@ Two `#[allow(clippy::type_complexity)]` waivers added with inline justification 
 | Unit (`cargo test --release -p hymeko_graph --lib`) | 46 passed, 0 failed | ✓ | < 1 s |
 | Integration (`tests/csr_sign_lookup.rs`) | 3 passed, 0 failed | ✓ | < 1 s |
 | Integration (`tests/friedler_scenarios.rs`) | 7 passed, 0 failed | ✓ | < 1 s |
-| Unit-test in dependent crate (`signedkan_wip/tests/test_cycle_cache.py`) | 12 passed, 0 failed | ✓ | 1.96 s |
+| Unit-test in dependent crate (`hymeko_neuro/tests/test_cycle_cache.py`) | 12 passed, 0 failed | ✓ | 1.96 s |
 | Doc-tests | 0 passed (no doc-tests defined) | ✓ | — |
 
 ### Coverage rule (CLAUDE.md §3)
@@ -77,7 +77,7 @@ Every new function exercised by at least one test:
 - `SignedGraph::build_csr_with_signs` → `signed_graph::tests::csr_with_signs_postcondition_small_triangle`, `csr_with_signs_matches_build_sign_lookup`, `csr_with_signs_no_self_lookup_for_missing_edge`, `csr_with_signs_parallel_edge_matches_hashmap_last_write_wins`, plus `tests/csr_sign_lookup.rs::csr_with_signs_round_trips_every_hashmap_entry_dense_fixture` (200-vertex Erdős–Rényi)
 - `csr_sign_of` (private inline helper in `topk_cycles.rs`) → exercised indirectly by every existing `topk_cycles` unit test (45) and the two new par/seq invariant tests
 - `HeapEntry::from_slices`, `cycle_slice`, `signs_slice` → exercised by every `topk_cycles` test (the public enumerators all push through `from_slices` and read via `*_slice` at output materialisation)
-- `_pack_and_drop`, `_unpack_to_ntuples`, `_save_packed`, `_load_packed`, `_cache_hit`, `_cache_miss` (Python `cycle_cache` helpers) → 12 unit tests in `signedkan_wip/tests/test_cycle_cache.py` (added in earlier session, all green)
+- `_pack_and_drop`, `_unpack_to_ntuples`, `_save_packed`, `_load_packed`, `_cache_hit`, `_cache_miss` (Python `cycle_cache` helpers) → 12 unit tests in `hymeko_neuro/tests/test_cycle_cache.py` (added in earlier session, all green)
 
 ### Regression rule
 
@@ -135,7 +135,7 @@ Run-to-run cycle counts: 3,692,177 / 3,692,180 / 3,692,182 / 3,692,189 / 3,692,1
 3. **Pre-existing clippy debt** — 7 of the 12 clippy errors fixed in this task were pre-existing in files unrelated to my change (`traversal.rs`, `friedler.rs`, etc.). `cargo clippy --all-targets -- -D warnings` now passes; it didn't before. Worth running on the rest of the workspace as a one-off cleanup pass.
 4. **`tools.yaml` referenced by `CLAUDE.md §10` does not exist.** Section 10 says tool versions are pinned there; the file is not yet on disk. I used `cargo flamegraph 0.6.12` (the latest stable at install time). Suggest creating `tools.yaml` to lock that version explicitly.
 5. **Plan budget assertion in Criterion bench was deferred.** The plan called for `benches/topk_balance.rs` asserting post-fix ≤ 0.75× pre-fix. Writing it would produce a failing assertion. Per §10 ("a measurement contradicts an assumption in the plan"), the right action is the report you're reading, not a bench that mis-shapes the conclusion. If the perf goal is revived under an algorithm-change plan, the bench is straightforward to add against the new baseline.
-6. **`signedkan_wip/src/cycle_cache.py`** is untracked and contains the 2026-05-10 morning OOM-fix work (separate from this task but in the same session). Already covered by `signedkan_wip/tests/test_cycle_cache.py` (12 tests). Independent of the topk_cycles change.
+6. **`hymeko_neuro/graph/cycle_cache.py`** is untracked and contains the 2026-05-10 morning OOM-fix work (separate from this task but in the same session). Already covered by `hymeko_neuro/tests/test_cycle_cache.py` (12 tests). Independent of the topk_cycles change.
 
 ## Experiment provenance
 
@@ -150,7 +150,7 @@ Run-to-run cycle counts: 3,692,177 / 3,692,180 / 3,692,182 / 3,692,189 / 3,692,1
 | Profiler | `cargo flamegraph 0.6.12` (perf backend; `kernel.perf_event_paranoid=1` for the session) |
 | Benchmark tool | none for this task — single-shot diagnostic timers in `examples/profile_topk_balance.rs`; `criterion` deferred per Open Issue #5 |
 | Random seed | LCG seed 42 / 7 / 99 in `tests/csr_sign_lookup.rs`; production scorer is deterministic over input cycle |
-| Dataset | `signedkan_wip/data/epinions.txt` — sha256 `8120d06a0bb4e65d4b821eba1072647ef3429e4e0a3c02e72bf0c534664f6fee`; 131,828 vertices, 840,799 edges, 14.7% negative |
+| Dataset | `hymeko_neuro/assets/data/epinions.txt` — sha256 `8120d06a0bb4e65d4b821eba1072647ef3429e4e0a3c02e72bf0c534664f6fee`; 131,828 vertices, 840,799 edges, 14.7% negative |
 | Working-tree dirty files | 15 modified + 2 untracked under `hymeko_graph/`; 1 untracked + 1 untracked under `docs/plans/2026-05-10-csr-sign-lookup/`; 5 SVG flamegraphs under `target/profile/` |
 | Suppressions added | 2× `#[allow(clippy::type_complexity)]` with inline justification (`examples/strategy_pattern.rs:49`, `examples/axiom_effect.rs:89`) — both for heterogeneous-closure-table type-complexity that does not warrant a named lifetime alias at the call site |
 

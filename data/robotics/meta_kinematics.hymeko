@@ -80,6 +80,7 @@ kinematics {
         box {}
         cylinder {}
         sphere {}
+        capsule {}
     }
 
     axes {

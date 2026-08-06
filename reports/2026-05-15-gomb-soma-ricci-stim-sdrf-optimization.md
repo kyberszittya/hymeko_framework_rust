@@ -126,8 +126,8 @@ applies; only how `new_min` is computed has changed.
 All 27 prior SDRF tests pass:
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_vision_sdrf.py \
-                   signedkan_wip/tests/test_gomb_soma_vision_sdrf_wiring.py -v
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_vision_sdrf.py \
+                   hymeko_neuro/tests/test_gomb_soma_vision_sdrf_wiring.py -v
 =========== 27 passed in 2.55 s ===========
 ```
 
@@ -194,7 +194,7 @@ for a meaningful benchmark.
 
 | File | Change |
 |---|---|
-| [signedkan_wip/src/hymeko_gomb/soma/vision/sdrf.py](../signedkan_wip/src/hymeko_gomb/soma/vision/sdrf.py) | `_find_best_shortcut` rewritten to use `_delta_min_kappa_after_add` (new method); `edge_index` dict added alongside `edge_set` |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/sdrf.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/sdrf.py) | `_find_best_shortcut` rewritten to use `_delta_min_kappa_after_add` (new method); `edge_index` dict added alongside `edge_set` |
 
 Net source change: ~50 LOC added (new method + edge_index plumbing).
 

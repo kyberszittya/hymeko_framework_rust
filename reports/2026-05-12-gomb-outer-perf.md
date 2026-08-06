@@ -2,15 +2,15 @@
 
 ## Summary
 
-Replaced the Python loop over `M` Clifford-FIR banks in `OuterFIRShell` with a single `einsum` pre-projection stack, batched Cl(0,1) coefficient multiply, and one batched scatter. Replaced the per-corner `for i in range(k)` in `scatter_mean` with a flattened `index_add` (and a batched variant for `(B, M_c, d)` inputs). The timing benchmark supports optional **`--torch-compile`** (cloned shell, Inductor) on CUDA; **`_bench`** wraps timed forwards in **`torch.inference_mode()`** for forward-only semantics. See Performance results and `signedkan_wip/src/benchmarks/gomb_outer_timing.py`.
+Replaced the Python loop over `M` Clifford-FIR banks in `OuterFIRShell` with a single `einsum` pre-projection stack, batched Cl(0,1) coefficient multiply, and one batched scatter. Replaced the per-corner `for i in range(k)` in `scatter_mean` with a flattened `index_add` (and a batched variant for `(B, M_c, d)` inputs). The timing benchmark supports optional **`--torch-compile`** (cloned shell, Inductor) on CUDA; **`_bench`** wraps timed forwards in **`torch.inference_mode()`** for forward-only semantics. See Performance results and `hymeko_neuro/eval/benchmarks/gomb_outer_timing.py`.
 
 ## Files touched
 
 | File | Change |
 |------|--------|
-| `signedkan_wip/src/hymeko_gomb/shells.py` | Batched `OuterFIRShell.forward`; `scatter_mean` + `_scatter_mean_flat` / `_scatter_mean_batched` |
-| `signedkan_wip/tests/test_hymeko_gomb.py` | Parity tests vs corner-loop reference; outer-shell sequential equivalence |
-| `signedkan_wip/src/benchmarks/gomb_outer_timing.py` | Synthetic + `--datasets` timing; **`--torch-compile`**; `_bench` uses `torch.inference_mode` |
+| `hymeko_neuro/models/hymeko_gomb/shells.py` | Batched `OuterFIRShell.forward`; `scatter_mean` + `_scatter_mean_flat` / `_scatter_mean_batched` |
+| `hymeko_neuro/tests/test_hymeko_gomb.py` | Parity tests vs corner-loop reference; outer-shell sequential equivalence |
+| `hymeko_neuro/eval/benchmarks/gomb_outer_timing.py` | Synthetic + `--datasets` timing; **`--torch-compile`**; `_bench` uses `torch.inference_mode` |
 | `reports/2026-05-12-gomb-outer-perf.md` | Perf tables + provenance (this document) |
 | `docs/plans/2026-05-12-gomb-outer-perf/plan.{tex,pdf,tikz,mmd}` | Plan artifacts |
 
@@ -24,12 +24,12 @@ None added.
 
 ## Test results
 
-- Command: `python -m pytest -p no:randomly signedkan_wip/tests/test_hymeko_gomb.py -q`
+- Command: `python -m pytest -p no:randomly hymeko_neuro/tests/test_hymeko_gomb.py -q`
 - Result: **18 passed** (re-run after `_bench` `inference_mode` change).
 
 ## Performance results
 
-Measured with `python -m signedkan_wip.src.benchmarks.gomb_outer_timing` (warmup + multi-iteration wall time; **not** Criterion — diagnostic protocol per CLAUDE.md for Python quick benches). The timed loop runs inside **`torch.inference_mode()`** (forward-only; no autograd tape).
+Measured with `python -m hymeko_neuro.eval.benchmarks.gomb_outer_timing` (warmup + multi-iteration wall time; **not** Criterion — diagnostic protocol per CLAUDE.md for Python quick benches). The timed loop runs inside **`torch.inference_mode()`** (forward-only; no autograd tape).
 
 **Legacy baseline** in the script = original semantics: Python `for m in range(M)` over banks + per-corner `for i in range(k)` scatter. **Eager (batched)** = current `OuterFIRShell.forward`. **torch.compile** = cloned shell, `dynamic=True`, `mode="reduce-overhead"`, parity vs eager on the first `min(4096, M_c)` cycles (rtol `2e-3`), then timed with **+15** extra warmup steps on CUDA before the same `iters` timed loop.
 
@@ -44,13 +44,13 @@ Historical snapshot (earlier run on a different day / stack; retained for rough 
 Reproduce (synthetic + compile):
 
 ```bash
-python -m signedkan_wip.src.benchmarks.gomb_outer_timing --device cuda --N 2048 --Mc 16384 --M 8 --warmup 8 --iters 35 --torch-compile
-python -m signedkan_wip.src.benchmarks.gomb_outer_timing --device cpu --N 512 --Mc 4096 --M 8
+python -m hymeko_neuro.eval.benchmarks.gomb_outer_timing --device cuda --N 2048 --Mc 16384 --M 8 --warmup 8 --iters 35 --torch-compile
+python -m hymeko_neuro.eval.benchmarks.gomb_outer_timing --device cpu --N 512 --Mc 4096 --M 8
 ```
 
 ### Bitcoin Alpha / OTC (real train-split cycle pools)
 
-Command: `python -m signedkan_wip.src.benchmarks.gomb_outer_timing --device cuda --datasets bitcoin_alpha bitcoin_otc --warmup 5 --iters 20 --topk 64 --torch-compile`
+Command: `python -m hymeko_neuro.eval.benchmarks.gomb_outer_timing --device cuda --datasets bitcoin_alpha bitcoin_otc --warmup 5 --iters 20 --topk 64 --torch-compile`
 
 Same setup as `run_gomb_smoke`: 80/20 edge split, cycles enumerated on **train** edges only, `m_per_vertex=64`, triads `k=3`. Outer shell dims match default Gömb smoke (`d_in=32`, `d_layer=16`, `M=8`). Parity (legacy vs eager) on first 4096 cycles before timing; compile parity vs eager on same slice.
 
@@ -67,7 +67,7 @@ Enumerate wall is Rust + Python sign lookup, not included in forward median.
 
 ## Quality metrics and parameters (Gömb)
 
-`python -m signedkan_wip.src.run_gomb_smoke` now ends with a human-readable **`[metrics]`** line and one **JSON** object that includes:
+`python -m hymeko_neuro.run_gomb_smoke` now ends with a human-readable **`[metrics]`** line and one **JSON** object that includes:
 
 | Field | Meaning |
 |-------|---------|

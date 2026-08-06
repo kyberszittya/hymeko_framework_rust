@@ -149,7 +149,7 @@ human-aid only.
    `sweep_msg_gomb.hymeko` only has 3 units, so the test would be
    trivial — but it might still be worth doing for the symmetry
    of the witness suite.
-2. **Production wiring**: `signedkan_wip/experiments/runs/run_gomb_msg_sweep.py`
+2. **Production wiring**: `hymeko_neuro/experiments/runs/run_gomb_msg_sweep.py`
    currently runs the engine and reports the selection but does
    not invoke `AxiomBundle::validate` on the result. A one-line
    addition would print the canonical / extension certificate

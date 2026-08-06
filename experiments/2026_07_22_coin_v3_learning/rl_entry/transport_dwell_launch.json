@@ -1,0 +1,118 @@
+{
+  "campaign": "TRANSPORT_TO_DWELL_TD3_BASELINE_V1",
+  "config_sha": "3ec6dbeb20b7abb7",
+  "pi0_sha": "1902454c",
+  "exact_command": "python experiments/2026_07_22_coin_v3_learning/rl_entry/coin_transport_dwell_campaign.py experiments/2026_07_22_coin_v3_learning/rl_entry/frozen/pi0_shared_clip_actor.pt experiments/2026_07_22_coin_v3_learning/rl_entry/transport_dwell_config.json experiments/2026_07_22_coin_v3_learning/rl_entry/transport_dwell_results.json",
+  "rng_seeds": {
+    "torch": 0,
+    "numpy_collect": 0,
+    "numpy_replay": 1
+  },
+  "ontology": {
+    "control_modes": [
+      "transport",
+      "braking",
+      "settling_dwell"
+    ],
+    "contact_flags": [
+      "contact_present",
+      "contact_lost"
+    ],
+    "target_entry": "DEMOTED to event features (not a control mode)",
+    "event_features": [
+      "inside_target_zone",
+      "just_entered",
+      "just_exited",
+      "distance_to_target",
+      "radial_velocity"
+    ],
+    "conditioning": "onehot3(control) ++ onehot2(contact) ++ event(5) = 10; actor/critic input obs_48 ++ 10 = 58",
+    "update0_identity": "conditioning weights ZERO-init \u21d2 update-0 == pi_0"
+  },
+  "horizon": 60,
+  "n_step": 4,
+  "sample_target": {
+    "transport": 0.5,
+    "braking": 0.3,
+    "settling_dwell": 0.2
+  },
+  "bank_counts": {
+    "transport": 30,
+    "braking": 20,
+    "settling_dwell": 9
+  },
+  "bank_shas": {
+    "train": {
+      "transport": "8f378e841060a2aa",
+      "braking": "3a899e4ecf31ec7c",
+      "settling_dwell": "81e1df852b572abe"
+    },
+    "dev": {
+      "transport": "cbc49369aa311dfa",
+      "braking": "ed6d090fe382ab5b",
+      "settling_dwell": "a0598728dd04355a"
+    }
+  },
+  "stage": {
+    "total_updates": 8000,
+    "critic_warmup_steps": 2000,
+    "policy_delay": 4,
+    "collect_every": 500,
+    "episodes_per_collect": 24,
+    "checkpoints": [
+      0,
+      2000,
+      4000,
+      6000,
+      8000
+    ]
+  },
+  "transactional_UNCHANGED": {
+    "actor_lr": 1e-05,
+    "policy_delay": 4,
+    "lambda_bc": 0.1,
+    "trust_region": {
+      "step_median": 0.0025,
+      "step_p95": 0.005,
+      "step_max": 0.01,
+      "cum_p95": 0.03,
+      "cum_max": 0.06
+    },
+    "backtrack_scales": [
+      0.5,
+      0.25,
+      0.125,
+      0.0625
+    ],
+    "auth_gate": {
+      "boundary_pref_max": 0.5,
+      "twin_disagree_max": 0.5,
+      "perturb_order_min": 0.5,
+      "eps": 0.05
+    }
+  },
+  "unchanged": [
+    "frozen pi_0",
+    "canonical reward",
+    "stable-engagement gate",
+    "4-step TD",
+    "smoothing 0.10/0.25",
+    "coherent exploration 0.15->0.30 held 2-4",
+    "transactional per-step+cumulative caps",
+    "terminated/truncated semantics",
+    "development eval protocol"
+  ],
+  "stop_conditions": [
+    "accepted actor updates > 0",
+    "two consecutive TRAINED checkpoints improve >=1 of {entry-rate, braking/entry-speed, max-dwell, strict} without degrading contact retention (>=-0.05) or target exit (<=+0.05)"
+  ],
+  "constraints": [
+    "old target_entry curriculum",
+    "Stage 2",
+    "Arm B",
+    "SAC",
+    "neutral-reset composition",
+    "final-test seeds",
+    "trust-region relaxation"
+  ]
+}

@@ -16,12 +16,28 @@ pub enum GeometryShape {
     Box,
     Cylinder,
     Sphere,
+    /// A capsule (a cylinder capped by two hemispheres). Dimensional contract (2026-07-23, Galambos planar
+    /// extension): `dimensions[0]` = the **rod/segment length** (the cylinder-axis extent, i.e. the `fromto`
+    /// endpoint distance used by the golden MuJoCo builder — NOT including the hemispherical caps, which the
+    /// emitter adds as `size` beyond each endpoint); `dimensions[1]` = the capsule **radius**.
+    Capsule,
+}
+
+/// Explicit collision categories for a geometry (additive, 2026-07-23). Maps directly to MuJoCo
+/// `contype` / `conaffinity`. `None` (no `collision {}` sub-node) preserves the historical behaviour exactly
+/// (the emitter omits both attributes → MuJoCo defaults).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CollisionMask {
+    pub contype: i64,
+    pub conaffinity: i64,
 }
 
 #[derive(Debug, Clone)]
 pub struct GeometryInfo {
     pub shape: GeometryShape,
     pub dimensions: Vec<f64>,
+    /// Optional explicit collision mask; `None` ⇒ historical default behaviour (emitter omits contype/conaffinity).
+    pub collision: Option<CollisionMask>,
 }
 
 #[derive(Debug, Clone)]
@@ -238,6 +254,7 @@ fn extract_geometry<R: NameResolver>(ir: &Ir, res: &R, link_did: DeclId) -> Opti
         if cname != "link_geometry" { return None; }
 
         if let Some(nid) = ir.as_node(cid) {
+            let mut unknown_shape: Option<String> = None;
             for base in &ir.nodes[nid.0].bases {
                 let target = base.target();
                 if target.is_none() { continue; }
@@ -246,16 +263,39 @@ fn extract_geometry<R: NameResolver>(ir: &Ir, res: &R, link_did: DeclId) -> Opti
                     "box"      => Some(GeometryShape::Box),
                     "cylinder" => Some(GeometryShape::Cylinder),
                     "sphere"   => Some(GeometryShape::Sphere),
-                    _ => None,
+                    "capsule"  => Some(GeometryShape::Capsule),
+                    other      => { unknown_shape = Some(other.to_string()); None }
                 };
                 if let Some(shape) = shape {
                     let dims = find_child_list(ir, res, cid, "dimension")
                         .unwrap_or_default();
-                    return Some(GeometryInfo { shape, dimensions: dims });
+                    let collision = extract_collision(ir, res, cid);
+                    return Some(GeometryInfo { shape, dimensions: dims, collision });
                 }
+            }
+            // An EXPLICITLY supplied but unknown geometry shape must hard-fail (not silently disappear).
+            // Missing geometry (no shape base at all) remains allowed and returns None below.
+            if let Some(bad) = unknown_shape {
+                panic!(
+                    "unknown geometry shape {bad:?} in `link_geometry` (decl {cid:?}); \
+                     expected one of box / cylinder / sphere / capsule"
+                );
             }
         }
         None
+    })
+}
+
+/// Read an optional `collision {{ contype ...; conaffinity ...; }}` sub-node of a `link_geometry` node.
+/// Absence ⇒ `None` (historical default). Both fields are required together when the block is present.
+fn extract_collision<R: NameResolver>(ir: &Ir, res: &R, geom_did: DeclId) -> Option<CollisionMask> {
+    ir.decl_children(geom_did).find_map(|cid| {
+        if res.resolve(ir.decl_nodes[cid.0].name) != "collision" {
+            return None;
+        }
+        let contype = find_child_num(ir, res, cid, "contype")? as i64;
+        let conaffinity = find_child_num(ir, res, cid, "conaffinity")? as i64;
+        Some(CollisionMask { contype, conaffinity })
     })
 }
 
@@ -319,13 +359,70 @@ fn check_inherits_simple<R: NameResolver>(
     false
 }
 
+/// Find a direct child named `name` whose value is a resolved `Ref`, returning the ref
+/// target; if absent on `did`, walk `did`'s bases (node and edge) up to `depth` — a joint
+/// declares its `limit` directly (`@j0: rev_joint { limit -> joint0_limit; }`) **or**
+/// inherits it from `rev_joint`/`prismatic_joint`. Unresolved refs are skipped.
+///
+/// # Preconditions
+/// `depth` bounds the inheritance walk (cycle/overflow guard).
+/// # Postconditions
+/// Returns `Some(target)` for the nearest `name`-named ref (own children before bases),
+/// else `None`.
+fn find_inherited_ref_target<R: NameResolver>(
+    ir: &Ir, res: &R, did: DeclId, name: &str, depth: usize,
+) -> Option<DeclId> {
+    if did.is_none() || depth == 0 {
+        return None;
+    }
+    for cid in ir.decl_children(did) {
+        let child = &ir.decl_nodes[cid.0];
+        if res.resolve(child.name) == name {
+            if let Some(ValueR::Ref(target)) = &child.anno.value {
+                if !target.is_none() {
+                    return Some(*target);
+                }
+            }
+        }
+    }
+    if let Some(nid) = ir.as_node(did) {
+        for base in &ir.nodes[nid.0].bases {
+            if let Some(t) = find_inherited_ref_target(ir, res, base.target(), name, depth - 1) {
+                return Some(t);
+            }
+        }
+    }
+    if let Some(eid) = ir.as_edge(did) {
+        for base in &ir.edges[eid.0].bases {
+            if let Some(t) = find_inherited_ref_target(ir, res, base.target(), name, depth - 1) {
+                return Some(t);
+            }
+        }
+    }
+    None
+}
+
 fn extract_joint_limits<R: NameResolver>(
     ir: &Ir, res: &R, did: DeclId,
 ) -> Option<JointLimits> {
-    let lower = find_child_num(ir, res, did, "limit_lower");
-    let upper = find_child_num(ir, res, did, "limit_upper");
-    let effort = find_child_num(ir, res, did, "limit_effort");
-    let velocity = find_child_num(ir, res, did, "limit_velocity");
+    // Legacy form: `limit_lower`/`limit_upper`/... as direct children of the joint.
+    let mut lower = find_child_num(ir, res, did, "limit_lower");
+    let mut upper = find_child_num(ir, res, did, "limit_upper");
+    let mut effort = find_child_num(ir, res, did, "limit_effort");
+    let mut velocity = find_child_num(ir, res, did, "limit_velocity");
+
+    // Referenced form: `limit -> joint_rev_limit { lower; upper; effort; velocity; }`,
+    // declared on the joint or inherited from its base joint type. Follow the `limit` ref
+    // and read the fields off the target node (named without the `limit_` prefix). Without
+    // this the emitted joints are unlimited and the actuators carry no ctrlrange.
+    if lower.is_none() && upper.is_none() {
+        if let Some(limit_did) = find_inherited_ref_target(ir, res, did, "limit", 4) {
+            lower = find_child_num(ir, res, limit_did, "lower");
+            upper = find_child_num(ir, res, limit_did, "upper");
+            effort = find_child_num(ir, res, limit_did, "effort");
+            velocity = find_child_num(ir, res, limit_did, "velocity");
+        }
+    }
 
     // Only produce limits if at least lower+upper are present
     match (lower, upper) {

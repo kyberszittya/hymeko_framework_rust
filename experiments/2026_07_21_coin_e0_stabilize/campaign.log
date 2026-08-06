@@ -1,0 +1,614 @@
+[campaign] headline=9 dev=8 train=17 | demos=2280 pairs | seeds=(0, 1, 2, 3) reps=2 steps=24000
+/Users/kyberszittya/hakiko_ai_ws/03_implementation/hymeko_framework_rust/hymeko_rl/experiments/coin_delivery_e0_campaign.py:190: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:839.)
+  curve.append(float(loss))
+[CONTROL s0] BC-init headline 2/9 | steps=24000 alpha_final=0.005 bc_coef=1.0(persistent)
+  [sac] step    2000/24000 | crit=0.186 act=-0.0532 alpha=0.0868[anneal] |   803 steps/s | ETA  0.5 min | buf=2000
+  [CONTROL s0 eval#1] dev 3/8 (best 3) alpha_floor=0.005
+  [sac] eval @ 2000: 3
+  [sac] step    4000/24000 | crit=0.545 act=-1.74 alpha=0.0736[anneal] |   539 steps/s | ETA  0.6 min | buf=4000
+  [CONTROL s0 eval#2] dev 3/8 (best 3) alpha_floor=0.005
+  [sac] eval @ 4000: 3
+  [sac] step    6000/24000 | crit=4.45 act=-4.55 alpha=0.0604[anneal] |   486 steps/s | ETA  0.6 min | buf=6000
+  [CONTROL s0 eval#3] dev 2/8 (best 3) alpha_floor=0.005
+  [sac] eval @ 6000: 2
+  [sac] step    8000/24000 | crit=1.31 act=-6.14 alpha=0.0472[anneal] |   462 steps/s | ETA  0.6 min | buf=8000
+  [CONTROL s0 eval#4] dev 0/8 (best 3) alpha_floor=0.005
+  [sac] eval @ 8000: 0
+  [sac] step   10000/24000 | crit=0.6 act=-7.37 alpha=0.034[anneal] |   446 steps/s | ETA  0.5 min | buf=10000
+  [CONTROL s0 eval#5] dev 0/8 (best 3) alpha_floor=0.005
+  [sac] eval @ 10000: 0
+  [sac] step   12000/24000 | crit=1.18 act=-8.86 alpha=0.0208[anneal] |   436 steps/s | ETA  0.5 min | buf=12000
+  [CONTROL s0 eval#6] dev 4/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 12000: 4
+  [sac] step   14000/24000 | crit=1.32 act=-9.68 alpha=0.00764[anneal] |   435 steps/s | ETA  0.4 min | buf=14000
+  [CONTROL s0 eval#7] dev 4/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 14000: 4
+  [sac] step   16000/24000 | crit=0.545 act=-10.3 alpha=0.005[anneal] |   434 steps/s | ETA  0.3 min | buf=16000
+  [CONTROL s0 eval#8] dev 5/8 (best 5) alpha_floor=0.005
+  [sac] eval @ 16000: 5
+  [sac] step   18000/24000 | crit=0.337 act=-11.5 alpha=0.005[anneal] |   435 steps/s | ETA  0.2 min | buf=18000
+  [CONTROL s0 eval#9] dev 5/8 (best 5) alpha_floor=0.005
+  [sac] eval @ 18000: 5
+  [sac] step   20000/24000 | crit=0.473 act=-11.9 alpha=0.005[anneal] |   434 steps/s | ETA  0.2 min | buf=20000
+  [CONTROL s0 eval#10] dev 5/8 (best 5) alpha_floor=0.005
+  [sac] eval @ 20000: 5
+  [sac] step   22000/24000 | crit=0.411 act=-11.9 alpha=0.005[anneal] |   434 steps/s | ETA  0.1 min | buf=22000
+  [CONTROL s0 eval#11] dev 5/8 (best 5) alpha_floor=0.005
+  [sac] eval @ 22000: 5
+  [sac] step   24000/24000 | crit=0.731 act=-11.6 alpha=0.005[anneal] |   434 steps/s | ETA  0.0 min | buf=24000
+  [CONTROL s0 eval#12] dev 2/8 (best 5) alpha_floor=0.005
+  [sac] eval @ 24000: 2
+  => CONTROL s0.0: peak_dev=5 final_dev=2 headline>=8/10=3
+[CONTROL s1] BC-init headline 2/9 | steps=24000 alpha_final=0.005 bc_coef=1.0(persistent)
+  [sac] step    2000/24000 | crit=0.0778 act=-0.873 alpha=0.0868[anneal] |   813 steps/s | ETA  0.5 min | buf=2000
+  [CONTROL s1 eval#1] dev 4/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 2000: 4
+  [sac] step    4000/24000 | crit=1.58 act=-2.3 alpha=0.0736[anneal] |   559 steps/s | ETA  0.6 min | buf=4000
+  [CONTROL s1 eval#2] dev 2/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 4000: 2
+  [sac] step    6000/24000 | crit=1.21 act=-3.96 alpha=0.0604[anneal] |   497 steps/s | ETA  0.6 min | buf=6000
+  [CONTROL s1 eval#3] dev 6/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 6000: 6
+  [sac] step    8000/24000 | crit=0.978 act=-5.9 alpha=0.0472[anneal] |   483 steps/s | ETA  0.6 min | buf=8000
+  [CONTROL s1 eval#4] dev 5/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 8000: 5
+  [sac] step   10000/24000 | crit=3.02 act=-7.41 alpha=0.034[anneal] |   472 steps/s | ETA  0.5 min | buf=10000
+  [CONTROL s1 eval#5] dev 0/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 10000: 0
+  [sac] step   12000/24000 | crit=2.36 act=-8.86 alpha=0.0208[anneal] |   448 steps/s | ETA  0.4 min | buf=12000
+  [CONTROL s1 eval#6] dev 4/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 12000: 4
+  [sac] step   14000/24000 | crit=1.33 act=-10.4 alpha=0.00764[anneal] |   442 steps/s | ETA  0.4 min | buf=14000
+  [CONTROL s1 eval#7] dev 3/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 14000: 3
+  [sac] step   16000/24000 | crit=0.791 act=-12 alpha=0.005[anneal] |   437 steps/s | ETA  0.3 min | buf=16000
+  [CONTROL s1 eval#8] dev 4/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 16000: 4
+  [sac] step   18000/24000 | crit=1.05 act=-12.4 alpha=0.005[anneal] |   431 steps/s | ETA  0.2 min | buf=18000
+  [CONTROL s1 eval#9] dev 4/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 18000: 4
+  [sac] step   20000/24000 | crit=0.382 act=-12.9 alpha=0.005[anneal] |   428 steps/s | ETA  0.2 min | buf=20000
+  [CONTROL s1 eval#10] dev 4/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 20000: 4
+  [sac] step   22000/24000 | crit=0.431 act=-12.6 alpha=0.005[anneal] |   427 steps/s | ETA  0.1 min | buf=22000
+  [CONTROL s1 eval#11] dev 5/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 22000: 5
+  [sac] step   24000/24000 | crit=0.539 act=-12.7 alpha=0.005[anneal] |   427 steps/s | ETA  0.0 min | buf=24000
+  [CONTROL s1 eval#12] dev 5/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 24000: 5
+  => CONTROL s0.1: peak_dev=6 final_dev=5 headline>=8/10=5
+[CONTROL s10] BC-init headline 2/9 | steps=24000 alpha_final=0.005 bc_coef=1.0(persistent)
+  [sac] step    2000/24000 | crit=0.101 act=-0.584 alpha=0.0868[anneal] |   798 steps/s | ETA  0.5 min | buf=2000
+  [CONTROL s10 eval#1] dev 7/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 2000: 7
+  [sac] step    4000/24000 | crit=1.09 act=-1.96 alpha=0.0736[anneal] |   578 steps/s | ETA  0.6 min | buf=4000
+  [CONTROL s10 eval#2] dev 2/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 4000: 2
+  [sac] step    6000/24000 | crit=0.424 act=-3.31 alpha=0.0604[anneal] |   503 steps/s | ETA  0.6 min | buf=6000
+  [CONTROL s10 eval#3] dev 2/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 6000: 2
+  [sac] step    8000/24000 | crit=2.05 act=-5.46 alpha=0.0472[anneal] |   472 steps/s | ETA  0.6 min | buf=8000
+  [CONTROL s10 eval#4] dev 1/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 8000: 1
+  [sac] step   10000/24000 | crit=0.697 act=-7.27 alpha=0.034[anneal] |   454 steps/s | ETA  0.5 min | buf=10000
+  [CONTROL s10 eval#5] dev 3/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 10000: 3
+  [sac] step   12000/24000 | crit=1.67 act=-9.26 alpha=0.0208[anneal] |   446 steps/s | ETA  0.4 min | buf=12000
+  [CONTROL s10 eval#6] dev 2/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 12000: 2
+  [sac] step   14000/24000 | crit=1.8 act=-10.3 alpha=0.00764[anneal] |   437 steps/s | ETA  0.4 min | buf=14000
+  [CONTROL s10 eval#7] dev 1/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 14000: 1
+  [sac] step   16000/24000 | crit=0.213 act=-11.2 alpha=0.005[anneal] |   431 steps/s | ETA  0.3 min | buf=16000
+  [CONTROL s10 eval#8] dev 2/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 16000: 2
+  [sac] step   18000/24000 | crit=0.822 act=-12.2 alpha=0.005[anneal] |   427 steps/s | ETA  0.2 min | buf=18000
+  [CONTROL s10 eval#9] dev 7/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 18000: 7
+  [sac] step   20000/24000 | crit=0.43 act=-12.3 alpha=0.005[anneal] |   427 steps/s | ETA  0.2 min | buf=20000
+  [CONTROL s10 eval#10] dev 8/8 (best 8) alpha_floor=0.005
+  [sac] eval @ 20000: 8
+  [sac] step   22000/24000 | crit=0.851 act=-12.7 alpha=0.005[anneal] |   429 steps/s | ETA  0.1 min | buf=22000
+  [CONTROL s10 eval#11] dev 4/8 (best 8) alpha_floor=0.005
+  [sac] eval @ 22000: 4
+  [sac] step   24000/24000 | crit=0.408 act=-11.8 alpha=0.005[anneal] |   426 steps/s | ETA  0.0 min | buf=24000
+  [CONTROL s10 eval#12] dev 3/8 (best 8) alpha_floor=0.005
+  [sac] eval @ 24000: 3
+  => CONTROL s1.0: peak_dev=8 final_dev=3 headline>=8/10=6
+[CONTROL s11] BC-init headline 2/9 | steps=24000 alpha_final=0.005 bc_coef=1.0(persistent)
+  [sac] step    2000/24000 | crit=0.417 act=-1.04 alpha=0.0868[anneal] |   802 steps/s | ETA  0.5 min | buf=2000
+  [CONTROL s11 eval#1] dev 4/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 2000: 4
+  [sac] step    4000/24000 | crit=2.27 act=-2.57 alpha=0.0736[anneal] |   559 steps/s | ETA  0.6 min | buf=4000
+  [CONTROL s11 eval#2] dev 3/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 4000: 3
+  [sac] step    6000/24000 | crit=3.61 act=-4.39 alpha=0.0604[anneal] |   499 steps/s | ETA  0.6 min | buf=6000
+  [CONTROL s11 eval#3] dev 3/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 6000: 3
+  [sac] step    8000/24000 | crit=1.31 act=-5.84 alpha=0.0472[anneal] |   472 steps/s | ETA  0.6 min | buf=8000
+  [CONTROL s11 eval#4] dev 3/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 8000: 3
+  [sac] step   10000/24000 | crit=2.72 act=-7.29 alpha=0.034[anneal] |   450 steps/s | ETA  0.5 min | buf=10000
+  [CONTROL s11 eval#5] dev 0/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 10000: 0
+  [sac] step   12000/24000 | crit=1.66 act=-8.96 alpha=0.0208[anneal] |   437 steps/s | ETA  0.5 min | buf=12000
+  [CONTROL s11 eval#6] dev 0/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 12000: 0
+  [sac] step   14000/24000 | crit=1.61 act=-9.44 alpha=0.00764[anneal] |   428 steps/s | ETA  0.4 min | buf=14000
+  [CONTROL s11 eval#7] dev 1/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 14000: 1
+  [sac] step   16000/24000 | crit=1.1 act=-11.1 alpha=0.005[anneal] |   423 steps/s | ETA  0.3 min | buf=16000
+  [CONTROL s11 eval#8] dev 2/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 16000: 2
+  [sac] step   18000/24000 | crit=1.02 act=-11.7 alpha=0.005[anneal] |   420 steps/s | ETA  0.2 min | buf=18000
+  [CONTROL s11 eval#9] dev 2/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 18000: 2
+  [sac] step   20000/24000 | crit=1.28 act=-12.4 alpha=0.005[anneal] |   418 steps/s | ETA  0.2 min | buf=20000
+  [CONTROL s11 eval#10] dev 1/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 20000: 1
+  [sac] step   22000/24000 | crit=0.844 act=-12.4 alpha=0.005[anneal] |   415 steps/s | ETA  0.1 min | buf=22000
+  [CONTROL s11 eval#11] dev 1/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 22000: 1
+  [sac] step   24000/24000 | crit=1.21 act=-12.4 alpha=0.005[anneal] |   412 steps/s | ETA  0.0 min | buf=24000
+  [CONTROL s11 eval#12] dev 3/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 24000: 3
+  => CONTROL s1.1: peak_dev=4 final_dev=3 headline>=8/10=4
+[CONTROL s20] BC-init headline 2/9 | steps=24000 alpha_final=0.005 bc_coef=1.0(persistent)
+  [sac] step    2000/24000 | crit=0.0646 act=-0.444 alpha=0.0868[anneal] |   801 steps/s | ETA  0.5 min | buf=2000
+  [CONTROL s20 eval#1] dev 6/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 2000: 6
+  [sac] step    4000/24000 | crit=3.13 act=-1.71 alpha=0.0736[anneal] |   567 steps/s | ETA  0.6 min | buf=4000
+  [CONTROL s20 eval#2] dev 3/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 4000: 3
+  [sac] step    6000/24000 | crit=2.4 act=-3.47 alpha=0.0604[anneal] |   500 steps/s | ETA  0.6 min | buf=6000
+  [CONTROL s20 eval#3] dev 3/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 6000: 3
+  [sac] step    8000/24000 | crit=0.424 act=-5.29 alpha=0.0472[anneal] |   472 steps/s | ETA  0.6 min | buf=8000
+  [CONTROL s20 eval#4] dev 2/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 8000: 2
+  [sac] step   10000/24000 | crit=1.99 act=-6.93 alpha=0.034[anneal] |   455 steps/s | ETA  0.5 min | buf=10000
+  [CONTROL s20 eval#5] dev 1/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 10000: 1
+  [sac] step   12000/24000 | crit=1.87 act=-8.65 alpha=0.0208[anneal] |   443 steps/s | ETA  0.5 min | buf=12000
+  [CONTROL s20 eval#6] dev 0/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 12000: 0
+  [sac] step   14000/24000 | crit=0.587 act=-9.71 alpha=0.00764[anneal] |   432 steps/s | ETA  0.4 min | buf=14000
+  [CONTROL s20 eval#7] dev 0/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 14000: 0
+  [sac] step   16000/24000 | crit=0.312 act=-10.8 alpha=0.005[anneal] |   425 steps/s | ETA  0.3 min | buf=16000
+  [CONTROL s20 eval#8] dev 0/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 16000: 0
+  [sac] step   18000/24000 | crit=1.17 act=-11.5 alpha=0.005[anneal] |   419 steps/s | ETA  0.2 min | buf=18000
+  [CONTROL s20 eval#9] dev 0/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 18000: 0
+  [sac] step   20000/24000 | crit=0.726 act=-11.5 alpha=0.005[anneal] |   414 steps/s | ETA  0.2 min | buf=20000
+  [CONTROL s20 eval#10] dev 5/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 20000: 5
+  [sac] step   22000/24000 | crit=0.577 act=-11.5 alpha=0.005[anneal] |   411 steps/s | ETA  0.1 min | buf=22000
+  [CONTROL s20 eval#11] dev 2/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 22000: 2
+  [sac] step   24000/24000 | crit=0.581 act=-11.3 alpha=0.005[anneal] |   409 steps/s | ETA  0.0 min | buf=24000
+  [CONTROL s20 eval#12] dev 1/8 (best 6) alpha_floor=0.005
+  [sac] eval @ 24000: 1
+  => CONTROL s2.0: peak_dev=6 final_dev=1 headline>=8/10=5
+[CONTROL s21] BC-init headline 5/9 | steps=24000 alpha_final=0.005 bc_coef=1.0(persistent)
+  [sac] step    2000/24000 | crit=0.0721 act=-0.319 alpha=0.0868[anneal] |   787 steps/s | ETA  0.5 min | buf=2000
+  [CONTROL s21 eval#1] dev 7/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 2000: 7
+  [sac] step    4000/24000 | crit=1.43 act=-0.775 alpha=0.0736[anneal] |   564 steps/s | ETA  0.6 min | buf=4000
+  [CONTROL s21 eval#2] dev 3/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 4000: 3
+  [sac] step    6000/24000 | crit=2.3 act=-3.65 alpha=0.0604[anneal] |   501 steps/s | ETA  0.6 min | buf=6000
+  [CONTROL s21 eval#3] dev 3/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 6000: 3
+  [sac] step    8000/24000 | crit=0.395 act=-5.56 alpha=0.0472[anneal] |   473 steps/s | ETA  0.6 min | buf=8000
+  [CONTROL s21 eval#4] dev 2/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 8000: 2
+  [sac] step   10000/24000 | crit=1.15 act=-7.65 alpha=0.034[anneal] |   456 steps/s | ETA  0.5 min | buf=10000
+  [CONTROL s21 eval#5] dev 0/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 10000: 0
+  [sac] step   12000/24000 | crit=1.23 act=-9.06 alpha=0.0208[anneal] |   441 steps/s | ETA  0.5 min | buf=12000
+  [CONTROL s21 eval#6] dev 0/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 12000: 0
+  [sac] step   14000/24000 | crit=1.23 act=-10.5 alpha=0.00764[anneal] |   432 steps/s | ETA  0.4 min | buf=14000
+  [CONTROL s21 eval#7] dev 5/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 14000: 5
+  [sac] step   16000/24000 | crit=1.53 act=-11.7 alpha=0.005[anneal] |   430 steps/s | ETA  0.3 min | buf=16000
+  [CONTROL s21 eval#8] dev 4/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 16000: 4
+  [sac] step   18000/24000 | crit=1.38 act=-13.1 alpha=0.005[anneal] |   428 steps/s | ETA  0.2 min | buf=18000
+  [CONTROL s21 eval#9] dev 4/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 18000: 4
+  [sac] step   20000/24000 | crit=0.524 act=-13.3 alpha=0.005[anneal] |   424 steps/s | ETA  0.2 min | buf=20000
+  [CONTROL s21 eval#10] dev 4/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 20000: 4
+  [sac] step   22000/24000 | crit=0.645 act=-12.9 alpha=0.005[anneal] |   423 steps/s | ETA  0.1 min | buf=22000
+  [CONTROL s21 eval#11] dev 4/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 22000: 4
+  [sac] step   24000/24000 | crit=0.552 act=-12.5 alpha=0.005[anneal] |   422 steps/s | ETA  0.0 min | buf=24000
+  [CONTROL s21 eval#12] dev 3/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 24000: 3
+  => CONTROL s2.1: peak_dev=7 final_dev=3 headline>=8/10=5
+[CONTROL s30] BC-init headline 2/9 | steps=24000 alpha_final=0.005 bc_coef=1.0(persistent)
+  [sac] step    2000/24000 | crit=0.0626 act=-1.72 alpha=0.0868[anneal] |   797 steps/s | ETA  0.5 min | buf=2000
+  [CONTROL s30 eval#1] dev 7/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 2000: 7
+  [sac] step    4000/24000 | crit=0.0634 act=-3.07 alpha=0.0736[anneal] |   572 steps/s | ETA  0.6 min | buf=4000
+  [CONTROL s30 eval#2] dev 7/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 4000: 7
+  [sac] step    6000/24000 | crit=2.56 act=-4.98 alpha=0.0604[anneal] |   526 steps/s | ETA  0.6 min | buf=6000
+  [CONTROL s30 eval#3] dev 3/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 6000: 3
+  [sac] step    8000/24000 | crit=1.33 act=-6.9 alpha=0.0472[anneal] |   490 steps/s | ETA  0.5 min | buf=8000
+  [CONTROL s30 eval#4] dev 3/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 8000: 3
+  [sac] step   10000/24000 | crit=0.766 act=-7.31 alpha=0.034[anneal] |   471 steps/s | ETA  0.5 min | buf=10000
+  [CONTROL s30 eval#5] dev 7/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 10000: 7
+  [sac] step   12000/24000 | crit=1.16 act=-8.41 alpha=0.0208[anneal] |   466 steps/s | ETA  0.4 min | buf=12000
+  [CONTROL s30 eval#6] dev 7/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 12000: 7
+  [sac] step   14000/24000 | crit=1.38 act=-8.87 alpha=0.00764[anneal] |   460 steps/s | ETA  0.4 min | buf=14000
+  [CONTROL s30 eval#7] dev 1/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 14000: 1
+  [sac] step   16000/24000 | crit=0.679 act=-9.3 alpha=0.005[anneal] |   451 steps/s | ETA  0.3 min | buf=16000
+  [CONTROL s30 eval#8] dev 0/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 16000: 0
+  [sac] step   18000/24000 | crit=1.34 act=-8.75 alpha=0.005[anneal] |   442 steps/s | ETA  0.2 min | buf=18000
+  [CONTROL s30 eval#9] dev 1/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 18000: 1
+  [sac] step   20000/24000 | crit=0.414 act=-9.15 alpha=0.005[anneal] |   437 steps/s | ETA  0.2 min | buf=20000
+  [CONTROL s30 eval#10] dev 0/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 20000: 0
+  [sac] step   22000/24000 | crit=0.909 act=-9.08 alpha=0.005[anneal] |   430 steps/s | ETA  0.1 min | buf=22000
+  [CONTROL s30 eval#11] dev 1/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 22000: 1
+  [sac] step   24000/24000 | crit=1.05 act=-9.36 alpha=0.005[anneal] |   425 steps/s | ETA  0.0 min | buf=24000
+  [CONTROL s30 eval#12] dev 0/8 (best 7) alpha_floor=0.005
+  [sac] eval @ 24000: 0
+  => CONTROL s3.0: peak_dev=7 final_dev=0 headline>=8/10=5
+[CONTROL s31] BC-init headline 2/9 | steps=24000 alpha_final=0.005 bc_coef=1.0(persistent)
+  [sac] step    2000/24000 | crit=2.65 act=-0.194 alpha=0.0868[anneal] |   801 steps/s | ETA  0.5 min | buf=2000
+  [CONTROL s31 eval#1] dev 4/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 2000: 4
+  [sac] step    4000/24000 | crit=0.355 act=-1.84 alpha=0.0736[anneal] |   548 steps/s | ETA  0.6 min | buf=4000
+  [CONTROL s31 eval#2] dev 2/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 4000: 2
+  [sac] step    6000/24000 | crit=0.736 act=-3.75 alpha=0.0604[anneal] |   483 steps/s | ETA  0.6 min | buf=6000
+  [CONTROL s31 eval#3] dev 3/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 6000: 3
+  [sac] step    8000/24000 | crit=0.683 act=-5.97 alpha=0.0472[anneal] |   455 steps/s | ETA  0.6 min | buf=8000
+  [CONTROL s31 eval#4] dev 2/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 8000: 2
+  [sac] step   10000/24000 | crit=1.35 act=-7.32 alpha=0.034[anneal] |   440 steps/s | ETA  0.5 min | buf=10000
+  [CONTROL s31 eval#5] dev 1/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 10000: 1
+  [sac] step   12000/24000 | crit=0.446 act=-7.89 alpha=0.0208[anneal] |   429 steps/s | ETA  0.5 min | buf=12000
+  [CONTROL s31 eval#6] dev 1/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 12000: 1
+  [sac] step   14000/24000 | crit=1.01 act=-9.55 alpha=0.00764[anneal] |   420 steps/s | ETA  0.4 min | buf=14000
+  [CONTROL s31 eval#7] dev 4/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 14000: 4
+  [sac] step   16000/24000 | crit=0.534 act=-10.3 alpha=0.005[anneal] |   417 steps/s | ETA  0.3 min | buf=16000
+  [CONTROL s31 eval#8] dev 0/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 16000: 0
+  [sac] step   18000/24000 | crit=1.84 act=-10.4 alpha=0.005[anneal] |   412 steps/s | ETA  0.2 min | buf=18000
+  [CONTROL s31 eval#9] dev 3/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 18000: 3
+  [sac] step   20000/24000 | crit=0.576 act=-11.3 alpha=0.005[anneal] |   411 steps/s | ETA  0.2 min | buf=20000
+  [CONTROL s31 eval#10] dev 4/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 20000: 4
+  [sac] step   22000/24000 | crit=0.491 act=-10.4 alpha=0.005[anneal] |   411 steps/s | ETA  0.1 min | buf=22000
+  [CONTROL s31 eval#11] dev 3/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 22000: 3
+  [sac] step   24000/24000 | crit=1.72 act=-10.2 alpha=0.005[anneal] |   410 steps/s | ETA  0.0 min | buf=24000
+  [CONTROL s31 eval#12] dev 0/8 (best 4) alpha_floor=0.005
+  [sac] eval @ 24000: 0
+  => CONTROL s3.1: peak_dev=4 final_dev=0 headline>=8/10=2
+[STABILIZED s0] BC-init headline 5/9 | steps=24000 alpha_final=0.0367 bc_coef=1.0(persistent)
+  [sac] step    2000/24000 | crit=0.167 act=0.0329 alpha=0.0912[anneal] |   770 steps/s | ETA  0.5 min | buf=2000
+  [STABILIZED s0 eval#1] dev 3/8 (best 3) alpha_floor=0.0367
+  [sac] eval @ 2000: 3
+  [sac] step    4000/24000 | crit=1.23 act=-2.08 alpha=0.0824[anneal] |   525 steps/s | ETA  0.6 min | buf=4000
+  [STABILIZED s0 eval#2] dev 3/8 (best 3) alpha_floor=0.0367
+  [sac] eval @ 4000: 3
+  [sac] step    6000/24000 | crit=1.44 act=-5.94 alpha=0.0736[anneal] |   473 steps/s | ETA  0.6 min | buf=6000
+  [STABILIZED s0 eval#3] dev 2/8 (best 3) alpha_floor=0.0367
+  [sac] eval @ 6000: 2
+  [sac] step    8000/24000 | crit=1.3 act=-6.71 alpha=0.0648[anneal] |   448 steps/s | ETA  0.6 min | buf=8000
+  [STABILIZED s0 eval#4] dev 1/8 (best 3) alpha_floor=0.0367
+  [sac] eval @ 8000: 1
+  [sac] step   10000/24000 | crit=0.344 act=-7.98 alpha=0.056[anneal] |   431 steps/s | ETA  0.5 min | buf=10000
+  [STABILIZED s0 eval#5] dev 4/8 (best 4) alpha_floor=0.0367
+  [sac] eval @ 10000: 4
+  [sac] step   12000/24000 | crit=0.388 act=-9.74 alpha=0.0472[anneal] |   427 steps/s | ETA  0.5 min | buf=12000
+  [STABILIZED s0 eval#6] dev 3/8 (best 4) alpha_floor=0.0367
+  [sac] eval @ 12000: 3
+  [sac] step   14000/24000 | crit=0.391 act=-10.7 alpha=0.0385[anneal] |   422 steps/s | ETA  0.4 min | buf=14000
+  [STABILIZED s0 eval#7] dev 7/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 14000: 7
+  [sac] step   16000/24000 | crit=0.742 act=-10.7 alpha=0.0367[anneal] |   424 steps/s | ETA  0.3 min | buf=16000
+  [STABILIZED s0 eval#8] dev 7/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 16000: 7
+  [sac] step   18000/24000 | crit=0.731 act=-11.3 alpha=0.0367[anneal] |   426 steps/s | ETA  0.2 min | buf=18000
+  [STABILIZED s0 eval#9] dev 8/8 (best 8) alpha_floor=0.0367
+  [sac] eval @ 18000: 8
+  [sac] step   20000/24000 | crit=0.497 act=-12 alpha=0.0367[anneal] |   428 steps/s | ETA  0.2 min | buf=20000
+  [STABILIZED s0 eval#10] dev 5/8 (best 8) alpha_floor=0.0367
+  [sac] eval @ 20000: 5
+  [sac] step   22000/24000 | crit=0.382 act=-11.9 alpha=0.0367[anneal] |   427 steps/s | ETA  0.1 min | buf=22000
+  [STABILIZED s0 eval#11] dev 5/8 (best 8) alpha_floor=0.0367
+  [sac] eval @ 22000: 5
+  [sac] step   24000/24000 | crit=0.694 act=-12 alpha=0.0367[anneal] |   426 steps/s | ETA  0.0 min | buf=24000
+  [STABILIZED s0 eval#12] dev 5/8 (best 8) alpha_floor=0.0367
+  [sac] eval @ 24000: 5
+  => STABILIZED s0.0: peak_dev=8 final_dev=5 headline>=8/10=5
+[STABILIZED s1] BC-init headline 2/9 | steps=24000 alpha_final=0.0367 bc_coef=1.0(persistent)
+  [sac] step    2000/24000 | crit=0.103 act=-1.01 alpha=0.0912[anneal] |   797 steps/s | ETA  0.5 min | buf=2000
+  [STABILIZED s1 eval#1] dev 3/8 (best 3) alpha_floor=0.0367
+  [sac] eval @ 2000: 3
+  [sac] step    4000/24000 | crit=4.49 act=-3.2 alpha=0.0824[anneal] |   539 steps/s | ETA  0.6 min | buf=4000
+  [STABILIZED s1 eval#2] dev 3/8 (best 3) alpha_floor=0.0367
+  [sac] eval @ 4000: 3
+  [sac] step    6000/24000 | crit=1.05 act=-6.35 alpha=0.0736[anneal] |   487 steps/s | ETA  0.6 min | buf=6000
+  [STABILIZED s1 eval#3] dev 3/8 (best 3) alpha_floor=0.0367
+  [sac] eval @ 6000: 3
+  [sac] step    8000/24000 | crit=0.195 act=-8.2 alpha=0.0648[anneal] |   465 steps/s | ETA  0.6 min | buf=8000
+  [STABILIZED s1 eval#4] dev 2/8 (best 3) alpha_floor=0.0367
+  [sac] eval @ 8000: 2
+  [sac] step   10000/24000 | crit=0.636 act=-10.2 alpha=0.056[anneal] |   449 steps/s | ETA  0.5 min | buf=10000
+  [STABILIZED s1 eval#5] dev 6/8 (best 6) alpha_floor=0.0367
+  [sac] eval @ 10000: 6
+  [sac] step   12000/24000 | crit=1.39 act=-10.6 alpha=0.0472[anneal] |   449 steps/s | ETA  0.4 min | buf=12000
+  [STABILIZED s1 eval#6] dev 6/8 (best 6) alpha_floor=0.0367
+  [sac] eval @ 12000: 6
+  [sac] step   14000/24000 | crit=0.673 act=-11.8 alpha=0.0385[anneal] |   450 steps/s | ETA  0.4 min | buf=14000
+  [STABILIZED s1 eval#7] dev 2/8 (best 6) alpha_floor=0.0367
+  [sac] eval @ 14000: 2
+  [sac] step   16000/24000 | crit=0.554 act=-13.1 alpha=0.0367[anneal] |   444 steps/s | ETA  0.3 min | buf=16000
+  [STABILIZED s1 eval#8] dev 5/8 (best 6) alpha_floor=0.0367
+  [sac] eval @ 16000: 5
+  [sac] step   18000/24000 | crit=0.329 act=-12.3 alpha=0.0367[anneal] |   444 steps/s | ETA  0.2 min | buf=18000
+  [STABILIZED s1 eval#9] dev 5/8 (best 6) alpha_floor=0.0367
+  [sac] eval @ 18000: 5
+  [sac] step   20000/24000 | crit=0.596 act=-13.1 alpha=0.0367[anneal] |   443 steps/s | ETA  0.2 min | buf=20000
+  [STABILIZED s1 eval#10] dev 2/8 (best 6) alpha_floor=0.0367
+  [sac] eval @ 20000: 2
+  [sac] step   22000/24000 | crit=0.525 act=-13.4 alpha=0.0367[anneal] |   440 steps/s | ETA  0.1 min | buf=22000
+  [STABILIZED s1 eval#11] dev 2/8 (best 6) alpha_floor=0.0367
+  [sac] eval @ 22000: 2
+  [sac] step   24000/24000 | crit=0.205 act=-13.4 alpha=0.0367[anneal] |   437 steps/s | ETA  0.0 min | buf=24000
+  [STABILIZED s1 eval#12] dev 1/8 (best 6) alpha_floor=0.0367
+  [sac] eval @ 24000: 1
+  => STABILIZED s0.1: peak_dev=6 final_dev=1 headline>=8/10=2
+[STABILIZED s10] BC-init headline 2/9 | steps=24000 alpha_final=0.0367 bc_coef=1.0(persistent)
+  [sac] step    2000/24000 | crit=0.16 act=-0.239 alpha=0.0912[anneal] |   811 steps/s | ETA  0.5 min | buf=2000
+  [STABILIZED s10 eval#1] dev 3/8 (best 3) alpha_floor=0.0367
+  [sac] eval @ 2000: 3
+  [sac] step    4000/24000 | crit=10.1 act=-2.07 alpha=0.0824[anneal] |   547 steps/s | ETA  0.6 min | buf=4000
+  [STABILIZED s10 eval#2] dev 3/8 (best 3) alpha_floor=0.0367
+  [sac] eval @ 4000: 3
+  [sac] step    6000/24000 | crit=1.75 act=-4.22 alpha=0.0736[anneal] |   494 steps/s | ETA  0.6 min | buf=6000
+  [STABILIZED s10 eval#3] dev 2/8 (best 3) alpha_floor=0.0367
+  [sac] eval @ 6000: 2
+  [sac] step    8000/24000 | crit=0.57 act=-6.44 alpha=0.0648[anneal] |   469 steps/s | ETA  0.6 min | buf=8000
+  [STABILIZED s10 eval#4] dev 2/8 (best 3) alpha_floor=0.0367
+  [sac] eval @ 8000: 2
+  [sac] step   10000/24000 | crit=0.493 act=-7.73 alpha=0.056[anneal] |   455 steps/s | ETA  0.5 min | buf=10000
+  [STABILIZED s10 eval#5] dev 2/8 (best 3) alpha_floor=0.0367
+  [sac] eval @ 10000: 2
+  [sac] step   12000/24000 | crit=0.445 act=-9.28 alpha=0.0472[anneal] |   446 steps/s | ETA  0.4 min | buf=12000
+  [STABILIZED s10 eval#6] dev 4/8 (best 4) alpha_floor=0.0367
+  [sac] eval @ 12000: 4
+  [sac] step   14000/24000 | crit=0.733 act=-10.7 alpha=0.0385[anneal] |   444 steps/s | ETA  0.4 min | buf=14000
+  [STABILIZED s10 eval#7] dev 5/8 (best 5) alpha_floor=0.0367
+  [sac] eval @ 14000: 5
+  [sac] step   16000/24000 | crit=0.497 act=-11.4 alpha=0.0367[anneal] |   444 steps/s | ETA  0.3 min | buf=16000
+  [STABILIZED s10 eval#8] dev 4/8 (best 5) alpha_floor=0.0367
+  [sac] eval @ 16000: 4
+  [sac] step   18000/24000 | crit=0.626 act=-11.9 alpha=0.0367[anneal] |   441 steps/s | ETA  0.2 min | buf=18000
+  [STABILIZED s10 eval#9] dev 6/8 (best 6) alpha_floor=0.0367
+  [sac] eval @ 18000: 6
+  [sac] step   20000/24000 | crit=0.889 act=-12.5 alpha=0.0367[anneal] |   442 steps/s | ETA  0.2 min | buf=20000
+  [STABILIZED s10 eval#10] dev 4/8 (best 6) alpha_floor=0.0367
+  [sac] eval @ 20000: 4
+  [sac] step   22000/24000 | crit=1.25 act=-12.1 alpha=0.0367[anneal] |   441 steps/s | ETA  0.1 min | buf=22000
+  [STABILIZED s10 eval#11] dev 5/8 (best 6) alpha_floor=0.0367
+  [sac] eval @ 22000: 5
+  [sac] step   24000/24000 | crit=0.667 act=-13.3 alpha=0.0367[anneal] |   440 steps/s | ETA  0.0 min | buf=24000
+  [STABILIZED s10 eval#12] dev 5/8 (best 6) alpha_floor=0.0367
+  [sac] eval @ 24000: 5
+  => STABILIZED s1.0: peak_dev=6 final_dev=5 headline>=8/10=0
+[STABILIZED s11] BC-init headline 2/9 | steps=24000 alpha_final=0.0367 bc_coef=1.0(persistent)
+  [sac] step    2000/24000 | crit=0.283 act=-0.984 alpha=0.0912[anneal] |   812 steps/s | ETA  0.5 min | buf=2000
+  [STABILIZED s11 eval#1] dev 6/8 (best 6) alpha_floor=0.0367
+  [sac] eval @ 2000: 6
+  [sac] step    4000/24000 | crit=4.54 act=-2.88 alpha=0.0824[anneal] |   580 steps/s | ETA  0.6 min | buf=4000
+  [STABILIZED s11 eval#2] dev 7/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 4000: 7
+  [sac] step    6000/24000 | crit=1.75 act=-4.66 alpha=0.0736[anneal] |   532 steps/s | ETA  0.6 min | buf=6000
+  [STABILIZED s11 eval#3] dev 3/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 6000: 3
+  [sac] step    8000/24000 | crit=1.46 act=-6.59 alpha=0.0648[anneal] |   497 steps/s | ETA  0.5 min | buf=8000
+  [STABILIZED s11 eval#4] dev 3/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 8000: 3
+  [sac] step   10000/24000 | crit=0.772 act=-7.68 alpha=0.056[anneal] |   477 steps/s | ETA  0.5 min | buf=10000
+  [STABILIZED s11 eval#5] dev 4/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 10000: 4
+  [sac] step   12000/24000 | crit=2.84 act=-9.02 alpha=0.0472[anneal] |   467 steps/s | ETA  0.4 min | buf=12000
+  [STABILIZED s11 eval#6] dev 1/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 12000: 1
+  [sac] step   14000/24000 | crit=0.298 act=-9.33 alpha=0.0385[anneal] |   454 steps/s | ETA  0.4 min | buf=14000
+  [STABILIZED s11 eval#7] dev 2/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 14000: 2
+  [sac] step   16000/24000 | crit=1.1 act=-9.02 alpha=0.0367[anneal] |   447 steps/s | ETA  0.3 min | buf=16000
+  [STABILIZED s11 eval#8] dev 2/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 16000: 2
+  [sac] step   18000/24000 | crit=0.615 act=-9.34 alpha=0.0367[anneal] |   442 steps/s | ETA  0.2 min | buf=18000
+  [STABILIZED s11 eval#9] dev 2/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 18000: 2
+  [sac] step   20000/24000 | crit=0.403 act=-9.6 alpha=0.0367[anneal] |   438 steps/s | ETA  0.2 min | buf=20000
+  [STABILIZED s11 eval#10] dev 3/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 20000: 3
+  [sac] step   22000/24000 | crit=0.6 act=-9.06 alpha=0.0367[anneal] |   435 steps/s | ETA  0.1 min | buf=22000
+  [STABILIZED s11 eval#11] dev 3/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 22000: 3
+  [sac] step   24000/24000 | crit=0.598 act=-9.68 alpha=0.0367[anneal] |   433 steps/s | ETA  0.0 min | buf=24000
+  [STABILIZED s11 eval#12] dev 3/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 24000: 3
+  => STABILIZED s1.1: peak_dev=7 final_dev=3 headline>=8/10=5
+[STABILIZED s20] BC-init headline 2/9 | steps=24000 alpha_final=0.0367 bc_coef=1.0(persistent)
+  [sac] step    2000/24000 | crit=0.0684 act=-0.566 alpha=0.0912[anneal] |   813 steps/s | ETA  0.5 min | buf=2000
+  [STABILIZED s20 eval#1] dev 7/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 2000: 7
+  [sac] step    4000/24000 | crit=1.29 act=-1.91 alpha=0.0824[anneal] |   583 steps/s | ETA  0.6 min | buf=4000
+  [STABILIZED s20 eval#2] dev 7/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 4000: 7
+  [sac] step    6000/24000 | crit=2.42 act=-4.09 alpha=0.0736[anneal] |   534 steps/s | ETA  0.6 min | buf=6000
+  [STABILIZED s20 eval#3] dev 6/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 6000: 6
+  [sac] step    8000/24000 | crit=0.45 act=-6.05 alpha=0.0648[anneal] |   508 steps/s | ETA  0.5 min | buf=8000
+  [STABILIZED s20 eval#4] dev 2/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 8000: 2
+  [sac] step   10000/24000 | crit=0.413 act=-8.29 alpha=0.056[anneal] |   483 steps/s | ETA  0.5 min | buf=10000
+  [STABILIZED s20 eval#5] dev 5/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 10000: 5
+  [sac] step   12000/24000 | crit=0.93 act=-10.1 alpha=0.0472[anneal] |   473 steps/s | ETA  0.4 min | buf=12000
+  [STABILIZED s20 eval#6] dev 0/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 12000: 0
+  [sac] step   14000/24000 | crit=0.621 act=-11 alpha=0.0385[anneal] |   458 steps/s | ETA  0.4 min | buf=14000
+  [STABILIZED s20 eval#7] dev 1/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 14000: 1
+  [sac] step   16000/24000 | crit=0.348 act=-11.3 alpha=0.0367[anneal] |   450 steps/s | ETA  0.3 min | buf=16000
+  [STABILIZED s20 eval#8] dev 0/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 16000: 0
+  [sac] step   18000/24000 | crit=0.965 act=-12.1 alpha=0.0367[anneal] |   442 steps/s | ETA  0.2 min | buf=18000
+  [STABILIZED s20 eval#9] dev 0/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 18000: 0
+  [sac] step   20000/24000 | crit=0.71 act=-12.4 alpha=0.0367[anneal] |   436 steps/s | ETA  0.2 min | buf=20000
+  [STABILIZED s20 eval#10] dev 1/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 20000: 1
+  [sac] step   22000/24000 | crit=0.879 act=-12.3 alpha=0.0367[anneal] |   432 steps/s | ETA  0.1 min | buf=22000
+  [STABILIZED s20 eval#11] dev 3/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 22000: 3
+  [sac] step   24000/24000 | crit=0.211 act=-12.6 alpha=0.0367[anneal] |   431 steps/s | ETA  0.0 min | buf=24000
+  [STABILIZED s20 eval#12] dev 3/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 24000: 3
+  => STABILIZED s2.0: peak_dev=7 final_dev=3 headline>=8/10=5
+[STABILIZED s21] BC-init headline 5/9 | steps=24000 alpha_final=0.0367 bc_coef=1.0(persistent)
+  [sac] step    2000/24000 | crit=0.0738 act=-0.413 alpha=0.0912[anneal] |   811 steps/s | ETA  0.5 min | buf=2000
+  [STABILIZED s21 eval#1] dev 7/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 2000: 7
+  [sac] step    4000/24000 | crit=0.283 act=-0.715 alpha=0.0824[anneal] |   587 steps/s | ETA  0.6 min | buf=4000
+  [STABILIZED s21 eval#2] dev 3/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 4000: 3
+  [sac] step    6000/24000 | crit=2.2 act=-2.38 alpha=0.0736[anneal] |   515 steps/s | ETA  0.6 min | buf=6000
+  [STABILIZED s21 eval#3] dev 2/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 6000: 2
+  [sac] step    8000/24000 | crit=1.15 act=-5.16 alpha=0.0648[anneal] |   483 steps/s | ETA  0.6 min | buf=8000
+  [STABILIZED s21 eval#4] dev 2/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 8000: 2
+  [sac] step   10000/24000 | crit=0.231 act=-7.27 alpha=0.056[anneal] |   466 steps/s | ETA  0.5 min | buf=10000
+  [STABILIZED s21 eval#5] dev 3/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 10000: 3
+  [sac] step   12000/24000 | crit=0.979 act=-8.54 alpha=0.0472[anneal] |   456 steps/s | ETA  0.4 min | buf=12000
+  [STABILIZED s21 eval#6] dev 5/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 12000: 5
+  [sac] step   14000/24000 | crit=0.725 act=-9.42 alpha=0.0385[anneal] |   453 steps/s | ETA  0.4 min | buf=14000
+  [STABILIZED s21 eval#7] dev 6/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 14000: 6
+  [sac] step   16000/24000 | crit=0.896 act=-9.51 alpha=0.0367[anneal] |   453 steps/s | ETA  0.3 min | buf=16000
+  [STABILIZED s21 eval#8] dev 5/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 16000: 5
+  [sac] step   18000/24000 | crit=0.784 act=-10.8 alpha=0.0367[anneal] |   451 steps/s | ETA  0.2 min | buf=18000
+  [STABILIZED s21 eval#9] dev 5/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 18000: 5
+  [sac] step   20000/24000 | crit=0.808 act=-11.4 alpha=0.0367[anneal] |   450 steps/s | ETA  0.1 min | buf=20000
+  [STABILIZED s21 eval#10] dev 1/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 20000: 1
+  [sac] step   22000/24000 | crit=0.15 act=-11.9 alpha=0.0367[anneal] |   445 steps/s | ETA  0.1 min | buf=22000
+  [STABILIZED s21 eval#11] dev 5/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 22000: 5
+  [sac] step   24000/24000 | crit=0.758 act=-12.5 alpha=0.0367[anneal] |   444 steps/s | ETA  0.0 min | buf=24000
+  [STABILIZED s21 eval#12] dev 4/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 24000: 4
+  => STABILIZED s2.1: peak_dev=7 final_dev=4 headline>=8/10=2
+[STABILIZED s30] BC-init headline 2/9 | steps=24000 alpha_final=0.0367 bc_coef=1.0(persistent)
+  [sac] step    2000/24000 | crit=0.049 act=-1.8 alpha=0.0912[anneal] |   810 steps/s | ETA  0.5 min | buf=2000
+  [STABILIZED s30 eval#1] dev 7/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 2000: 7
+  [sac] step    4000/24000 | crit=0.225 act=-3.37 alpha=0.0824[anneal] |   589 steps/s | ETA  0.6 min | buf=4000
+  [STABILIZED s30 eval#2] dev 7/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 4000: 7
+  [sac] step    6000/24000 | crit=2.59 act=-5.4 alpha=0.0736[anneal] |   537 steps/s | ETA  0.6 min | buf=6000
+  [STABILIZED s30 eval#3] dev 1/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 6000: 1
+  [sac] step    8000/24000 | crit=1.78 act=-7.7 alpha=0.0648[anneal] |   494 steps/s | ETA  0.5 min | buf=8000
+  [STABILIZED s30 eval#4] dev 0/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 8000: 0
+  [sac] step   10000/24000 | crit=0.532 act=-9.96 alpha=0.056[anneal] |   470 steps/s | ETA  0.5 min | buf=10000
+  [STABILIZED s30 eval#5] dev 0/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 10000: 0
+  [sac] step   12000/24000 | crit=1.25 act=-11.3 alpha=0.0472[anneal] |   455 steps/s | ETA  0.4 min | buf=12000
+  [STABILIZED s30 eval#6] dev 0/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 12000: 0
+  [sac] step   14000/24000 | crit=0.713 act=-11.1 alpha=0.0385[anneal] |   444 steps/s | ETA  0.4 min | buf=14000
+  [STABILIZED s30 eval#7] dev 1/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 14000: 1
+  [sac] step   16000/24000 | crit=0.217 act=-12 alpha=0.0367[anneal] |   438 steps/s | ETA  0.3 min | buf=16000
+  [STABILIZED s30 eval#8] dev 0/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 16000: 0
+  [sac] step   18000/24000 | crit=0.221 act=-12.3 alpha=0.0367[anneal] |   432 steps/s | ETA  0.2 min | buf=18000
+  [STABILIZED s30 eval#9] dev 0/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 18000: 0
+  [sac] step   20000/24000 | crit=1.18 act=-12.7 alpha=0.0367[anneal] |   428 steps/s | ETA  0.2 min | buf=20000
+  [STABILIZED s30 eval#10] dev 0/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 20000: 0
+  [sac] step   22000/24000 | crit=0.557 act=-13.6 alpha=0.0367[anneal] |   424 steps/s | ETA  0.1 min | buf=22000
+  [STABILIZED s30 eval#11] dev 4/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 22000: 4
+  [sac] step   24000/24000 | crit=1.26 act=-13.4 alpha=0.0367[anneal] |   424 steps/s | ETA  0.0 min | buf=24000
+  [STABILIZED s30 eval#12] dev 5/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 24000: 5
+  => STABILIZED s3.0: peak_dev=7 final_dev=5 headline>=8/10=2
+[STABILIZED s31] BC-init headline 2/9 | steps=24000 alpha_final=0.0367 bc_coef=1.0(persistent)
+  [sac] step    2000/24000 | crit=0.298 act=-0.209 alpha=0.0912[anneal] |   811 steps/s | ETA  0.5 min | buf=2000
+  [STABILIZED s31 eval#1] dev 3/8 (best 3) alpha_floor=0.0367
+  [sac] eval @ 2000: 3
+  [sac] step    4000/24000 | crit=1.13 act=-2.36 alpha=0.0824[anneal] |   549 steps/s | ETA  0.6 min | buf=4000
+  [STABILIZED s31 eval#2] dev 3/8 (best 3) alpha_floor=0.0367
+  [sac] eval @ 4000: 3
+  [sac] step    6000/24000 | crit=1.83 act=-5.02 alpha=0.0736[anneal] |   496 steps/s | ETA  0.6 min | buf=6000
+  [STABILIZED s31 eval#3] dev 7/8 (best 7) alpha_floor=0.0367
+  [sac] eval @ 6000: 7
+  [sac] step    8000/24000 | crit=0.475 act=-6.99 alpha=0.0648[anneal] |   487 steps/s | ETA  0.5 min | buf=8000
+  [STABILIZED s31 eval#4] dev 8/8 (best 8) alpha_floor=0.0367
+  [sac] eval @ 8000: 8
+  [sac] step   10000/24000 | crit=0.582 act=-8.37 alpha=0.056[anneal] |   484 steps/s | ETA  0.5 min | buf=10000
+  [STABILIZED s31 eval#5] dev 7/8 (best 8) alpha_floor=0.0367
+  [sac] eval @ 10000: 7
+  [sac] step   12000/24000 | crit=0.933 act=-9.25 alpha=0.0472[anneal] |   481 steps/s | ETA  0.4 min | buf=12000
+  [STABILIZED s31 eval#6] dev 6/8 (best 8) alpha_floor=0.0367
+  [sac] eval @ 12000: 6
+  [sac] step   14000/24000 | crit=0.341 act=-10 alpha=0.0385[anneal] |   477 steps/s | ETA  0.3 min | buf=14000
+  [STABILIZED s31 eval#7] dev 5/8 (best 8) alpha_floor=0.0367
+  [sac] eval @ 14000: 5
+  [sac] step   16000/24000 | crit=1.47 act=-9.98 alpha=0.0367[anneal] |   472 steps/s | ETA  0.3 min | buf=16000
+  [STABILIZED s31 eval#8] dev 5/8 (best 8) alpha_floor=0.0367
+  [sac] eval @ 16000: 5
+  [sac] step   18000/24000 | crit=0.56 act=-10.8 alpha=0.0367[anneal] |   469 steps/s | ETA  0.2 min | buf=18000
+  [STABILIZED s31 eval#9] dev 6/8 (best 8) alpha_floor=0.0367
+  [sac] eval @ 18000: 6
+  [sac] step   20000/24000 | crit=2.12 act=-11.7 alpha=0.0367[anneal] |   467 steps/s | ETA  0.1 min | buf=20000
+  [STABILIZED s31 eval#10] dev 6/8 (best 8) alpha_floor=0.0367
+  [sac] eval @ 20000: 6
+  [sac] step   22000/24000 | crit=1.07 act=-11.7 alpha=0.0367[anneal] |   465 steps/s | ETA  0.1 min | buf=22000
+  [STABILIZED s31 eval#11] dev 5/8 (best 8) alpha_floor=0.0367
+  [sac] eval @ 22000: 5
+  [sac] step   24000/24000 | crit=0.395 act=-12 alpha=0.0367[anneal] |   463 steps/s | ETA  0.0 min | buf=24000
+  [STABILIZED s31 eval#12] dev 4/8 (best 8) alpha_floor=0.0367
+  [sac] eval @ 24000: 4
+  => STABILIZED s3.1: peak_dev=8 final_dev=4 headline>=8/10=5
+[CONTROL] n=8 peak_dev med=6 final_dev med=2 degrade med=4 | headline>=8/10 states: max=6 any-run-with-1+=8/8
+[STABILIZED] n=8 peak_dev med=7 final_dev med=4 degrade med=3 | headline>=8/10 states: max=5 any-run-with-1+=7/8

@@ -1,0 +1,15 @@
+{
+ "name": "FULL_ACTION_OBS_HISTORY_V1",
+ "k_obs": 3,
+ "k_act": 2,
+ "base_obs_dim": 48,
+ "action_dim": 4,
+ "feature_dim": 152,
+ "layout": "[obs_t, obs_{t-1}, obs_{t-2}, a_{t-1}, a_{t-2}] newest-first, causal",
+ "padding": "obs -> initial observation; actions -> zeros; deterministic at episode start",
+ "semantic_graph_fp": "sem:469094de1fba54b2ff481706ca2e09ce",
+ "bundle_hash": "6664ac459cca8f62",
+ "reset_behaviour": "obs window filled with initial obs (x3); action window zeros (x2)",
+ "legacy_markov_complete": false,
+ "sha256": "6c84fa5b6ab0aab96cc9deccbb03ec8c9b7226219bd8c0cc96387fe84f504eac"
+}

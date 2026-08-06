@@ -1,0 +1,833 @@
+{
+  "schema": 1,
+  "cycle_source": "stdlib cycle enumerator (fallback)",
+  "max_k": 6,
+  "mechanisms": [
+    {
+      "id": "four_bar",
+      "label": "4-bar planar linkage",
+      "family": "parallel (planar)",
+      "blurb": "One closed loop of 4 links. The textbook planar parallel mechanism \u2014 the regime compass spikes at k=4.",
+      "n_links": 4,
+      "n_joints": 4,
+      "n_revolute": 4,
+      "n_prismatic": 0,
+      "topology": "4-bar / planar parallel",
+      "links": [
+        "ground",
+        "crank",
+        "coupler",
+        "rocker"
+      ],
+      "joints": [
+        {
+          "name": "j_ground_crank",
+          "parent": "ground",
+          "child": "crank",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j_crank_coupler",
+          "parent": "crank",
+          "child": "coupler",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j_coupler_rocker",
+          "parent": "coupler",
+          "child": "rocker",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j_rocker_ground",
+          "parent": "rocker",
+          "child": "ground",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      ],
+      "edges": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          0
+        ]
+      ],
+      "cycles_per_arity": {
+        "3": 0,
+        "4": 1,
+        "5": 0,
+        "6": 0
+      }
+    },
+    {
+      "id": "stewart",
+      "label": "Stewart platform (hexapod)",
+      "family": "parallel (spatial)",
+      "blurb": "6-DOF spatial parallel manipulator. A dense forest of k=6 loops \u2014 the canonical 'k=6 spike'.",
+      "n_links": 14,
+      "n_joints": 18,
+      "n_revolute": 12,
+      "n_prismatic": 6,
+      "topology": "Stewart / delta / spatial parallel",
+      "links": [
+        "base",
+        "ee",
+        "leg1_lower",
+        "leg1_upper",
+        "leg2_lower",
+        "leg2_upper",
+        "leg3_lower",
+        "leg3_upper",
+        "leg4_lower",
+        "leg4_upper",
+        "leg5_lower",
+        "leg5_upper",
+        "leg6_lower",
+        "leg6_upper"
+      ],
+      "joints": [
+        {
+          "name": "j1_base",
+          "parent": "base",
+          "child": "leg1_lower",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j1_strut",
+          "parent": "leg1_lower",
+          "child": "leg1_upper",
+          "type": "prismatic",
+          "sign": -1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j1_ee",
+          "parent": "leg1_upper",
+          "child": "ee",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j2_base",
+          "parent": "base",
+          "child": "leg2_lower",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j2_strut",
+          "parent": "leg2_lower",
+          "child": "leg2_upper",
+          "type": "prismatic",
+          "sign": -1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j2_ee",
+          "parent": "leg2_upper",
+          "child": "ee",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j3_base",
+          "parent": "base",
+          "child": "leg3_lower",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j3_strut",
+          "parent": "leg3_lower",
+          "child": "leg3_upper",
+          "type": "prismatic",
+          "sign": -1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j3_ee",
+          "parent": "leg3_upper",
+          "child": "ee",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j4_base",
+          "parent": "base",
+          "child": "leg4_lower",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j4_strut",
+          "parent": "leg4_lower",
+          "child": "leg4_upper",
+          "type": "prismatic",
+          "sign": -1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j4_ee",
+          "parent": "leg4_upper",
+          "child": "ee",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j5_base",
+          "parent": "base",
+          "child": "leg5_lower",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j5_strut",
+          "parent": "leg5_lower",
+          "child": "leg5_upper",
+          "type": "prismatic",
+          "sign": -1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j5_ee",
+          "parent": "leg5_upper",
+          "child": "ee",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j6_base",
+          "parent": "base",
+          "child": "leg6_lower",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j6_strut",
+          "parent": "leg6_lower",
+          "child": "leg6_upper",
+          "type": "prismatic",
+          "sign": -1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j6_ee",
+          "parent": "leg6_upper",
+          "child": "ee",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      ],
+      "edges": [
+        [
+          0,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          0,
+          4
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          0,
+          6
+        ],
+        [
+          6,
+          7
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          0,
+          8
+        ],
+        [
+          8,
+          9
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          0,
+          10
+        ],
+        [
+          10,
+          11
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          12,
+          13
+        ],
+        [
+          13,
+          1
+        ]
+      ],
+      "cycles_per_arity": {
+        "3": 0,
+        "4": 0,
+        "5": 0,
+        "6": 15
+      }
+    },
+    {
+      "id": "delta_3rrr",
+      "label": "Delta 3-RRR",
+      "family": "parallel (spatial)",
+      "blurb": "Three parallel legs, sparser than Stewart but the SAME k=6 arity signature \u2014 \u03b1\u2096 is regime, not magnitude.",
+      "n_links": 8,
+      "n_joints": 9,
+      "n_revolute": 9,
+      "n_prismatic": 0,
+      "topology": "Stewart / delta / spatial parallel",
+      "links": [
+        "base",
+        "ee",
+        "arm1_upper",
+        "arm1_lower",
+        "arm2_upper",
+        "arm2_lower",
+        "arm3_upper",
+        "arm3_lower"
+      ],
+      "joints": [
+        {
+          "name": "j1_shoulder",
+          "parent": "base",
+          "child": "arm1_upper",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j1_elbow",
+          "parent": "arm1_upper",
+          "child": "arm1_lower",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "name": "j1_wrist",
+          "parent": "arm1_lower",
+          "child": "ee",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "name": "j2_shoulder",
+          "parent": "base",
+          "child": "arm2_upper",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j2_elbow",
+          "parent": "arm2_upper",
+          "child": "arm2_lower",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "name": "j2_wrist",
+          "parent": "arm2_lower",
+          "child": "ee",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "name": "j3_shoulder",
+          "parent": "base",
+          "child": "arm3_upper",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j3_elbow",
+          "parent": "arm3_upper",
+          "child": "arm3_lower",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "name": "j3_wrist",
+          "parent": "arm3_lower",
+          "child": "ee",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        }
+      ],
+      "edges": [
+        [
+          0,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          0,
+          4
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          0,
+          6
+        ],
+        [
+          6,
+          7
+        ],
+        [
+          7,
+          1
+        ]
+      ],
+      "cycles_per_arity": {
+        "3": 0,
+        "4": 0,
+        "5": 0,
+        "6": 3
+      }
+    },
+    {
+      "id": "serial_4",
+      "label": "Serial arm \u2014 4-DOF",
+      "family": "serial (open chain)",
+      "blurb": "Open chain. No closed loops \u2192 the cycle pool is empty \u2192 the regime compass is flat. The 'null' reference.",
+      "n_links": 5,
+      "n_joints": 4,
+      "n_revolute": 4,
+      "n_prismatic": 0,
+      "topology": "open chain",
+      "links": [
+        "link0",
+        "link1",
+        "link2",
+        "link3",
+        "link4"
+      ],
+      "joints": [
+        {
+          "name": "j1",
+          "parent": "link0",
+          "child": "link1",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j2",
+          "parent": "link1",
+          "child": "link2",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j3",
+          "parent": "link2",
+          "child": "link3",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j4",
+          "parent": "link3",
+          "child": "link4",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      ],
+      "edges": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          4
+        ]
+      ],
+      "cycles_per_arity": {
+        "3": 0,
+        "4": 0,
+        "5": 0,
+        "6": 0
+      }
+    },
+    {
+      "id": "serial_7",
+      "label": "Serial arm \u2014 7-DOF (redundant)",
+      "family": "serial (open chain)",
+      "blurb": "A 7-DOF redundant manipulator (WAM-shaped). Still an open chain \u2014 longer, but no cycles.",
+      "n_links": 8,
+      "n_joints": 7,
+      "n_revolute": 7,
+      "n_prismatic": 0,
+      "topology": "open chain",
+      "links": [
+        "link0",
+        "link1",
+        "link2",
+        "link3",
+        "link4",
+        "link5",
+        "link6",
+        "link7"
+      ],
+      "joints": [
+        {
+          "name": "j1",
+          "parent": "link0",
+          "child": "link1",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j2",
+          "parent": "link1",
+          "child": "link2",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j3",
+          "parent": "link2",
+          "child": "link3",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j4",
+          "parent": "link3",
+          "child": "link4",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j5",
+          "parent": "link4",
+          "child": "link5",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j6",
+          "parent": "link5",
+          "child": "link6",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "j7",
+          "parent": "link6",
+          "child": "link7",
+          "type": "revolute",
+          "sign": 1,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      ],
+      "edges": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          5,
+          6
+        ],
+        [
+          6,
+          7
+        ]
+      ],
+      "cycles_per_arity": {
+        "3": 0,
+        "4": 0,
+        "5": 0,
+        "6": 0
+      }
+    }
+  ]
+}

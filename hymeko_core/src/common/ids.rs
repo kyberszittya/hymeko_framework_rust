@@ -26,7 +26,7 @@ pub type HyperArcId = Id<HyperArcTag>;
 /// Index into the `Interner` / `StringTable` symbol table.
 pub type SymId = Id<SymTag>;
 
-#[repr(C)]  // Stable layout for serde and FFI
+#[repr(C)] // Stable layout for serde and FFI
 pub struct Id<T>(pub usize, PhantomData<T>);
 
 impl<T> Id<T> {
@@ -57,4 +57,3 @@ impl<T> Id<T> {
         self.0 != usize::MAX
     }
 }
-

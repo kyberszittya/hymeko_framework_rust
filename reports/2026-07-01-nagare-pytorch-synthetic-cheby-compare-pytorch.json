@@ -1,0 +1,62 @@
+{
+  "cases": [
+    {
+      "acc_random_weights": 0.5,
+      "activation_policy": "chebyshev_domain_rescale_only",
+      "chebyshev_domain_scale": 0.5,
+      "forward_us": {
+        "max_us_per_sample": 181.16796875,
+        "mean_us_per_sample": 7.510854166666666,
+        "median_us_per_sample": 4.051562499999999,
+        "min_us_per_sample": 1.94765625
+      },
+      "hidden": 32,
+      "k": 5,
+      "logits_checksum": -1.4891538619995117,
+      "n_params": 322,
+      "n_samples": 256,
+      "param_bytes": 1288,
+      "task": "moons"
+    },
+    {
+      "acc_random_weights": 0.5,
+      "activation_policy": "chebyshev_domain_rescale_only",
+      "chebyshev_domain_scale": 0.5,
+      "forward_us": {
+        "max_us_per_sample": 249.784375,
+        "mean_us_per_sample": 14.415850260416667,
+        "median_us_per_sample": 5.4318359375,
+        "min_us_per_sample": 2.155078125
+      },
+      "hidden": 32,
+      "k": 5,
+      "logits_checksum": -63.49835205078125,
+      "n_params": 322,
+      "n_samples": 256,
+      "param_bytes": 1288,
+      "task": "spiral"
+    },
+    {
+      "acc_random_weights": 0.4765625,
+      "activation_policy": "chebyshev_domain_rescale_only",
+      "chebyshev_domain_scale": 0.5,
+      "forward_us": {
+        "max_us_per_sample": 63.05859375,
+        "mean_us_per_sample": 6.932223958333333,
+        "median_us_per_sample": 4.267578125,
+        "min_us_per_sample": 2.510546875
+      },
+      "hidden": 32,
+      "k": 5,
+      "logits_checksum": 5.115047454833984,
+      "n_params": 322,
+      "n_samples": 256,
+      "param_bytes": 1288,
+      "task": "xor"
+    }
+  ],
+  "engine": "pytorch",
+  "fixture": "reports\\2026-07-01-nagare-pytorch-synthetic-cheby-compare-fixture.txt",
+  "threads": 8,
+  "torch": "2.12.0+cu132"
+}

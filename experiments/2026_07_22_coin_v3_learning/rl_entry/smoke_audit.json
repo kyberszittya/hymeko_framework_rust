@@ -1,0 +1,36 @@
+{
+ "\u00a71_sac_logprob": {
+  "action_is_clip_of_pre": true,
+  "logprob_is_preclip_gaussian_density_of_unclipped_z": true,
+  "boundary_mass_represented": false,
+  "boundary_samples_get_finite_density": true,
+  "frac_samples_at_boundary": 0.232,
+  "verdict": "SAC_HARD_CLIP_LOGPROB_MISMATCH"
+ },
+ "\u00a74_target_init": {
+  "td3_online_actor_sha": "0a754e8183b5daaa",
+  "td3_target_actor_sha": "0a754e8183b5daaa",
+  "actor_equal_at_init": true,
+  "actor_out_maxdiff": 0.0,
+  "critic_online_sha": "781a2e8ab8dd7922",
+  "critic_target_sha": "781a2e8ab8dd7922",
+  "critic_equal_at_init": true
+ },
+ "\u00a76_bellman": {
+  "target_matches_reference": true,
+  "no_bootstrap_after_terminated": true,
+  "target_action_in_bounds": true
+ },
+ "\u00a77_critic_direction": {
+  "loss_before": 2.2672,
+  "loss_after": 2.1499,
+  "decreased": true,
+  "verdict": "ok"
+ },
+ "\u00a78_td3_actor_direction": {
+  "meanQ_before": -0.0753,
+  "meanQ_after": -0.0753,
+  "Q_increased": true,
+  "verdict": "ok"
+ }
+}

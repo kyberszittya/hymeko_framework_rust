@@ -1,0 +1,26 @@
+{
+  "task": "coffee-push",
+  "arm": "plain",
+  "seed": 0,
+  "steps": 20000,
+  "device": "cpu",
+  "hidden": 256,
+  "horizon": 500,
+  "obs_dim": 39,
+  "action_dim": 4,
+  "success_curve": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "final_success": 0.0,
+  "best_success": 1.0,
+  "cip": null
+}

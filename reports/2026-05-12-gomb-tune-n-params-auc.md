@@ -9,9 +9,9 @@
 
 ## Files touched
 
-- `signedkan_wip/src/run_gomb_tune.py`
-- `signedkan_wip/experiments/run_gomb_external_auc_tuning.sh`
-- `signedkan_wip/tests/test_hymeko_gomb.py`
+- `hymeko_neuro/run_gomb_tune.py`
+- `hymeko_neuro/experiments/run_gomb_external_auc_tuning.sh`
+- `hymeko_neuro/tests/test_hymeko_gomb.py`
 - `docs/plans/2026-05-12-gomb-tune-n-params-auc/plan.{tex,pdf,mmd,tikz}`
 - `reports/2026-05-12-gomb-tune-n-params-auc.md` (this file)
 
@@ -21,7 +21,7 @@ None.
 
 ## Test results
 
-`PYTHONPATH=. pytest -p no:randomly signedkan_wip/tests/test_hymeko_gomb.py -q` → **35 passed** (~11 s).
+`PYTHONPATH=. pytest -p no:randomly hymeko_neuro/tests/test_hymeko_gomb.py -q` → **35 passed** (~11 s).
 
 `ruff` not installed on host (exit 127); not run.
 
@@ -29,7 +29,7 @@ None.
 
 Command:
 
-`python -m signedkan_wip.src.run_gomb_tune --datasets slashdot --joint-mix --trials 8 --search-seed 7 --data-seed 0 --edge-split 80_10_10 --n-epochs 48 --device cuda --architecture compact --out reports/gomb_tune_slashdot_joint_auc_2026_05_12.jsonl`
+`python -m hymeko_neuro.run_gomb_tune --datasets slashdot --joint-mix --trials 8 --search-seed 7 --data-seed 0 --edge-split 80_10_10 --n-epochs 48 --device cuda --architecture compact --out reports/gomb_tune_slashdot_joint_auc_2026_05_12.jsonl`
 
 - Wall **~761 s** for 8 trials; best **test_auroc ≈ 0.8962**, **`best_n_params` = 1 887 440** (trial 0: `lr=3e-3`, `d_embed=22`, `topk=28`, `pos_weight_auto=false`).
 - **Note:** Earlier ~0.75 test AUROC used **`n_epochs=10`**; this run uses **48 epochs**, which dominates the gain versus the small `topk` / `d_embed` menu changes.

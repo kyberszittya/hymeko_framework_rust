@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 
 from hymeko_ros2_demo.topic_binding import (
-    Hyperedge,
     aggregate_grasp_stability,
     extract_hyperedges,
     find_context_block,
@@ -74,13 +73,20 @@ def test_unknown_context_returns_none(ir):
 
 
 def test_aggregate_grasp_stability_decreasing_in_gap():
-    """1/(1+|F_l - F_g|) is 1 at zero gap and decreases monotonically."""
+    """S_g = 1/(1+6|F_l - F_g_norm|^1.5) is 1 at zero gap, decreasing in it.
+
+    ``grip_force`` is normalised by /10 before the comparison (see the
+    aggregator docstring), and in the live pipeline ``force_vector`` is
+    already clamped to [0, 1]; the gap is therefore taken in normalised
+    units. At ``grip_force=5`` the normalised value is 0.5, so zero gap is
+    ``force_vector=0.5``; reducing ``grip_force`` widens the gap.
+    """
     a = aggregate_grasp_stability(
-        {"force_vector": 5.0, "grip_force": 5.0})
+        {"force_vector": 0.5, "grip_force": 5.0})   # gap |0.5-0.5| = 0
     b = aggregate_grasp_stability(
-        {"force_vector": 5.0, "grip_force": 4.0})
+        {"force_vector": 0.5, "grip_force": 4.0})   # gap |0.5-0.4| = 0.1
     c = aggregate_grasp_stability(
-        {"force_vector": 5.0, "grip_force": 0.0})
+        {"force_vector": 0.5, "grip_force": 0.0})   # gap |0.5-0.0| = 0.5
     assert a["stability_margin"] == pytest.approx(1.0)
     assert a["stability_margin"] > b["stability_margin"] > c["stability_margin"]
 

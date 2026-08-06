@@ -1,0 +1,182 @@
+{
+  "name": "quadruped_stand_dagger",
+  "algorithm": "dagger",
+  "select": "standing",
+  "profile": "data/robotics/quadruped_stand_dagger.hymeko",
+  "label_sanity": {
+    "finite": true,
+    "in_bounds": true,
+    "deterministic": true,
+    "latch_coherent": true,
+    "has_latch": false,
+    "max_over_box_ranges": 0.0,
+    "n_steps": 500,
+    "committed_steps": 0,
+    "ok": true
+  },
+  "standing_median": 0.9583,
+  "standing_per_seed": [
+    0.9583,
+    0.9583,
+    1.0
+  ],
+  "final_standing_median": 0.0,
+  "budget": {
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "n_demos": 40,
+    "bc_epochs": 200,
+    "dagger_iters": 4,
+    "rollouts_per_iter": 12,
+    "beta": 0.5,
+    "beta_decay": 0.5,
+    "expert_replay_ratio": 1.0,
+    "n_eval": 24
+  },
+  "seeds": [
+    {
+      "seed": 0,
+      "peak": {
+        "standing": 0.9583,
+        "round": 1,
+        "stage": "d1",
+        "agg_size": 12695
+      },
+      "final": {
+        "round": 4,
+        "stage": "d4",
+        "agg_size": 21695,
+        "standing": 0.0
+      },
+      "curve": [
+        {
+          "round": 0,
+          "stage": "bc0",
+          "agg_size": 9695,
+          "standing": 0.7917
+        },
+        {
+          "round": 1,
+          "stage": "d1",
+          "agg_size": 12695,
+          "standing": 0.9583
+        },
+        {
+          "round": 2,
+          "stage": "d2",
+          "agg_size": 15695,
+          "standing": 0.25
+        },
+        {
+          "round": 3,
+          "stage": "d3",
+          "agg_size": 18695,
+          "standing": 0.0
+        },
+        {
+          "round": 4,
+          "stage": "d4",
+          "agg_size": 21695,
+          "standing": 0.0
+        }
+      ]
+    },
+    {
+      "seed": 1,
+      "peak": {
+        "standing": 0.9583,
+        "round": 0,
+        "stage": "bc0",
+        "agg_size": 9728
+      },
+      "final": {
+        "round": 4,
+        "stage": "d4",
+        "agg_size": 21728,
+        "standing": 0.0
+      },
+      "curve": [
+        {
+          "round": 0,
+          "stage": "bc0",
+          "agg_size": 9728,
+          "standing": 0.9583
+        },
+        {
+          "round": 1,
+          "stage": "d1",
+          "agg_size": 12728,
+          "standing": 0.9583
+        },
+        {
+          "round": 2,
+          "stage": "d2",
+          "agg_size": 15728,
+          "standing": 0.6667
+        },
+        {
+          "round": 3,
+          "stage": "d3",
+          "agg_size": 18728,
+          "standing": 0.0
+        },
+        {
+          "round": 4,
+          "stage": "d4",
+          "agg_size": 21728,
+          "standing": 0.0
+        }
+      ]
+    },
+    {
+      "seed": 2,
+      "peak": {
+        "standing": 1.0,
+        "round": 2,
+        "stage": "d2",
+        "agg_size": 16000
+      },
+      "final": {
+        "round": 4,
+        "stage": "d4",
+        "agg_size": 22000,
+        "standing": 0.0833
+      },
+      "curve": [
+        {
+          "round": 0,
+          "stage": "bc0",
+          "agg_size": 10000,
+          "standing": 0.1667
+        },
+        {
+          "round": 1,
+          "stage": "d1",
+          "agg_size": 13000,
+          "standing": 0.0417
+        },
+        {
+          "round": 2,
+          "stage": "d2",
+          "agg_size": 16000,
+          "standing": 1.0
+        },
+        {
+          "round": 3,
+          "stage": "d3",
+          "agg_size": 19000,
+          "standing": 0.625
+        },
+        {
+          "round": 4,
+          "stage": "d4",
+          "agg_size": 22000,
+          "standing": 0.0833
+        }
+      ]
+    }
+  ]
+}

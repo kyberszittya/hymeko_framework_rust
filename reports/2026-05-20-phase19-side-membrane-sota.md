@@ -28,8 +28,8 @@ check against the Bitcoin Alpha mixed-arity Optuna baseline
 
 | File | Status | LOC |
 | --- | --- | --- |
-| `signedkan_wip/experiments/runs/run_compare.py` | extended | +35 |
-| `signedkan_wip/src/core/side_signedkan.py` | extended | +20 (add `classifier` + `return_h_v` signature for run_compare compat) |
+| `hymeko_neuro/experiments/runs/run_compare.py` | extended | +35 |
+| `hymeko_neuro/hyperedge/side_signedkan.py` | extended | +20 (add `classifier` + `return_h_v` signature for run_compare compat) |
 
 ## CORE.YAML items touched
 

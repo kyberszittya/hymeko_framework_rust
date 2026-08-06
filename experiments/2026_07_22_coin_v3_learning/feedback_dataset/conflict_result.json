@@ -1,0 +1,249 @@
+{
+ "size_matched_knn": {
+  "TRANSPORT": {
+   "n_matched": 496,
+   "raw_counts": {
+    "A_HANDOFF_ONLY": 2191,
+    "B_OPEN_LOOP_MIXED": 6817,
+    "C_H30_FEEDBACK": 496,
+    "D_HANDOFF_PLUS_H30": 2687
+   },
+   "datasets": {
+    "A_HANDOFF_ONLY": {
+     "n": 496,
+     "cond_disp": 0.1177,
+     "conflict_rate": 0.0,
+     "cos_dis": 0.0024
+    },
+    "B_OPEN_LOOP_MIXED": {
+     "n": 496,
+     "cond_disp": 0.2405,
+     "conflict_rate": 0.0,
+     "cos_dis": 0.0068
+    },
+    "C_H30_FEEDBACK": {
+     "n": 496,
+     "cond_disp": 0.1823,
+     "conflict_rate": 0.0685,
+     "cos_dis": 0.0499
+    },
+    "D_HANDOFF_PLUS_H30": {
+     "n": 496,
+     "cond_disp": 0.165,
+     "conflict_rate": 0.006,
+     "cos_dis": 0.0065
+    }
+   }
+  },
+  "SETTLING": {
+   "n_matched": 286,
+   "raw_counts": {
+    "A_HANDOFF_ONLY": 309,
+    "B_OPEN_LOOP_MIXED": 1290,
+    "C_H30_FEEDBACK": 286,
+    "D_HANDOFF_PLUS_H30": 595
+   },
+   "datasets": {
+    "A_HANDOFF_ONLY": {
+     "n": 286,
+     "cond_disp": 0.0675,
+     "conflict_rate": 0.0,
+     "cos_dis": 0.0008
+    },
+    "B_OPEN_LOOP_MIXED": {
+     "n": 286,
+     "cond_disp": 0.1785,
+     "conflict_rate": 0.0,
+     "cos_dis": 0.0036
+    },
+    "C_H30_FEEDBACK": {
+     "n": 286,
+     "cond_disp": 0.2858,
+     "conflict_rate": 0.2657,
+     "cos_dis": 0.4703
+    },
+    "D_HANDOFF_PLUS_H30": {
+     "n": 286,
+     "cond_disp": 0.1731,
+     "conflict_rate": 0.1014,
+     "cos_dis": 0.1511
+    }
+   }
+  },
+  "STRICT_DWELL": {
+   "n_matched": 145,
+   "raw_counts": {
+    "A_HANDOFF_ONLY": 221,
+    "B_OPEN_LOOP_MIXED": 544,
+    "C_H30_FEEDBACK": 145,
+    "D_HANDOFF_PLUS_H30": 366
+   },
+   "datasets": {
+    "A_HANDOFF_ONLY": {
+     "n": 145,
+     "cond_disp": 0.151,
+     "conflict_rate": 0.0,
+     "cos_dis": 0.0021
+    },
+    "B_OPEN_LOOP_MIXED": {
+     "n": 145,
+     "cond_disp": 0.2227,
+     "conflict_rate": 0.0,
+     "cos_dis": 0.0047
+    },
+    "C_H30_FEEDBACK": {
+     "n": 145,
+     "cond_disp": 0.0513,
+     "conflict_rate": 0.0,
+     "cos_dis": 0.2498
+    },
+    "D_HANDOFF_PLUS_H30": {
+     "n": 145,
+     "cond_disp": 0.1367,
+     "conflict_rate": 0.0069,
+     "cos_dis": 0.0247
+    }
+   }
+  }
+ },
+ "fixed_radius": {
+  "TRANSPORT": {
+   "r=6.0": {
+    "A_HANDOFF_ONLY": {
+     "coverage": 1.0,
+     "cond_disp": 0.3163,
+     "conflict_rate": 0.0
+    },
+    "B_OPEN_LOOP_MIXED": {
+     "coverage": 1.0,
+     "cond_disp": 0.3537,
+     "conflict_rate": 0.0
+    },
+    "C_H30_FEEDBACK": {
+     "coverage": 0.895,
+     "cond_disp": 0.3289,
+     "conflict_rate": 0.0
+    },
+    "D_HANDOFF_PLUS_H30": {
+     "coverage": 0.981,
+     "cond_disp": 0.3319,
+     "conflict_rate": 0.0
+    }
+   },
+   "r=9.0": {
+    "A_HANDOFF_ONLY": {
+     "coverage": 1.0,
+     "cond_disp": 0.4932,
+     "conflict_rate": 0.0
+    },
+    "B_OPEN_LOOP_MIXED": {
+     "coverage": 1.0,
+     "cond_disp": 0.5216,
+     "conflict_rate": 0.0
+    },
+    "C_H30_FEEDBACK": {
+     "coverage": 0.897,
+     "cond_disp": 0.5075,
+     "conflict_rate": 0.0
+    },
+    "D_HANDOFF_PLUS_H30": {
+     "coverage": 0.981,
+     "cond_disp": 0.5105,
+     "conflict_rate": 0.0
+    }
+   }
+  },
+  "SETTLING": {
+   "r=6.0": {
+    "A_HANDOFF_ONLY": {
+     "coverage": 1.0,
+     "cond_disp": 0.3736,
+     "conflict_rate": 0.0
+    },
+    "B_OPEN_LOOP_MIXED": {
+     "coverage": 0.998,
+     "cond_disp": 0.4236,
+     "conflict_rate": 0.0
+    },
+    "C_H30_FEEDBACK": {
+     "coverage": 0.479,
+     "cond_disp": 0.1571,
+     "conflict_rate": 0.0657
+    },
+    "D_HANDOFF_PLUS_H30": {
+     "coverage": 0.75,
+     "cond_disp": 0.3315,
+     "conflict_rate": 0.0202
+    }
+   },
+   "r=9.0": {
+    "A_HANDOFF_ONLY": {
+     "coverage": 1.0,
+     "cond_disp": 0.4854,
+     "conflict_rate": 0.0
+    },
+    "B_OPEN_LOOP_MIXED": {
+     "coverage": 0.998,
+     "cond_disp": 0.4846,
+     "conflict_rate": 0.0
+    },
+    "C_H30_FEEDBACK": {
+     "coverage": 0.594,
+     "cond_disp": 0.4529,
+     "conflict_rate": 0.3059
+    },
+    "D_HANDOFF_PLUS_H30": {
+     "coverage": 0.805,
+     "cond_disp": 0.5445,
+     "conflict_rate": 0.1211
+    }
+   }
+  },
+  "STRICT_DWELL": {
+   "r=6.0": {
+    "A_HANDOFF_ONLY": {
+     "coverage": 1.0,
+     "cond_disp": 0.4227,
+     "conflict_rate": 0.0
+    },
+    "B_OPEN_LOOP_MIXED": {
+     "coverage": 1.0,
+     "cond_disp": 0.4406,
+     "conflict_rate": 0.0
+    },
+    "C_H30_FEEDBACK": {
+     "coverage": 0.945,
+     "cond_disp": 0.0167,
+     "conflict_rate": 0.0219
+    },
+    "D_HANDOFF_PLUS_H30": {
+     "coverage": 0.978,
+     "cond_disp": 0.2856,
+     "conflict_rate": 0.0168
+    }
+   },
+   "r=9.0": {
+    "A_HANDOFF_ONLY": {
+     "coverage": 1.0,
+     "cond_disp": 0.4765,
+     "conflict_rate": 0.0
+    },
+    "B_OPEN_LOOP_MIXED": {
+     "coverage": 1.0,
+     "cond_disp": 0.4964,
+     "conflict_rate": 0.0
+    },
+    "C_H30_FEEDBACK": {
+     "coverage": 0.966,
+     "cond_disp": 0.1942,
+     "conflict_rate": 0.3571
+    },
+    "D_HANDOFF_PLUS_H30": {
+     "coverage": 0.986,
+     "cond_disp": 0.6594,
+     "conflict_rate": 0.2493
+    }
+   }
+  }
+ }
+}

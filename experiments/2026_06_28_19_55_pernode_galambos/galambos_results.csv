@@ -1,0 +1,3 @@
+config,delivery_median,delivery_iqr,delivery_worst,delivery_best,per_seed_delivery,return_median,n_seeds,skip,n_params
+sa_hsikan,0.25,0.45,0.1,0.4,"[0.1, 0.4]",-45.63,2,none,1416
+mlp,0.15,0.15,0.1,0.2,"[0.1, 0.2]",-49.01,2,none,15296

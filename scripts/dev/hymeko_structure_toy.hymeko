@@ -1,0 +1,30 @@
+toy_model_description {}
+
+toy_model: graph {
+    v0: graph.node { tier 0; token 0; feature [1.0, 0.0, 0.0, 0.0]; }
+    v1: graph.node { tier 0; token 1; feature [0.8, 0.2, 0.0, 0.1]; }
+    v2: graph.node { tier 1; token 2; feature [0.0, 1.0, 0.1, 0.0]; }
+    v3: graph.node { tier 1; token 3; feature [0.1, 0.7, 0.2, 0.0]; }
+    v4: graph.node { tier 2; token 4; feature [0.0, 0.2, 1.0, 0.3]; }
+    v5: graph.node { tier 2; token 5; feature [0.2, 0.0, 0.8, 0.5]; }
+
+    @c0: graph.cycle { (+ v0, + v1, - v2); }
+    @c1: graph.cycle { (+ v1, - v2, + v3); }
+    @c2: graph.cycle { (- v2, + v3, + v4); }
+    @c3: graph.cycle { (+ v3, + v4, - v5); }
+
+    @w0: graph.walk { (+ v0, + v1, - v2); }
+    @w1: graph.walk { (+ v1, - v2, + v3); }
+    @w2: graph.walk { (- v2, + v3, + v4); }
+    @w3: graph.walk { (+ v3, + v4, - v5); }
+
+    @e0: graph.link { (+ v0, - v1); }
+    @e1: graph.link { (+ v2, + v3); }
+    @e2: graph.link { (- v4, + v5); }
+
+    @s0: graph.sequence { (+ v0, - v1); }
+    @s1: graph.sequence { (+ v1, - v2); }
+    @s2: graph.sequence { (+ v2, - v3); }
+    @s3: graph.sequence { (+ v3, - v4); }
+    @s4: graph.sequence { (+ v4, - v5); }
+}

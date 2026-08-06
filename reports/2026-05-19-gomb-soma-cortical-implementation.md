@@ -6,7 +6,7 @@ Slice 1 of the cortical-benchmark implementation plan
 (`docs/plans/2026-05-19-gomb-soma-cortical-implementation/`) lands the
 **dataset-agnostic scoring infrastructure** + a **synthetic
 Cichy-92-faithful smoke**. The 4-format plan (.tex/.pdf/.tikz/.mmd) was
-written first per CLAUDE.md §2. A new `signedkan_wip/src/cortical/`
+written first per CLAUDE.md §2. A new `hymeko_neuro/experiments/cortical/`
 package ships 5 modules implementing the Brain-Score 2018 protocol
 (Schrimpf et al.) in PyTorch + sklearn (no `brainscore`/`brainio`
 dependency — those aren't in the env). End-to-end 3-seed smoke at the
@@ -27,13 +27,13 @@ regression tests.
 | `docs/plans/2026-05-19-gomb-soma-cortical-implementation/plan.tikz`      | new    | 55   |
 | `docs/plans/2026-05-19-gomb-soma-cortical-implementation/plan.mmd`       | new    | 37   |
 | `docs/plans/2026-05-19-gomb-soma-cortical-implementation/plan.pdf`       | new    | (binary) |
-| `signedkan_wip/src/cortical/__init__.py`                                 | new    | 84   |
-| `signedkan_wip/src/cortical/synthetic.py`                                | new    | 266  |
-| `signedkan_wip/src/cortical/features.py`                                 | new    | 231  |
-| `signedkan_wip/src/cortical/scoring.py`                                  | new    | 312  |
-| `signedkan_wip/src/cortical/baselines.py`                                | new    | 174  |
-| `signedkan_wip/tests/test_cortical_benchmark.py`                         | new    | 303  |
-| `signedkan_wip/experiments/runs/run_cortical_benchmark.py`               | new    | 237  |
+| `hymeko_neuro/experiments/cortical/__init__.py`                                 | new    | 84   |
+| `hymeko_neuro/experiments/cortical/synthetic.py`                                | new    | 266  |
+| `hymeko_neuro/experiments/cortical/features.py`                                 | new    | 231  |
+| `hymeko_neuro/experiments/cortical/scoring.py`                                  | new    | 312  |
+| `hymeko_neuro/experiments/cortical/baselines.py`                                | new    | 174  |
+| `hymeko_neuro/tests/test_cortical_benchmark.py`                         | new    | 303  |
+| `hymeko_neuro/experiments/runs/run_cortical_benchmark.py`               | new    | 237  |
 
 Total: ~1.6 kLOC across 7 new source files + 4 plan artifacts.
 
@@ -44,7 +44,7 @@ None.
 ## Interface changes
 
 The new public surface (curated re-exports from
-`signedkan_wip.src.cortical.__init__`):
+`hymeko_neuro.experiments.cortical.__init__`):
 
 - **Frozen dataclasses (state-only types)**:
   `SyntheticCorticalDataset`, `BinningConfig`, `PerDepthFeatures`,
@@ -70,7 +70,7 @@ scaffold duplication; the runner reuses the existing
 
 ## Test results
 
-All 21 tests in `signedkan_wip/tests/test_cortical_benchmark.py`
+All 21 tests in `hymeko_neuro/tests/test_cortical_benchmark.py`
 pass under `pytest -p no:randomly`:
 
 ```
@@ -103,7 +103,7 @@ Coverage by layer:
 Command:
 
 ```
-python -m signedkan_wip.experiments.runs.run_cortical_benchmark \
+python -m hymeko_neuro.experiments.runs.run_cortical_benchmark \
     --seeds 0 1 2 --n_images 92 --n_subjects 16 \
     --image_size 64 --d_hidden 16
 ```

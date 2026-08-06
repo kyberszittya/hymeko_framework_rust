@@ -1,0 +1,65 @@
+{
+  "config": {
+    "difficulty": 0.3,
+    "steps": 60000,
+    "single_variable": "pull=reach_distance 6.0"
+  },
+  "rows": [
+    {
+      "seed": 0,
+      "arm": "nopull",
+      "delivery": 0.08,
+      "coin_toward_zone_m": 0.1261,
+      "both_contact_frac": 0.012,
+      "wall_s": 525
+    },
+    {
+      "seed": 0,
+      "arm": "withpull",
+      "delivery": 0.14,
+      "coin_toward_zone_m": 0.0694,
+      "both_contact_frac": 0.001,
+      "wall_s": 524
+    },
+    {
+      "seed": 1,
+      "arm": "nopull",
+      "delivery": 0.12,
+      "coin_toward_zone_m": 0.0627,
+      "both_contact_frac": 0.001,
+      "wall_s": 536
+    },
+    {
+      "seed": 1,
+      "arm": "withpull",
+      "delivery": 0.18,
+      "coin_toward_zone_m": 0.0687,
+      "both_contact_frac": 0.003,
+      "wall_s": 511
+    },
+    {
+      "seed": 2,
+      "arm": "nopull",
+      "delivery": 0.26,
+      "coin_toward_zone_m": 0.0962,
+      "both_contact_frac": 0.005,
+      "wall_s": 493
+    },
+    {
+      "seed": 2,
+      "arm": "withpull",
+      "delivery": 0.2,
+      "coin_toward_zone_m": 0.1071,
+      "both_contact_frac": 0.004,
+      "wall_s": 516
+    }
+  ],
+  "nopull": {
+    "delivery_median": 0.12,
+    "coin_toward_zone_median": 0.0962
+  },
+  "withpull": {
+    "delivery_median": 0.18,
+    "coin_toward_zone_median": 0.0694
+  }
+}

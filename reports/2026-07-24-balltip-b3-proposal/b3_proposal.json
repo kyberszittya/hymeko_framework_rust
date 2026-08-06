@@ -1,0 +1,69 @@
+{
+ "contract": "BALLTIP_COLLISION_ON_V1",
+ "stage": "B3",
+ "date": "2026-07-24",
+ "smoke": false,
+ "baseline": {
+  "tag": "executable-hymeko-option-rl-v1",
+  "commit": "772a11a4"
+ },
+ "robot": "ball r0.020 collision-ON",
+ "teacher_shots": 128,
+ "n_labels": 99,
+ "fit": {
+  "clf_ce": 0.2767719626426697,
+  "res_mse": 0.39740848541259766,
+  "cluster_sizes": [
+   10,
+   12,
+   22,
+   17,
+   19,
+   19
+  ]
+ },
+ "K": 6,
+ "ball_proposal_ckpt": "carry_proposal_balltip_v1.pt",
+ "bank": "carry_option_balltip_bank_v1.npz",
+ "eval": {
+  "n_eval": 24,
+  "ball_proposal_b0": 0,
+  "ball_proposal_b8": 5,
+  "clamp_proposal_b0_zeroshot": 0,
+  "clamp_proposal_b8_zeroshot": 0,
+  "expert_ceiling": 16,
+  "solved": {
+   "ball_b0": [],
+   "ball_b8": [
+    3,
+    10,
+    15,
+    16,
+    17
+   ],
+   "clamp_b8": [],
+   "expert": [
+    3,
+    4,
+    5,
+    6,
+    8,
+    9,
+    10,
+    11,
+    12,
+    14,
+    15,
+    16,
+    17,
+    18,
+    20,
+    22
+   ]
+  }
+ },
+ "provenance_stats": {
+  "scanned": 160,
+  "confident": 99
+ }
+}

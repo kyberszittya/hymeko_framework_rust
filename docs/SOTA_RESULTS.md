@@ -29,13 +29,13 @@ under the honest metric** then settled the actual
 
 | Variant | Cluttered MNIST mAP_50 (5 seeds) | Evidence |
 |---|---:|---|
-| `+ricci-mod` **+ HSiKAN-CR backbone + Stage A-3-lite levers** (Stage B b_hsikan; HSiKAN basis-function activation in place of ReLU at iso-topology) | **0.9032 ± 0.0087** ★★★ | `signedkan_wip/experiments/results/hymeyolo_ladder_b_hsikan_20260516T192708Z/`; full 5-seed (seed 2 salvaged via 2026-05-17 sole-GPU rerun, 3126 s wall). Paired Δ vs Stage A-2 = **+0.1571** (z=+8.16, 5/5 win-rate); paired Δ vs b_resnet = **+0.0077** (z=+0.61, 2/5 = **TIE** by pre-registered rule); paired Δ vs b_prime = **+0.1673** (z=+11.95, 5/5). **CR primitive transfers to vision at parity with ReLU — regime-general.** Per-seed walls 2798 / 2971 / 3126 / 4141 / 3941 s. |
-| `+ricci-mod` **+ ResNet-tiny backbone + Stage A-3-lite levers** (Stage B b_resnet, honest) | **0.8955 ± 0.0267** ★★★ | `signedkan_wip/experiments/results/hymeyolo_ladder_b_resnet_20260516T171048Z/`; paired Δ vs Stage A-2 = **+0.1494** (z=+8.14, 5/5 win-rate). **Cumulative paired Δ vs no-warm-start honest baseline = +0.391.** Per-seed: 0.9126 / 0.9135 / 0.8432 / 0.8977 / 0.9103. mAP_50:95 = 0.787 / 0.787 / 0.755 / 0.776 / 0.781 (mean ~0.777). |
-| `+ricci-mod` **+ ResNet-tiny + 2-level FPN head + Stage A-3-lite levers** (Stage C c_fpn) | **0.8926 ± 0.0238** ★★ | `signedkan_wip/experiments/results/hymeyolo_ladder_c_fpn_20260517T141622Z/`; paired Δ vs b_resnet = **−0.0029** (z=−1.11, 2/5 = **TIE** — FPN does not add over single-scale at this dataset/backbone scale); paired Δ vs b_prime = **+0.1568** (z=+12.16, 5/5); paired Δ vs A-2 cumulative = **+0.1466** (z=+9.08, 5/5). **Cluttered MNIST is single-scale by construction; multi-scale aggregation provides no benefit. ResNet-tiny single-scale is the saturation point at this scale.** Per-seed: 0.9120 / 0.9073 / 0.8461 / 0.8998 / 0.8979. See `reports/2026-05-17-hymeyolo-stage-c-5seed.md`. |
-| `+ricci-mod` **+ warm-start + cosine LR + warmup + e=100** (Stage A-2, honest) | 0.7460 ± 0.0350 ★★ | `reports/2026-05-16-hymeyolo-stage-a2-5seed.md` + `signedkan_wip/experiments/results/hymeyolo_stage_a2_5seed_20260516T115649Z/`; paired Δ vs Stage A-1 = +0.1181 (z=+14.01, 5/5 win-rate) |
-| `+ricci-mod` `ricci_scale = 1.00` + warm-start (Stage A-1, honest) | 0.6279 ± 0.0521 | `reports/2026-05-16-hymeyolo-warmstart-5seed.md` + `signedkan_wip/experiments/results/hymeyolo_warmstart_5seed_20260516T101835Z/`; paired Δ vs `--no-warm-start` = +0.1238 (z=+4.68, 5/5 win-rate) |
-| `+ricci-mod` **+ TinyBackbone + Stage A-3-lite levers** (Stage B' b_prime; A-3-lite attribution control, 5-seed sole-GPU rerun) | **0.7358 ± 0.0231** ★★ | `signedkan_wip/experiments/results/hymeyolo_ladder_b_prime_20260517T102427Z/`; paired Δ vs A-2 = **−0.0102** (z=−1.61, 1/5 = **TIE**); paired Δ vs b_resnet = **−0.1597** (z=−10.66, 0/5 = LOSS for b_prime). **Clean orthogonal attribution: backbone swap carries the entire +0.149 b_resnet-vs-A-2 lift; A-3-lite head levers alone add nothing to the TinyBackbone baseline.** Per-seed: 0.7294 / 0.7524 / 0.7253 / 0.7695 / 0.7025. Per-seed wall 1613-1631 s (sole-GPU), confirming earlier failure was contention-induced. |
-| `+ricci-mod` `ricci_scale = 1.00` (honest, no warm-start, e=50) | 0.5041 ± 0.0391 | `reports/2026-05-16-hymeyolo-ricci-weight-sweep.md` + `signedkan_wip/experiments/results/hymeyolo_ricci_scale_sweep_20260516T002116Z/` |
+| `+ricci-mod` **+ HSiKAN-CR backbone + Stage A-3-lite levers** (Stage B b_hsikan; HSiKAN basis-function activation in place of ReLU at iso-topology) | **0.9032 ± 0.0087** ★★★ | `hymeko_neuro/experiments/results/hymeyolo_ladder_b_hsikan_20260516T192708Z/`; full 5-seed (seed 2 salvaged via 2026-05-17 sole-GPU rerun, 3126 s wall). Paired Δ vs Stage A-2 = **+0.1571** (z=+8.16, 5/5 win-rate); paired Δ vs b_resnet = **+0.0077** (z=+0.61, 2/5 = **TIE** by pre-registered rule); paired Δ vs b_prime = **+0.1673** (z=+11.95, 5/5). **CR primitive transfers to vision at parity with ReLU — regime-general.** Per-seed walls 2798 / 2971 / 3126 / 4141 / 3941 s. |
+| `+ricci-mod` **+ ResNet-tiny backbone + Stage A-3-lite levers** (Stage B b_resnet, honest) | **0.8955 ± 0.0267** ★★★ | `hymeko_neuro/experiments/results/hymeyolo_ladder_b_resnet_20260516T171048Z/`; paired Δ vs Stage A-2 = **+0.1494** (z=+8.14, 5/5 win-rate). **Cumulative paired Δ vs no-warm-start honest baseline = +0.391.** Per-seed: 0.9126 / 0.9135 / 0.8432 / 0.8977 / 0.9103. mAP_50:95 = 0.787 / 0.787 / 0.755 / 0.776 / 0.781 (mean ~0.777). |
+| `+ricci-mod` **+ ResNet-tiny + 2-level FPN head + Stage A-3-lite levers** (Stage C c_fpn) | **0.8926 ± 0.0238** ★★ | `hymeko_neuro/experiments/results/hymeyolo_ladder_c_fpn_20260517T141622Z/`; paired Δ vs b_resnet = **−0.0029** (z=−1.11, 2/5 = **TIE** — FPN does not add over single-scale at this dataset/backbone scale); paired Δ vs b_prime = **+0.1568** (z=+12.16, 5/5); paired Δ vs A-2 cumulative = **+0.1466** (z=+9.08, 5/5). **Cluttered MNIST is single-scale by construction; multi-scale aggregation provides no benefit. ResNet-tiny single-scale is the saturation point at this scale.** Per-seed: 0.9120 / 0.9073 / 0.8461 / 0.8998 / 0.8979. See `reports/2026-05-17-hymeyolo-stage-c-5seed.md`. |
+| `+ricci-mod` **+ warm-start + cosine LR + warmup + e=100** (Stage A-2, honest) | 0.7460 ± 0.0350 ★★ | `reports/2026-05-16-hymeyolo-stage-a2-5seed.md` + `hymeko_neuro/experiments/results/hymeyolo_stage_a2_5seed_20260516T115649Z/`; paired Δ vs Stage A-1 = +0.1181 (z=+14.01, 5/5 win-rate) |
+| `+ricci-mod` `ricci_scale = 1.00` + warm-start (Stage A-1, honest) | 0.6279 ± 0.0521 | `reports/2026-05-16-hymeyolo-warmstart-5seed.md` + `hymeko_neuro/experiments/results/hymeyolo_warmstart_5seed_20260516T101835Z/`; paired Δ vs `--no-warm-start` = +0.1238 (z=+4.68, 5/5 win-rate) |
+| `+ricci-mod` **+ TinyBackbone + Stage A-3-lite levers** (Stage B' b_prime; A-3-lite attribution control, 5-seed sole-GPU rerun) | **0.7358 ± 0.0231** ★★ | `hymeko_neuro/experiments/results/hymeyolo_ladder_b_prime_20260517T102427Z/`; paired Δ vs A-2 = **−0.0102** (z=−1.61, 1/5 = **TIE**); paired Δ vs b_resnet = **−0.1597** (z=−10.66, 0/5 = LOSS for b_prime). **Clean orthogonal attribution: backbone swap carries the entire +0.149 b_resnet-vs-A-2 lift; A-3-lite head levers alone add nothing to the TinyBackbone baseline.** Per-seed: 0.7294 / 0.7524 / 0.7253 / 0.7695 / 0.7025. Per-seed wall 1613-1631 s (sole-GPU), confirming earlier failure was contention-induced. |
+| `+ricci-mod` `ricci_scale = 1.00` (honest, no warm-start, e=50) | 0.5041 ± 0.0391 | `reports/2026-05-16-hymeyolo-ricci-weight-sweep.md` + `hymeko_neuro/experiments/results/hymeyolo_ricci_scale_sweep_20260516T002116Z/` |
 | `+ricci-mod` `ricci_scale = 0.40` (honest)  | 0.5093 ± 0.0718 | same — statistically tied with 1.00 (paired Δ +0.005, z=+0.19) |
 | `+ricci-mod` `ricci_scale = 0.10` (honest)  | 0.4907 ± 0.0539 | same — paired Δ −0.013, z=−0.58 |
 | `+ricci-mod` `ricci_scale = 0.05 / 0.20` (honest) | 0.4487 / 0.4426 | same — both LOSS vs 1.00 at z=−2.36 / z=−2.18 |
@@ -139,10 +139,10 @@ Full audit: `reports/2026-05-14-bitcoin-leakage-audit.md`.
 
 | Model / run | Kind | bitcoin_alpha | bitcoin_otc | slashdot | epinions | Primary evidence |
 |-------------|------|---------------|-------------|----------|----------|------------------|
-| **optuna_best** (`optuna_best_alpha` / `optuna_best_otc`) | ★ tuples **c2,c5,w2,w3,w4** + SignedKAN, **lean** (h=8 / h=4) | **0.9959 ± 0.0011** (n=10)¹ | **0.9933 ± 0.0023** (n=10)¹ | — | — | `signedkan_wip/experiments/results/bitcoin_optuna_best_5seed_2026_05_13.jsonl` (detail §3–§4); paired Δ vs joint mix +0.0119 (12σ) Alpha / +0.0139 (7σ) OTC, 5/5 win-rate; **30 487 / 23 815 params** (≈½ / ¼ of joint_mix) |
+| **optuna_best** (`optuna_best_alpha` / `optuna_best_otc`) | ★ tuples **c2,c5,w2,w3,w4** + SignedKAN, **lean** (h=8 / h=4) | **0.9959 ± 0.0011** (n=10)¹ | **0.9933 ± 0.0023** (n=10)¹ | — | — | `hymeko_neuro/experiments/results/bitcoin_optuna_best_5seed_2026_05_13.jsonl` (detail §3–§4); paired Δ vs joint mix +0.0119 (12σ) Alpha / +0.0139 (7σ) OTC, 5/5 win-rate; **30 487 / 23 815 params** (≈½ / ¼ of joint_mix) |
 
 ¹ **Protocol note.** Numbers above use the SMC-paper transductive convention (k=2 self-exclusion only) — the same convention `joint_mix`, `sgcn_balance`, `sigat_attn`, `mlp_blind` and `gcn_blind` in this table are measured under, so the comparison is apples-to-apples within the field's standard convention. The current `HSIKAN_STRICT_PROTOCOL=1` implementation is **over-aggressive** (zeros M_e for every edge, producing 0.5000 ± 0.0000 filter-artifact rows — see memory `project_strict_protocol_broken_2026_05_13`); a proper σ-masked cycle-product variant is open follow-up. It does **not** change the iso-protocol wins above.
-| **joint mix** (`joint_ba` / `joint_otc`) | ★ tuples **c3,c4,w2,w3** + SignedKAN (h=16) | 0.9845 (n=5) | 0.9801 (n=5; `cycle_otc` n=4 → 0.9266) | — | — | `signedkan_wip/experiments/results/joint_mix_5seed_2026_05_08.jsonl` (detail §3–§4) |
+| **joint mix** (`joint_ba` / `joint_otc`) | ★ tuples **c3,c4,w2,w3** + SignedKAN (h=16) | 0.9845 (n=5) | 0.9801 (n=5; `cycle_otc` n=4 → 0.9266) | — | — | `hymeko_neuro/experiments/results/joint_mix_5seed_2026_05_08.jsonl` (detail §3–§4) |
 | **hsikan_mixed_leanest** | ★ HSiKAN Phase‑8 panel | 0.828±0.010 | 0.851±0.016 | — | — | `phase8_bitcoin_5seed.json` + `master_table.md` |
 | **hsikan_k3_only_leanest** | ★ HSiKAN (Slashdot k=3 lean) | — | — | 0.614±0.002 | — | `master_table.md` |
 | **signedkan_L1** | ★ SignedKAN | 0.745±0.023 | 0.802±0.012 | — | — | `phase8_bitcoin_5seed.json` + `master_table.md` |
@@ -159,7 +159,7 @@ Full audit: `reports/2026-05-14-bitcoin-leakage-audit.md`.
 - **Phase‑8 panel** rows (`hsikan_*`, `signedkan_L1`, blinds, GCN/SGCN/SiGAT) share one protocol; see **§3–§4** for bar charts.  
 - **Gömb** vs **edge_cr** on Slashdot is a deliberate **cascade vs reference highway** comparison — negative at the stated gate; see **§8**.
 
-Full multi-dataset grid (incl. synthetic SBM / hier / karate): `signedkan_wip/experiments/results/master_table.md`.
+Full multi-dataset grid (incl. synthetic SBM / hier / karate): `hymeko_neuro/experiments/results/master_table.md`.
 
 ---
 
@@ -176,9 +176,9 @@ flowchart LR
   subgraph slash ["Slashdot SOTA ref"]
     S["edge_cr 5-seed"]
   end
-  J --> F["signedkan_wip/experiments/results/joint_mix_5seed_2026_05_08.jsonl"]
-  P --> G["signedkan_wip/experiments/results/phase8_bitcoin_5seed.json"]
-  S --> H["signedkan_wip/experiments/results/slashdot_edge_cr_5seed_2026_05_09.jsonl"]
+  J --> F["hymeko_neuro/experiments/results/joint_mix_5seed_2026_05_08.jsonl"]
+  P --> G["hymeko_neuro/experiments/results/phase8_bitcoin_5seed.json"]
+  S --> H["hymeko_neuro/experiments/results/slashdot_edge_cr_5seed_2026_05_09.jsonl"]
 ```
 
 **Do not** merge “joint” and “lean panel” into one verbal score — they are different experiments.
@@ -297,7 +297,7 @@ xychart-beta
 
 ## 7. Multi-dataset architecture table (5 seeds)
 
-Source: `signedkan_wip/experiments/results/master_table.md`  
+Source: `hymeko_neuro/experiments/results/master_table.md`  
 (mean±std AUC; excerpt — full table in file.)
 
 | arch | bitcoin_alpha | bitcoin_otc | slashdot |
@@ -315,7 +315,7 @@ Two additional datasets in the canonical Stanford SNAP signed-graph
 suite, measured at the same protocol as the Bitcoin Alpha / OTC
 joint-mix Gömb runs (c3,c4,w2,w3 tuples; `M_outer=8, d_outer=8, d_middle=8,
 d_core=8, n_tiers=3, topk=64, lr=3e-3, weight_decay=0`). Surfaced here
-2026-05-16 from `signedkan_wip/experiments/results/gomb_wiki_datasets_20260514T150002Z/`
+2026-05-16 from `hymeko_neuro/experiments/results/gomb_wiki_datasets_20260514T150002Z/`
 + `gomb_wikisigned_retry_20260514T165139Z/` — already on disk, just
 unindexed.
 

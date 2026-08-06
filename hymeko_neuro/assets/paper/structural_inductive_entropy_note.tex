@@ -1,0 +1,157 @@
+% Structural-feature inductive signed-link prediction, and algebraic entropy
+% feedback as a bridge to control. Companion note to the SignedKAN WiP paper +
+% regulariser_note.tex. Draft 2026-06-18 (Aiko / Claude Code for Dr. Cs. Hajdu).
+\documentclass[11pt, a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{booktabs}\usepackage{hyperref}\usepackage{xcolor}
+\title{Structural-feature inductive signed-link prediction,\\
+and algebraic entropy feedback as a bridge to control}
+\author{Csaba Hajdu \and (draft note)}
+\date{2026-06-18}
+\begin{document}\maketitle
+
+\begin{abstract}
+A companion note recording two results and a synthesis. \textbf{(1)}~The
+leakage-free ``rotor'' line's wins are carried by \emph{structural features}
+replacing the node-identity table, \emph{not} by the rotor's $S^3$ geometry: a
+matched-capacity MLP embedding ties the rotor on link-sign AUROC ($\pm0.002$--$0.005$,
+inside $\sigma$). \textbf{(2)}~The line's distinctive, falsifiable claim is
+\emph{inductive}: a model trained on one signed graph transfers to an unseen one,
+where the transductive (node-table) baselines structurally cannot; on harder
+train-small/eval-large pairs the learned-from-source increment is positive in $8/8$
+cells and clears $1\sigma$ in $7/8$, reaching $+2.90\sigma$
+(\texttt{bitcoin\_otc}$\to$\texttt{epinions}). \textbf{Synthesis}: the framework's
+\emph{structural (algebraic) entropy} and the signed-link line's \emph{Lyapunov-safe
+entropy-feedback} regulariser are the same control idea, and it transfers to
+reinforcement learning over a robot's kinematic/contact hypergraph --- an
+exploration/regularisation signal driven by the algebra of the state, not by the
+action distribution alone.
+\end{abstract}
+
+\section{The reframe: structural features, not the rotor}
+The Cayley-rotor embedding replaces the transductive \texttt{nn.Embedding(n\_nodes)}
+identity table --- the memorisation channel behind the leakage-audit collapse --- with a
+shared map from \emph{structural features} (degree, signed-cycle participation, exact
+signed $A^k$ walk profile) to a unit quaternion on $S^3$. The line is leakage-clean
+(label-shuffle gate $\to$ chance) and competitive (deduped strict protocol: $0.850$ alpha
+/ $0.879$ otc, within $+0.036$/$+0.016$ of pure SiGAT).
+
+A foundational ablation settles \emph{what} carries the wins. Replacing the rotor
+embedding with a matched-capacity MLP of equal output dimension (same projection, signed
+message passing, and readout; $\geq$ parameters) leaves link-sign AUROC unchanged ---
+rotor $-$ MLP $=\pm0.002$--$0.005$, inside the seed $\sigma$ (0.01--0.027), both
+leakage-clean. The rotor's $S^3$ geometry is therefore \textbf{not load-bearing for
+AUROC}; the wins are the \emph{structural-feature, leakage-free, inductive} embedding,
+which the MLP control shares. The residual gap to pure SiGAT is \emph{expressivity}
+(learned attention), confirmed across input/readout/propagation/depth levers.
+
+\section{The distinctive result: inductive transfer}
+What the rotor (or its MLP sibling) can do that the node-table baselines cannot is
+\emph{transfer to an unseen graph}: train all weights on graph $A$, evaluate the frozen
+model on graph $B$'s strict deduped held-out edges, $B$'s embeddings built from $B$'s
+own structural features. The transductive control (\texttt{dadsgnn},
+\texttt{nn.Embedding}$(n_A)$) \emph{cannot index} $B$ --- ``cannot transfer'', recorded,
+not masked.
+
+To isolate transported knowledge from the eval graph's own structural prior (which signed
+message passing exposes regardless of training), we decompose each cell into three arms:
+\textbf{real} (train on $A$), \textbf{shuffle} (train on permuted-$A$ signs, the gate),
+and \textbf{random-init} (no training, the floor). Learned transfer $=$
+real $-\max(\text{shuffle},\text{random-init})$. On the bitcoin pairs the increment is
+$+0.038$--$0.063$ but only $\sim$1--1.5$\sigma$ (suggestive). On harder train-small
+(bitcoin) $\to$ eval-large (slashdot/epinions) pairs it is:
+
+\begin{center}\small
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+model & pair & real & shuffle & learned & signif. \\
+\midrule
+cayley\_rotor      & otc$\to$epinions & $0.8927$ & $0.8665$ & $+0.0261$ & $\mathbf{+2.90\sigma}$ \\
+cayley\_rotor      & otc$\to$slashdot & $0.8497$ & $0.8282$ & $+0.0215$ & $+2.28\sigma$ \\
+cayley\_rotor\_walk & otc$\to$epinions & $0.8939$ & $0.8418$ & $+0.0520$ & $+2.02\sigma$ \\
+\dots (8 cells)    &                  &          &          & $8/8>0$   & $7/8\geq1\sigma$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The variance, not the effect size, separates the train graphs: \texttt{otc}-trained
+shuffle arms are tight ($\sigma\!\approx\!0.009 \Rightarrow$ $+2.3$--$2.9\sigma$),
+\texttt{alpha}-trained are noisy ($\sigma\!\approx\!0.05 \Rightarrow$ $\sim$1.1$\sigma$
+despite a \emph{larger} raw increment). Random-init sits at/below chance throughout, so
+the cross-graph signal is genuinely \emph{learned}, not the table read trivially.
+
+\section{Where the rotor earns its place}
+Since the AUROC ablation neutralises the rotor, its value lives on a \emph{different}
+objective: it is weightless (a Cayley map $+$ cross-product sandwich, $\sim$4 fixed MACs
+per block, no matrix), and its output is \emph{bounded on $S^3$} --- calibration-free to
+quantise and directly cosine/dot-retrievable (ANN-index-ready). So on an embedded /
+hardware metric the rotor may \emph{win} exactly where it \emph{ties} on AUROC. That is a
+falsifiable claim (int8 PTQ $\Delta$AUROC, ANN recall@$k$), reserved for its own test, not
+asserted here.
+
+\section{Algebraic entropy feedback}
+\subsection{Two entropies already in the system}
+\textbf{Structural (algebraic) entropy.} The compiler computes, tensor-free and
+deterministically over the hierarchical IR, per-scope Shannon entropies of
+\emph{structural features only} --- arity, sign-roles ($+/-/0$), and degree
+(\texttt{hymeko\_query::entropy::StructuralEntropy}). This is an algebraic invariant of
+the hypergraph: how diverse its composition is, independent of any learned weights.
+
+\textbf{Spectral entropy with Lyapunov-safe KL feedback.} The signed-link regulariser
+acts on the singular-value distribution $\mathbf{p}_t$ of the node-embedding matrix:
+\begin{align*}
+H_{\mathrm{norm}} &= \tfrac{1}{\log_2\mathrm{rank}} H(\mathbf{p}_t), \quad
+\Delta_{KL}(t) = D_{KL}(\mathbf{p}_{t-1}\,\|\,\mathbf{p}_t), \\
+\lambda_{\mathrm{eff}}(t) &= \mathrm{clamp}\!\bigl(\lambda_0 e^{-\eta\Delta_{KL}(t)},\,
+0.1\lambda_0,\, 10\lambda_0\bigr), \quad
+\mathcal{L}_H = \lambda_{\mathrm{eff}}\bigl[\lambda_a(H_{\mathrm{norm}}-H^\ast)^2
++ \lambda_b H_{\mathrm{norm}}\bigr].
+\end{align*}
+The schedule \emph{relaxes} pressure when the spectrum moves fast (transient) and recovers
+when settled --- a feedback loop on the \emph{rate of change} of an entropy. This is
+already ``entropy feedback'' (measured: macro-$F_1$ $+0.005$ alpha / $+0.007$ otc).
+
+\subsection{The bridge: the same loop, for control}
+Reinforcement learning maximises $\mathbb{E}[R] + \beta\,H(\pi)$ --- an entropy term that
+buys exploration, but over the \emph{action distribution}, blind to structure. The
+synthesis: drive the feedback from the \textbf{algebraic entropy of the state hypergraph}
+(the kinematic/contact graph the HSiKAN policy already reads), with the same Lyapunov-safe
+KL schedule:
+\begin{itemize}\itemsep1pt
+  \item \textbf{Signal.} $H_{\mathrm{struct}}(s_t)$ = structural entropy
+        (arity/sign/degree) of the state's hypergraph --- high when the contact pattern is
+        rich/novel (a quadruped mid-stride forming closed leg--ground loops), low when
+        degenerate (all feet planted, or airborne).
+  \item \textbf{Feedback.} Modulate the exploration/regularisation weight by
+        $\Delta_{KL}$ of $H_{\mathrm{struct}}$ across steps: relax when the contact
+        structure is churning (the policy is already exploring structurally), tighten when
+        it stalls --- the control law transplanted verbatim from $\mathcal{L}_H$.
+  \item \textbf{Use.} Either as an intrinsic reward (visit structurally-novel states) or as
+        a structure-aware entropy bonus replacing/augmenting $\beta\,H(\pi)$.
+\end{itemize}
+This unifies the two lines: the \emph{same} structural-feature machinery that gives
+leakage-free inductive signed-link prediction supplies, for free, an algebraic entropy
+signal whose feedback control is already validated on the signed-link side. It is
+\emph{proposed}, not measured --- the falsifiable test is whether structure-driven
+entropy feedback improves sample efficiency over the vanilla $\beta\,H(\pi)$ bonus on the
+\texttt{hymeko\_rl} arm/quadruped tasks, ablated against the MLP policy (which has no
+hypergraph to read an algebraic entropy from).
+
+\section{Open questions}
+\begin{itemize}\itemsep1pt
+  \item \textbf{Which entropy, where.} $H_{\mathrm{struct}}$ is of the \emph{fixed}
+        topology for a rigid robot; the time-varying part is the \emph{contact} hypergraph
+        (transient foot--ground edges). The feedback signal must read the contact graph,
+        not just the kinematic skeleton --- ties to the legged contact-mode line.
+  \item \textbf{Confound control.} Any RL gain must be attributed to the algebraic entropy,
+        not extra reward shaping: fix the PPO algorithm, ablate only the entropy source.
+  \item \textbf{Significance of the alpha-trained transfer cells.} A 10-seed pass would
+        settle whether the noisy $\sim$1.1$\sigma$ cells also clear $1\sigma$.
+\end{itemize}
+
+\paragraph{Provenance.} Reports \texttt{2026-06-18-\{rotor-vs-mlp-embed-ablation,
+inductive-transfer-test, transfer-grid-strengthen\}.md}; regulariser in
+\texttt{paper/regulariser\_note.tex} \S\,spectral-entropy; entropy compiler in
+\texttt{hymeko\_query::entropy}; RL substrate in \texttt{hymeko\_rl/}.
+\end{document}

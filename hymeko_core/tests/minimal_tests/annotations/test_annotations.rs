@@ -1,10 +1,12 @@
 #[cfg(test)]
 mod test_annotations {
+    use crate::minimal_tests::constants::*;
+    use crate::test_helpers::{
+        find_decl, get_node, has_tag, load_and_lower, log_test_footer, log_test_header, weight0,
+    };
     use hymeko::ir::ir::{DeclKind, SignedRefR};
-    use crate::test_helpers::{find_decl, get_node, has_tag, load_and_lower, log_test_footer, log_test_header, weight0};
     use log::info;
     use std::time::Instant;
-    use crate::minimal_tests::constants::*;
 
     #[test]
     fn parses_minimal_tag_annotation_and_extracts_bases_and_arc_weights() {
@@ -68,16 +70,24 @@ mod test_annotations {
             .inner
             .body
             .iter()
-            .find_map(|it| if let HyperItem::Arc(a) = it { Some(a) } else { None })
+            .find_map(|it| {
+                if let HyperItem::Arc(a) = it {
+                    Some(a)
+                } else {
+                    None
+                }
+            })
             .expect("expected an arc inside e0");
 
         assert_eq!(arc.inner.refs.len(), 2);
 
         fn weight(r: &SignedRef<'_, &str>) -> f64 {
             let v = match r {
-                SignedRef::Plus(a) | SignedRef::Minus(a) | SignedRef::Neutral(a) => a.anno.value.as_ref(),
+                SignedRef::Plus(a) | SignedRef::Minus(a) | SignedRef::Neutral(a) => {
+                    a.anno.value.as_ref()
+                }
             }
-                .expect("expected weight value");
+            .expect("expected weight value");
 
             match v {
                 Value::List(xs) => match xs.as_slice() {
@@ -128,9 +138,8 @@ mod test_annotations {
 
         // 1) segéd: DeclId keresés név + kind alapján
 
-
         let node10 = find_decl(ir, it, NODE10_NAME, DeclKind::Node);
-        let node0  = find_decl(ir, it, NODE0_NAME,  DeclKind::Node);
+        let node0 = find_decl(ir, it, NODE0_NAME, DeclKind::Node);
 
         // 2) NodeRec lekérés
         let n10_id = ir.as_node(node10).expect("node10 should be a node");
@@ -148,7 +157,11 @@ mod test_annotations {
             }
             other => panic!("expected Plus base ref, got {:?}", other),
         }
-        info!("lowered node {} base count {}", NODE10_NAME, n10.bases.len());
+        info!(
+            "lowered node {} base count {}",
+            NODE10_NAME,
+            n10.bases.len()
+        );
         log_test_footer(
             "lowers_node_bases_into_ir_with_isa_tag",
             Some(start.elapsed()),
@@ -169,10 +182,10 @@ mod test_annotations {
         let it = &store.it;
 
         // --- decl ids ---
-        let node0  = find_decl(ir, it, NODE0_NAME,  DeclKind::Node);
+        let node0 = find_decl(ir, it, NODE0_NAME, DeclKind::Node);
         let node10 = find_decl(ir, it, NODE10_NAME, DeclKind::Node);
         let node11 = find_decl(ir, it, NODE11_NAME, DeclKind::Node);
-        let node2  = find_decl(ir, it, NODE2_NAME,  DeclKind::Node);
+        let node2 = find_decl(ir, it, NODE2_NAME, DeclKind::Node);
 
         // --- node10 bases ---
         let n10 = get_node(ir, node10);

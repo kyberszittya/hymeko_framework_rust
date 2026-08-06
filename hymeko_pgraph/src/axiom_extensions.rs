@@ -340,7 +340,7 @@ mod tests {
         let kinds = BTreeMap::from([
             (d(0), PNodeKind::Material), // raw
             (d(1), PNodeKind::OperatingUnit),
-            (d(2), PNodeKind::Material), // product (unreachable)
+            (d(2), PNodeKind::Material),      // product (unreachable)
             (d(3), PNodeKind::OperatingUnit), // produces the product
         ]);
         let edges = BTreeMap::from([
@@ -419,12 +419,16 @@ mod tests {
         let products = BTreeSet::from([d(2)]);
         // E-ConsumedHasProducer accepts (d(3) is not in `consumed`).
         let consumed_check = check_consumed_has_producer(&schema, &ext.raws);
-        assert!(consumed_check.is_none(),
-            "E-ConsumedHasProducer must be silent on an isolated M-node");
+        assert!(
+            consumed_check.is_none(),
+            "E-ConsumedHasProducer must be silent on an isolated M-node"
+        );
 
         // Canonical bundle FAILS (A2 forward + A5).
         let bundle = crate::axioms::AxiomBundle::new([d(0)], []);
-        let err = bundle.validate(&schema, &products).expect_err("canonical must err");
+        let err = bundle
+            .validate(&schema, &products)
+            .expect_err("canonical must err");
         assert!(err.iter().any(|x| matches!(
             x, crate::axioms::AxiomViolation::IsolatedMaterials { offenders }
                 if offenders.contains(&d(3))

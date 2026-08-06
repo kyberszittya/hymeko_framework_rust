@@ -28,9 +28,9 @@ edge_cr (0.9067 ± 0.0034) baseline still need to run.
 
 | File | +/- | Notes |
 |---|---|---|
-| `signedkan_wip/src/hymeko_gomb.py` | +144 / -3 | added `GombNoOuter`, `GombNoMiddle`, `GombNoInner` ablation wrappers |
-| `signedkan_wip/tests/test_hymeko_gomb.py` | +91 / -1 | 4 new tests (one per ablation + a param-budget assertion) |
-| `signedkan_wip/src/run_gomb_smoke.py` | new (192 LOC) | smoke runner with `--model {gomb,no_outer,no_middle,no_inner}` dispatch |
+| `hymeko_neuro/models/hymeko_gomb.py` | +144 / -3 | added `GombNoOuter`, `GombNoMiddle`, `GombNoInner` ablation wrappers |
+| `hymeko_neuro/tests/test_hymeko_gomb.py` | +91 / -1 | 4 new tests (one per ablation + a param-budget assertion) |
+| `hymeko_neuro/run_gomb_smoke.py` | new (192 LOC) | smoke runner with `--model {gomb,no_outer,no_middle,no_inner}` dispatch |
 | `hymeko_graph/src/spine.rs` | +3 / -3 | doc-list overindent fix (clippy 1.92 `doc_overindented_list_items`) |
 | `hymeko_nagare/src/ops/linear.rs` | +6 / -6 | `needless_range_loop` → iter+enumerate refactor (4 sites) |
 | `hymeko_nagare/src/ops/scatter.rs` | +1 / -1 | unused-var `h` → `_h` in a unit test |
@@ -49,7 +49,7 @@ crate itself is new this session, also outside `CORE.YAML`).
 
 ### Python (`pytest -p no:randomly`)
 
-`signedkan_wip/tests/test_hymeko_gomb.py`: **13/13 passed in 2.62 s**.
+`hymeko_neuro/tests/test_hymeko_gomb.py`: **13/13 passed in 2.62 s**.
 
 Breakdown:
 - 3 OuterFIRShell tests (forward shape, M-bank diversification, zero-cycles passthrough)
@@ -124,7 +124,7 @@ None.
 1. **Peak RSS not measured.** Bench wall is reported but `dhat` /
    `memray` not yet run. The 16 GB cap held (process did not abort)
    but the actual numerical budget is unknown. Action: run
-   `memray run -o gomb.bin python -m signedkan_wip.src.run_gomb_smoke ...`
+   `memray run -o gomb.bin python -m hymeko_neuro.run_gomb_smoke ...`
    on one seed and attach.
 
 2. **5-seed ablation paired study required.** Single-seed Δ for all
@@ -156,7 +156,7 @@ None.
 - **CPU:** AMD Ryzen 7 3700X, 8 cores / 16 threads.
 - **GPU:** NVIDIA GeForce RTX 2070 SUPER (8 GB), driver 580.126.09, CUDA 13.0.
 - **Python:** 3.13.5 (miniconda); torch 2.11.0+cu130; numpy 2.4.4; pytest 9.0.3 + pluggy 1.5.0.
-- **Dataset:** Bitcoin OTC. `md5(signedkan_wip/data/bitcoin_otc.csv) = eeaf5cd1d29ab435505baeeb6816317b`. |V|=5 881, |E|=35 592, pos/neg = 32 029 / 3 563.
+- **Dataset:** Bitcoin OTC. `md5(hymeko_neuro/assets/data/bitcoin_otc.csv) = eeaf5cd1d29ab435505baeeb6816317b`. |V|=5 881, |E|=35 592, pos/neg = 32 029 / 3 563.
 - **Seeds:** {0, 1, 2, 3, 4} for the full-model 5-seed; {0} for each ablation.
 - **Memory cap:** `ulimit -v 16777216` (16 GB virtual) per CLAUDE.md §4.
 

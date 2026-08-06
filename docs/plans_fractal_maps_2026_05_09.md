@@ -95,18 +95,18 @@ For each generator, sweep the dimension parameter (e.g., R-MAT $a{\in}[0.4, 0.9]
 
 ## Implementation notes
 
-- New `signedkan_wip/src/cycle_ifs.py` (~250 LOC):
+- New `hymeko_neuro/cycle_ifs.py` (~250 LOC):
   - Three IFS maps $f_1, f_2, f_3$ for signed-cycle perturbation
   - Iterator with seed-cycle pool + per-step contractive selection
   - `sample_cycles_ifs(g, k, n_samples)` returns a `list[SignedNTuple]` consumable by the HSiKAN encoder
-- New `signedkan_wip/src/cycle_fractal_dim.py` (~150 LOC):
+- New `hymeko_neuro/cycle_fractal_dim.py` (~150 LOC):
   - Box-counting / correlation-dimension estimator over cycle--cycle Hausdorff distance
   - Wrapper that takes a `list[SignedNTuple]` and returns $D$
-- New `signedkan_wip/src/synth_fractal_graph.py` (~200 LOC):
+- New `hymeko_neuro/synth_fractal_graph.py` (~200 LOC):
   - R-MAT generator with controllable fractal slope
   - Hierarchical SBM with depth/branching knobs
   - Sierpinski signed-graph generator
-- Runner `signedkan_wip/src/run_fractal_eval.py` (~150 LOC):
+- Runner `hymeko_neuro/run_fractal_eval.py` (~150 LOC):
   - Trains HSiKAN over (real, synthetic) datasets
   - Logs $\alpha_\kappa$, $D_\kappa$, and AUC
   - Produces the regression $\alpha \sim D$ for E2

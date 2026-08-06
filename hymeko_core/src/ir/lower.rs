@@ -1,25 +1,29 @@
-use parser::ast::{EdgeDecl, HyperArc, HyperItem, NodeDecl};
-use crate::common::ids::{HyperArcId, DeclId, EdgeId, NodeId, SymId};
+use crate::common::ids::{DeclId, EdgeId, HyperArcId, NodeId, SymId};
 use crate::ir::ir::{ArcRec, DeclKind, EdgeRec, Ir, NodeRec};
 use crate::ir::meta::Meta;
 use crate::ir::time::now_ns;
 use crate::resolution::interner::Interner;
-use crate::resolution::resolve::{resolve_anno, resolve_arc_refs, resolve_node_bases, Index, ResolveError};
+use crate::resolution::resolve::{
+    Index, ResolveError, resolve_anno, resolve_arc_refs, resolve_node_bases,
+};
 use crate::sym_ast::AstSym;
+use parser::ast::{EdgeDecl, HyperArc, HyperItem, NodeDecl};
 
-fn default_build_id() -> [u8; 16] { [0u8; 16] }
+fn default_build_id() -> [u8; 16] {
+    [0u8; 16]
+}
 
 fn parent_decl(idx: &Index, scope: &[SymId]) -> DeclId {
-    if scope.is_empty() { DeclId::NONE }
-    else {
-        *idx.by_path
-            .get(scope)
-            .unwrap_or(&DeclId::NONE)
+    if scope.is_empty() {
+        DeclId::NONE
+    } else {
+        *idx.by_path.get(scope).unwrap_or(&DeclId::NONE)
     }
 }
 
 fn decl_id_of(idx: &Index, path: &[SymId]) -> Result<DeclId, ResolveError> {
-    idx.by_path.get(path)
+    idx.by_path
+        .get(path)
         .copied()
         .ok_or_else(|| ResolveError::MissingDecl {
             detail: format!("No DeclId for path {:?}", path),
@@ -38,12 +42,15 @@ fn link_decl_child(ir: &mut Ir, parent: DeclId, child: DeclId) {
     }
 }
 
-
-
 pub fn lower_to_ir(ast: &AstSym, idx: &Index, it: &mut Interner) -> Result<Ir, ResolveError> {
     lower_to_ir_with_meta(
-        ast, idx, it,
-        Meta { created_at_unix_ns: now_ns(), build_id: default_build_id() }
+        ast,
+        idx,
+        it,
+        Meta {
+            created_at_unix_ns: now_ns(),
+            build_id: default_build_id(),
+        },
     )
 }
 
@@ -56,7 +63,9 @@ pub fn lower_to_ir_with_meta(
     let mut ir = Ir::new(meta);
     let mut path = Vec::new();
     ir.preallocate_from_index(idx.by_path.len());
-    for n in &ast.header { lower_node(&mut ir, idx, it, &mut path, n)?; }
+    for n in &ast.header {
+        lower_node(&mut ir, idx, it, &mut path, n)?;
+    }
     lower_items(&mut ir, idx, it, &mut path, &ast.items)?;
     Ok(ir)
 }
@@ -72,9 +81,9 @@ fn lower_items(
         match item {
             HyperItem::Node(n) => lower_node(ir, idx, it, path, n)?,
             HyperItem::Edge(e) => lower_edge(ir, idx, it, path, e)?,
-            HyperItem::Arc(a)  => {
+            HyperItem::Arc(a) => {
                 return Err(ResolveError::UnexpectedTopLevelArc {
-                    detail: format!("{:?}", a.inner.refs)
+                    detail: format!("{:?}", a.inner.refs),
                 });
             }
         }
@@ -146,7 +155,11 @@ fn lower_arc(
 
     // 5) create ArcRec + mapping
     let aid = HyperArcId::new(ir.arcs.len());
-    ir.arcs.push(ArcRec { anno, in_edge: edge_decl, refs });
+    ir.arcs.push(ArcRec {
+        anno,
+        in_edge: edge_decl,
+        refs,
+    });
     ir.decl_to_arc[idx_usize] = Some(aid);
 
     // 6) link into edge's decl-children chain
@@ -226,7 +239,6 @@ pub fn lower_into_ir(
     Ok(())
 }
 
-
 pub fn lower_program_to_ir_with_meta(
     root: &AstSym,
     imported: &[(SymId, AstSym)],
@@ -252,7 +264,13 @@ pub fn lower_program_to_ir(
     it: &mut Interner,
 ) -> Result<Ir, ResolveError> {
     lower_program_to_ir_with_meta(
-        root, imported, idx, it,
-        Meta { created_at_unix_ns: now_ns(), build_id: default_build_id() }
+        root,
+        imported,
+        idx,
+        it,
+        Meta {
+            created_at_unix_ns: now_ns(),
+            build_id: default_build_id(),
+        },
     )
 }

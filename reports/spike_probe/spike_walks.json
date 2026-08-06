@@ -1,0 +1,31 @@
+{
+  "n_train": 512,
+  "seeds": 3,
+  "epochs": 500,
+  "rows": [
+    {
+      "walk_len": 1,
+      "spike_gated_mse": 0.0,
+      "mlp_mse": 0.01042,
+      "mlp_over_gated": 10422240.94
+    },
+    {
+      "walk_len": 2,
+      "spike_gated_mse": 0.0,
+      "mlp_mse": 0.05612,
+      "mlp_over_gated": 56123431.77
+    },
+    {
+      "walk_len": 3,
+      "spike_gated_mse": 0.0,
+      "mlp_mse": 0.1695,
+      "mlp_over_gated": 169498264.79
+    },
+    {
+      "walk_len": 4,
+      "spike_gated_mse": 0.0,
+      "mlp_mse": 0.30182,
+      "mlp_over_gated": 301821231.84
+    }
+  ]
+}

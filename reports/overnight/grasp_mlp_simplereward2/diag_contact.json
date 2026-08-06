@@ -1,0 +1,20 @@
+{
+  "n_episodes": 50,
+  "outcomes": {
+    "delivered_grasp": 8,
+    "delivered_knock": 5,
+    "death": 30,
+    "timeout": 7
+  },
+  "delivery_rate": 0.26,
+  "grasp_fraction_of_deliveries": 0.615,
+  "any_grasp_delivery": true,
+  "median_contact_steps_per_delivery": 2,
+  "total_contact_steps": 65,
+  "kind": "mlp",
+  "task_graph": false,
+  "steps": 25000,
+  "design": "none",
+  "k": 2,
+  "difficulty": 0.3
+}

@@ -1,0 +1,175 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+\title{Convolution and Multiplication Semantics on Signed Hypergraphs\\
+\large The algebraic foundation for HyMeKo's \texttt{aggregate} extension}
+\author{Aiko (for Dr.\ Cs.\ Hajdu / Kato)}
+\date{2026-06-25}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+HyMeKo already represents structure, observation, and reward as one signed (weighted) hypergraph. The
+\emph{computation} over it --- message passing, balance, fuzzy firing, reward --- is, in every case, a
+\textbf{semiring-valued convolution of the signed incidence with a vertex field}. This note gives the algebraic
+object precisely (a commutative-monoid aggregation, a semiring for the signed-weighted product), the conditions
+under which it is well defined, the catalog of admissible algebras (the \texttt{aggregate} tags), and the
+differential/spectral structure each one induces. It is the foundation on which the \texttt{aggregate} language
+extension (\texttt{docs/plans/2026-06-25-hymeko-aggregation-semantics}) can be built soundly.
+\end{abstract}
+
+\section{Setup: signed hypergraph and its boundary operator}
+A \emph{signed weighted hypergraph} is $H=(V,E,w,\sigma)$ with vertices $V$ ($n=|V|$), hyperedges
+$E\subseteq 2^V$ ($m=|E|$), arc weights $w_{ev}\in\mathbb{R}$ and signs $\sigma_{ev}\in\{+1,-1\}$ for each
+incident pair $v\in e$. Its \emph{star-expansion} promotes each hyperedge $e$ to a hub node joined to its members
+by signed, weighted arcs; the data is the \emph{signed incidence}
+\[
+B\in\mathbb{R}^{n\times m},\qquad B_{ve}=\sigma_{ev}\,w_{ev}\ \text{if } v\in e,\ \text{else } 0 .
+\]
+$B$ is the discrete \emph{boundary operator} $\partial:C_1\!\to\!C_0$ of the chain complex (hyperedges are
+1-chains, vertices 0-chains); $B^{\!\top}$ is the coboundary $\delta$. A \emph{vertex field} is $x:V\to S$ valued
+in an algebra $S$ (a feature, a state, a membership). \textbf{Hyperedges may themselves be members of hyperedges}
+(the star-expansion is closed): incidence then composes, $B=B^{(2)}\!\cdots B^{(1)}$ (the ``hyperedge-on-hyperedge''
+$P$-space; \S\ref{sec:nest}).
+
+\section{The core object: semiring-valued convolution}
+\begin{definition}[Aggregation algebra]
+An \emph{aggregation algebra} is a commutative monoid $(S,\oplus,\mathbf{0})$: $\oplus$ associative and
+commutative with identity $\mathbf{0}$. A \emph{signed-weighted aggregation} additionally needs a second operation
+$\otimes$ (the arc weight/sign acting on a value) such that $(S,\oplus,\otimes,\mathbf{0},\mathbf{1})$ is a
+\emph{semiring}: $(S,\oplus,\mathbf 0)$ a commutative monoid, $(S,\otimes,\mathbf 1)$ a monoid, $\otimes$
+distributes over $\oplus$, and $\mathbf 0$ annihilates ($\mathbf 0\otimes a=\mathbf 0$).
+\end{definition}
+
+\begin{definition}[Hypergraph convolution]
+For a vertex field $x\in S^V$ the convolution onto the hyperedges is $(B\circledast x)\in S^E$ with
+\[
+(B\circledast x)_e \;=\; \bigoplus_{v\in e}\ \big(B_{ve}\otimes x_v\big)
+\;=\; \bigoplus_{v\in e}\ \sigma_{ev}\,w_{ev}\otimes x_v .
+\]
+This is exactly the semiring matrix--vector product $B^{\!\top}\!\circledast x$. The dual convolution
+$B\circledast y$ (with $y\in S^E$) scatters edge values back onto vertices.
+\end{definition}
+
+\begin{proposition}[Well-definedness]\label{prop:wd}
+$(B\circledast x)_e$ is independent of the order in which the members of $e$ are visited \emph{iff} $\oplus$ is
+commutative and associative; it is defined for the empty edge and for padded/masked members \emph{iff} $\oplus$
+has identity $\mathbf 0$ (the pad value); it composes across nested hyperedges (\S\ref{sec:nest}) \emph{iff}
+$\otimes$ distributes over $\oplus$. Hence: \textbf{the convolution is well defined precisely when the declared
+algebra is a commutative monoid, and signed-weighted convolution requires a semiring.}
+\end{proposition}
+\begin{proof}[Sketch] Members of a hyperedge are an unordered (multi)set, so order independence is exactly
+commutativity+associativity of $\oplus$; the identity supplies the value of the empty fold and absorbs masked
+entries; distributivity is what lets $B^{(2)}\!\circledast(B^{(1)}\!\circledast x)=(B^{(2)}B^{(1)})\circledast x$.
+\end{proof}
+
+Proposition~\ref{prop:wd} is the contract the language extension must enforce: \textbf{an \texttt{aggregate} tag
+is admissible iff it names a commutative monoid (for plain aggregation) or a semiring (for signed-weighted
+aggregation).}
+
+\section{Catalog: the admissible algebras (the \texttt{aggregate} tags)}
+\begin{enumerate}[nosep,leftmargin=1.4em]
+  \item \textbf{Additive} $(\mathbb{R},+,\times)$ --- \texttt{sum}/\texttt{signed\_sum}. The linear convolution
+        $Bx$: HSiKAN message passing $A^\pm h$, the reward $w^{\!\top}f(Bx)$, observation gather. A field semiring.
+  \item \textbf{Parity / Boolean} $(\{\pm1\},\times)$ or $(\mathbb{F}_2,\oplus,\wedge)$ ---
+        \texttt{signed\_product}. The fold is the \emph{product} of signs: Cartwright--Harary balance
+        $\prod_{v\in e}\sigma_{ev}$. Commutative monoid under $\times$; the semiring is $\mathbb{F}_2$.
+  \item \textbf{Tropical / idempotent} $(\mathbb{R}\cup\{\infty\},\min,+)$ --- \texttt{tropical}. Shortest
+        path / reachability cost; idempotent ($a\oplus a=a$). A semiring; eigenvalues are tropical.
+  \item \textbf{Fuzzy / residuated} $([0,1],\bot,\top)$ with a T-conorm $\bot$ and a T-norm $\top$ ---
+        \texttt{tnorm\_min}/\texttt{tnorm\_prod}. Fuzzy rule firing. \textbf{Caveat:} a T-norm distributes over a
+        T-conorm (a genuine semiring) only for some pairs --- G\"odel $(\min,\max)$ is distributive; product and
+        \L{}ukasiewicz are \emph{not} fully, so they form a residuated lattice, not a semiring. The reader must
+        therefore mark the non-distributive tags as \emph{non-composable across nesting} (single-layer only).
+\end{enumerate}
+
+\section{Differential-topological structure (per algebra)}\label{sec:diff}
+Because $B=\partial$, the chosen algebra fixes the cohomology over the \emph{same} structure:
+\begin{itemize}[nosep]
+  \item \textbf{Additive}: the graph Laplacian $L=BB^{\!\top}$, Hodge decomposition
+        $C_1=\operatorname{im}\delta\oplus\operatorname{im}\partial\oplus\mathcal H$. Reward shaping splits into the
+        \emph{exact} part (gradients of a potential --- Ng's policy-invariant shaping, e.g.\ a telescoping
+        progress term) and the non-exact part that reshapes the policy.
+  \item \textbf{Parity}: cohomology over $\mathbb{F}_2$. Harary's theorem is exactly ``the sign 1-cocycle is a
+        coboundary'' $\iff$ the (hyper)graph is balanced; the convolution computes the cocycle.
+  \item \textbf{Tropical}: the idempotent ``spectral theory'' is shortest-path / max-plus eigenvalues; the
+        convolution is a Bellman operator.
+  \item \textbf{Fuzzy}: a residuated lattice; ``adjoint'' is the residuum, not a transpose --- no inner-product
+        Hodge theory, which is \emph{why} it must be treated separately.
+\end{itemize}
+\begin{remark}
+``Declare the multiplication early'' (Kato) is formally ``declare which (co)homology / spectral theory the relation
+computes in.'' The algebra is not a detail of execution; it is the choice of mathematical universe.
+\end{remark}
+
+\section{Spectral view}
+For the additive algebra the convolution is a spectral filter: with $L=BB^{\!\top}=U\Lambda U^{\!\top}$, a depth-$k$
+message-passing stack is a polynomial $p(L)=U\,p(\Lambda)\,U^{\!\top}$ acting on $x$. ``Structure helps'' iff the
+signal aligns with informative eigenvectors --- topological complexity (branching, cycles) is what gives $L$ a
+non-trivial spectrum to exploit. For non-additive algebras the spectral object is the algebra's own (tropical /
+$\mathbb{F}_2$ / lattice) spectrum; the same incidence, a different operator norm.
+
+\section{Event-based computation: walk-spikes (the tropical instantiation)}\label{sec:spike}
+The tropical semiring $(\mathbb{R}\cup\{\infty\},\min,+)$ is not merely ``shortest path'' --- read the arc weights
+$w_{ev}$ as \textbf{delays} and it is an \emph{event} algebra: $\otimes=+$ accumulates delay along a walk,
+$\oplus=\min$ keeps the \emph{earliest arrival}. The convolution then computes, at each vertex, the time of the
+\textbf{first spike} reaching it along any signed walk; a signed walk $W$ emits a spike at time
+$\tau_W=\sum_{(v\to v')\in W} w_{v v'}$ carrying the walk's sign-parity $\sigma_W=\prod \sigma$. So a vertex field
+becomes a \emph{signed spike train} --- ``walk-spikes'' --- and a depth-$k$ stack is a leaky-integrate-and-fire
+forward pass with structural delays. This is the same $B\circledast x$ as the additive case; only the algebra
+changed.
+
+\paragraph{Two separable, testable claims.}
+\begin{enumerate}[nosep,leftmargin=1.4em]
+  \item \textbf{Representational (a bet).} For signed-link prediction the additive aggregation is
+        \emph{path-length-blind}: it sums all walk-parities flat. The tropical readout instead weights by the
+        \textbf{earliest / shortest signed walk}. On a \emph{perfectly} balanced graph the parity is
+        order-independent and this adds nothing; but real graphs are imperfectly balanced, conflicting paths
+        disagree, and \textbf{shorter paths are more reliable} (less sign noise accumulates). ``Trust the shortest
+        balanced walk'' is a principled inductive bias the continuous code lacks --- the discriminating test is
+        tropical (shortest-signed-walk) vs.\ additive readout on the Bitcoin-OTC AUROC.
+  \item \textbf{Efficiency (near-certain).} The tropical algebra is \emph{idempotent} ($a\oplus a=a$), so the
+        representation is naturally \textbf{sparse and event-driven}: compute scales with spikes, not dense
+        activations. A spiking-readout HSiKAN is the low-power, neuromorphic form of the \emph{fast reflex} in the
+        rate-asymmetric controller (event-based inference, the embedded/$\sim$kHz story), and it is the
+        biologically apt register over the deliberative substrate.
+\end{enumerate}
+
+\begin{remark}
+Walk-spikes are therefore not a new architecture but the \emph{tropical reading} of the one convolution. With it
+the framework spans \textbf{rate} (additive), \textbf{spike} (tropical), \textbf{balance} (parity), and
+\textbf{fuzzy} (residuated) over a single signed incidence --- four computational regimes, one operator.
+\end{remark}
+
+\section{Nesting: hyperedge-on-hyperedge}\label{sec:nest}
+A reward bundle over terms over vertices is a two-layer convolution
+$R=w\!\circledast f\!\big(B^{(1)}\!\circledast x\big)$, i.e.\ vertices $\xrightarrow{B^{(1)}}$ term-nodes
+$\xrightarrow{w}$ scalar (the term-nodes are hypernodes; the bundle is the outer hyperedge). By
+Proposition~\ref{prop:wd} the layers compose when $\otimes$ distributes over $\oplus$ --- so an additive bundle of
+additive terms is a single linear functional, but a \emph{product} bundle of \emph{additive} terms is genuinely
+two-layer and must not be flattened. The language must therefore allow a \emph{per-edge} algebra and check
+compositional admissibility at the nesting boundary.
+
+\section{The extension recipe (what the implementation must do)}
+\begin{enumerate}[nosep,leftmargin=1.4em]
+  \item \textbf{Grammar:} an \texttt{aggregate} annotation on a hyperedge whose value names an algebra from the
+        catalog; default \texttt{sum}. (CORE/parser --- gated.)
+  \item \textbf{Validation:} reject a tag that is not a commutative monoid; mark non-distributive tags
+        (product/\L{}ukasiewicz T-norms) as single-layer; check composition at every nesting boundary.
+  \item \textbf{Reader:} one \texttt{pick\_semiring(tag)} returning $(\oplus,\otimes,\mathbf 0,\mathbf 1)$; the
+        convolution is the semiring matvec over $B$. Reused by reward, observation, balance, and fuzzy readers ---
+        replacing four bespoke code paths with one.
+  \item \textbf{Parity guard:} \texttt{signed\_product} over a cycle must equal the existing
+        \texttt{hymeko\_graph::BalanceScorer}; the additive default must reproduce the current reward bit-for-bit.
+\end{enumerate}
+
+\paragraph{One sentence.} Every computation HyMeKo performs over its hypergraph is a semiring convolution
+$B\circledast x$; making the semiring a \emph{declared, validated} property of each relation is the whole content
+of the \texttt{aggregate} extension, and it is sound exactly when each tag is a commutative monoid (semiring for
+signed-weighted, distributive for nesting).
+\end{document}

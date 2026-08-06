@@ -6,7 +6,7 @@
 //   3. Training loop (forward → loss → backward → step + entropy
 //      regulariser feedback)
 //
-// The driver (signedkan_wip/src/hymeko_driver.py) walks this IR,
+// The driver (hymeko_neuro/hymeko/hymeko_driver.py) walks this IR,
 // routes each tagged hyperedge to its corresponding Python callable,
 // and runs the resulting cell.
 //

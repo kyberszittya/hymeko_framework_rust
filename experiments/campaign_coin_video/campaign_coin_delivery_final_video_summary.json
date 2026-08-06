@@ -1,0 +1,177 @@
+{
+  "name": "coin_delivery_final_video",
+  "n": 9,
+  "results": [
+    {
+      "run_id": "coin_delivery.neutral_start_delivery.P4_E_APPROACH_HANDOFF.S1_FAST_HANDOFF.neutral_1011.s0.r0",
+      "out": "experiments/campaign_coin_video/coin_delivery.neutral_start_delivery.P4_E_APPROACH_HANDOFF.S1_FAST_HANDOFF.neutral_1011.s0.r0",
+      "status": "ok",
+      "domain": "coin_delivery",
+      "clearance": 0.0793,
+      "strict": "0/3",
+      "grasp": 1,
+      "config": {
+        "policy": "P4_E_APPROACH_HANDOFF",
+        "strategy": "S1_FAST_HANDOFF",
+        "embodiment": "RING",
+        "seed": 1011,
+        "reps": 3,
+        "strict_required": true,
+        "grasp_hold": 1,
+        "contact_window": 20
+      }
+    },
+    {
+      "run_id": "coin_delivery.neutral_start_delivery.P4_E_APPROACH_HANDOFF.S1_FAST_HANDOFF.neutral_1045.s0.r0",
+      "out": "experiments/campaign_coin_video/coin_delivery.neutral_start_delivery.P4_E_APPROACH_HANDOFF.S1_FAST_HANDOFF.neutral_1045.s0.r0",
+      "status": "ok",
+      "domain": "coin_delivery",
+      "clearance": 0.0113,
+      "strict": "3/3",
+      "grasp": 0,
+      "config": {
+        "policy": "P4_E_APPROACH_HANDOFF",
+        "strategy": "S1_FAST_HANDOFF",
+        "embodiment": "RING",
+        "seed": 1045,
+        "reps": 3,
+        "strict_required": true,
+        "grasp_hold": 1,
+        "contact_window": 20
+      }
+    },
+    {
+      "run_id": "coin_delivery.neutral_start_delivery.P4_E_APPROACH_HANDOFF.S1_FAST_HANDOFF.neutral_1447.s0.r0",
+      "out": "experiments/campaign_coin_video/coin_delivery.neutral_start_delivery.P4_E_APPROACH_HANDOFF.S1_FAST_HANDOFF.neutral_1447.s0.r0",
+      "status": "ok",
+      "domain": "coin_delivery",
+      "clearance": 0.0388,
+      "strict": "3/3",
+      "grasp": 1,
+      "config": {
+        "policy": "P4_E_APPROACH_HANDOFF",
+        "strategy": "S1_FAST_HANDOFF",
+        "embodiment": "RING",
+        "seed": 1447,
+        "reps": 3,
+        "strict_required": true,
+        "grasp_hold": 1,
+        "contact_window": 20
+      }
+    },
+    {
+      "run_id": "coin_delivery.neutral_start_delivery.P4_E_APPROACH_HANDOFF.S1_FAST_HANDOFF.point_1011.s0.r0",
+      "out": "experiments/campaign_coin_video/coin_delivery.neutral_start_delivery.P4_E_APPROACH_HANDOFF.S1_FAST_HANDOFF.point_1011.s0.r0",
+      "status": "ok",
+      "domain": "coin_delivery",
+      "clearance": 0.0793,
+      "strict": "3/3",
+      "grasp": 1,
+      "config": {
+        "policy": "P4_E_APPROACH_HANDOFF",
+        "strategy": "S1_FAST_HANDOFF",
+        "embodiment": "POINT",
+        "seed": 1011,
+        "reps": 3,
+        "strict_required": true,
+        "grasp_hold": 1,
+        "contact_window": 20
+      }
+    },
+    {
+      "run_id": "coin_delivery.neutral_start_delivery.P4_E_APPROACH_HANDOFF.S1_FAST_HANDOFF.point_1174.s0.r0",
+      "out": "experiments/campaign_coin_video/coin_delivery.neutral_start_delivery.P4_E_APPROACH_HANDOFF.S1_FAST_HANDOFF.point_1174.s0.r0",
+      "status": "ok",
+      "domain": "coin_delivery",
+      "clearance": 0.0144,
+      "strict": "3/3",
+      "grasp": 1,
+      "config": {
+        "policy": "P4_E_APPROACH_HANDOFF",
+        "strategy": "S1_FAST_HANDOFF",
+        "embodiment": "POINT",
+        "seed": 1174,
+        "reps": 3,
+        "strict_required": true,
+        "grasp_hold": 1,
+        "contact_window": 20
+      }
+    },
+    {
+      "run_id": "coin_delivery.neutral_start_delivery.P0_ZERO_ACTION.S1_FAST_HANDOFF.neutral_1011.s0.r0",
+      "out": "experiments/campaign_coin_video/coin_delivery.neutral_start_delivery.P0_ZERO_ACTION.S1_FAST_HANDOFF.neutral_1011.s0.r0",
+      "status": "ok",
+      "domain": "coin_delivery",
+      "clearance": 0.0793,
+      "strict": "0/3",
+      "grasp": 0,
+      "config": {
+        "policy": "P0_ZERO_ACTION",
+        "strategy": "S1_FAST_HANDOFF",
+        "embodiment": "RING",
+        "seed": 1011,
+        "reps": 3,
+        "strict_required": true,
+        "grasp_hold": 1,
+        "contact_window": 20
+      }
+    },
+    {
+      "run_id": "coin_delivery.neutral_start_delivery.P1_FROZEN_TRANSPORT.S1_FAST_HANDOFF.neutral_1011.s0.r0",
+      "out": "experiments/campaign_coin_video/coin_delivery.neutral_start_delivery.P1_FROZEN_TRANSPORT.S1_FAST_HANDOFF.neutral_1011.s0.r0",
+      "status": "ok",
+      "domain": "coin_delivery",
+      "clearance": 0.0793,
+      "strict": "0/3",
+      "grasp": 1,
+      "config": {
+        "policy": "P1_FROZEN_TRANSPORT",
+        "strategy": "S1_FAST_HANDOFF",
+        "embodiment": "RING",
+        "seed": 1011,
+        "reps": 3,
+        "strict_required": true,
+        "grasp_hold": 1,
+        "contact_window": 20
+      }
+    },
+    {
+      "run_id": "coin_delivery.neutral_start_delivery.P3_E_APPROACH_FROZEN.S1_FAST_HANDOFF.neutral_1011.s0.r0",
+      "out": "experiments/campaign_coin_video/coin_delivery.neutral_start_delivery.P3_E_APPROACH_FROZEN.S1_FAST_HANDOFF.neutral_1011.s0.r0",
+      "status": "ok",
+      "domain": "coin_delivery",
+      "clearance": 0.0793,
+      "strict": "0/3",
+      "grasp": 1,
+      "config": {
+        "policy": "P3_E_APPROACH_FROZEN",
+        "strategy": "S1_FAST_HANDOFF",
+        "embodiment": "RING",
+        "seed": 1011,
+        "reps": 3,
+        "strict_required": true,
+        "grasp_hold": 1,
+        "contact_window": 20
+      }
+    },
+    {
+      "run_id": "coin_delivery.neutral_start_delivery.P4_E_APPROACH_HANDOFF.S0_SLOW_HANDOFF.neutral_1045.s0.r0",
+      "out": "experiments/campaign_coin_video/coin_delivery.neutral_start_delivery.P4_E_APPROACH_HANDOFF.S0_SLOW_HANDOFF.neutral_1045.s0.r0",
+      "status": "ok",
+      "domain": "coin_delivery",
+      "clearance": 0.0113,
+      "strict": "3/3",
+      "grasp": 0,
+      "config": {
+        "policy": "P4_E_APPROACH_HANDOFF",
+        "strategy": "S0_SLOW_HANDOFF",
+        "embodiment": "RING",
+        "seed": 1045,
+        "reps": 3,
+        "strict_required": true,
+        "grasp_hold": 3,
+        "contact_window": null
+      }
+    }
+  ]
+}

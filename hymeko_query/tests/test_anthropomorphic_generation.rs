@@ -64,6 +64,119 @@ mod test_anthropomorphic_generation {
             .unwrap_or_else(|| panic!("joint {name} not found"))
     }
 
+    /// Regression for B-005 (joint-axis extraction).
+    ///
+    /// The fixture declares **mixed** per-joint axes via `- ...axes.AXIS_*` arcs. After the
+    /// 2026-06-19 canonical-axis correction the local tokens are j0=Z, j1=X, j2=X, j3=Z, j4=X,
+    /// jtool=Z (which, through j1's 90°-about-Z twist on link_1..tool, give the canonical world
+    /// pattern Z,Y,Y,Z,Y,Z — shoulder ∥ elbow). The extractor must read each joint's axis from
+    /// its `axis_definition` arc — *not* default everything to Z, which collapses the arm to a
+    /// colinear spinner with zero end-effector workspace (the symptom that surfaced building
+    /// hymeko_rl). The bug emitted `axis="0 0 1"` for every joint.
+    #[test]
+    fn per_joint_axes_match_the_source_b005() {
+        let m = model();
+        let expected: &[(&str, [f64; 3])] = &[
+            ("j0", [0.0, 0.0, 1.0]),
+            ("j1", [1.0, 0.0, 0.0]),
+            ("j2", [1.0, 0.0, 0.0]),
+            ("j3", [0.0, 0.0, 1.0]),
+            ("j4", [1.0, 0.0, 0.0]),
+            ("jtool", [0.0, 0.0, 1.0]),
+        ];
+        for (name, axis) in expected {
+            let j = find_joint(&m, name);
+            assert_eq!(
+                j.axis,
+                Some(*axis),
+                "joint {name}: axis must be read from the AXIS_* arc, got {:?}",
+                j.axis
+            );
+        }
+        // Degeneracy guard: the revolute joints must NOT all share one axis.
+        let distinct: std::collections::HashSet<String> = m
+            .joints
+            .iter()
+            .filter_map(|j| j.axis.map(|a| format!("{a:?}")))
+            .collect();
+        assert!(
+            distinct.len() >= 2,
+            "all joint axes collapsed onto a single direction (B-005)"
+        );
+    }
+
+    /// Regression for joint-limit extraction through the `limit -> …` reference.
+    ///
+    /// `@j0`/`@j1` declare `limit -> joint0_limit` (effort 500 N·m); `@j2..@jtool` inherit
+    /// `limit -> joint_rev_limit` (effort 50) from `rev_joint`. The extractor must follow
+    /// the ref — declared *or* inherited — not return `None` (which left the emitted joints
+    /// unlimited with no actuator ctrlrange, making torque-control reaching unlearnable).
+    #[test]
+    fn per_joint_limits_resolved_through_the_limit_ref() {
+        let m = model();
+        let expected_effort: &[(&str, f64)] = &[
+            ("j0", 500.0),
+            ("j1", 500.0),
+            ("j2", 50.0),
+            ("j3", 50.0),
+            ("j4", 50.0),
+            ("jtool", 50.0),
+        ];
+        for (name, effort) in expected_effort {
+            let j = find_joint(&m, name);
+            let lim = j.limits.as_ref().unwrap_or_else(|| {
+                panic!("joint {name}: no limits — the `limit` ref was not followed")
+            });
+            assert_eq!(lim.effort, *effort, "joint {name} effort (N·m)");
+            assert_eq!(lim.lower, -180.0, "joint {name} lower (deg)");
+            assert_eq!(lim.upper, 180.0, "joint {name} upper (deg)");
+        }
+    }
+
+    /// Regression for B-004 / B-005 / world-collision / inertial-pos at the **MJCF
+    /// emit** layer — the end-to-end product the CLI `emit -f mjcf` now ships.
+    ///
+    /// Exercises the exact path the CLI uses (registry transform `emit()` over a
+    /// `ModelView::Kinematic`), guarding the four defects that made the emitted arm
+    /// unusable in MuJoCo:
+    ///   - B-004: the static template emitted **no `<joint>`** at all;
+    ///   - B-005: axes hardcoded to Z (`emit` must carry the mixed axes);
+    ///   - the root `world` frame collided with MuJoCo's implicit `<worldbody>`;
+    ///   - `<inertial>` lacked the required `pos` attribute (load error).
+    #[test]
+    fn mjcf_emit_is_loadable_and_articulable_b004_b005() {
+        use hymeko_query::transforms::{ModelView, TransformConfig};
+
+        let reg = hymeko_formats::default_registry();
+        let t = reg.get("mjcf").expect("mjcf transform must be registered");
+        let view = ModelView::Kinematic(model());
+        let cfg = TransformConfig::default().with_name(ROBOT_NAME);
+        let mjcf = t
+            .emit(&view, &cfg)
+            .expect("mjcf emit must produce output for a kinematic model");
+
+        // B-004: the six revolute joints must be present (the template emitted none).
+        let n_joints = mjcf.matches("<joint ").count();
+        assert_eq!(n_joints, 6, "expected 6 hinge joints in MJCF, got {n_joints}");
+
+        // B-005: mixed per-joint axes survive to the emitted scene. The canonical arm uses only
+        // local X and Z (no Y token) — both must be present (mixedness), proving axes are not
+        // collapsed onto a single direction.
+        assert!(mjcf.contains("axis=\"1 0 0\""), "MJCF missing an X-axis joint (B-005)");
+        assert!(mjcf.contains("axis=\"0 0 1\""), "MJCF missing a Z-axis joint (B-005)");
+
+        // world frame maps onto the implicit worldbody — no colliding `<body name="world">`.
+        assert!(
+            !mjcf.contains("<body name=\"world\""),
+            "world frame must not be emitted as a body (MuJoCo name collision)"
+        );
+
+        // every `<inertial>` carries the required `pos` attribute.
+        for line in mjcf.lines().filter(|l| l.contains("<inertial")) {
+            assert!(line.contains("pos="), "<inertial> missing required pos: {line}");
+        }
+    }
+
     // =====================================================================
     // SECTION 1: Structural signature — serial chain, 6 DoF + fixed base
     // =====================================================================
@@ -248,7 +361,7 @@ mod test_anthropomorphic_generation {
         let title = "six_dof_axis_signature_matches_fixture";
         log_test_header(
             title,
-            "Verifies the j0=Z, j1=X, j2=Z, j3=X, j4=Y, jtool=Z axis pattern.",
+            "Verifies the j0=Z, j1=X, j2=X, j3=Z, j4=X, jtool=Z local-axis pattern.",
         );
         let start = Instant::now();
 
@@ -256,9 +369,9 @@ mod test_anthropomorphic_generation {
         let expected = [
             ("j0", 'Z'),
             ("j1", 'X'),
-            ("j2", 'Z'),
-            ("j3", 'X'),
-            ("j4", 'Y'),
+            ("j2", 'X'),
+            ("j3", 'Z'),
+            ("j4", 'X'),
             ("jtool", 'Z'),
         ];
         let mut pattern = String::new();
@@ -268,7 +381,8 @@ mod test_anthropomorphic_generation {
             pattern.push(got);
             assert_eq!(got, letter, "{name} axis mismatch: got {got} want {letter}");
         }
-        info!("6-DoF axis signature: {pattern}  (expected: ZXZXYZ)");
+        // Local tokens ZXXZXZ -> canonical world axes Z,Y,Y,Z,Y,Z via j1's 90° twist.
+        info!("6-DoF local-axis signature: {pattern}  (expected: ZXXZXZ)");
 
         log_test_footer(
             title,

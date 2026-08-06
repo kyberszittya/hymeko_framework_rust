@@ -1,0 +1,146 @@
+{
+  "task": "pick-place",
+  "source": "generic MetaWorld info-signals (scripted policy + action noise)",
+  "n": 80,
+  "seed": 0,
+  "policy": "SawyerPickPlaceV3Policy",
+  "mw_success_rate": 0.8875,
+  "reward_monitor_disagreement": 0.244304,
+  "continuous_kept": [
+    "action_noise",
+    "near_fraction",
+    "grasp_fraction",
+    "obj_to_target_delta",
+    "total_reward"
+  ],
+  "continuous_dropped": {
+    "reward_progress_disagreement": "constant"
+  },
+  "diagnosis": {
+    "causal_order": [
+      "near_fraction",
+      "total_reward",
+      "grasp_fraction",
+      "obj_to_target_delta",
+      "action_noise"
+    ],
+    "strongest_edges": [
+      [
+        "total_reward",
+        "action_noise",
+        -0.888854
+      ],
+      [
+        "near_fraction",
+        "total_reward",
+        0.749758
+      ],
+      [
+        "total_reward",
+        "grasp_fraction",
+        0.694121
+      ],
+      [
+        "total_reward",
+        "obj_to_target_delta",
+        0.689091
+      ],
+      [
+        "obj_to_target_delta",
+        "action_noise",
+        0.307046
+      ]
+    ],
+    "failure_ranking": [
+      {
+        "variable": "reward_progress_disagreement",
+        "mean_disagreement": 0.244304,
+        "max_disagreement": 0.244304,
+        "candidate_cause": "reward_farming_candidate",
+        "top_rollouts": [
+          0,
+          57,
+          56,
+          55,
+          54
+        ]
+      }
+    ],
+    "next_intervention": "Reward rises without monitor progress \u2014 audit reward vs task BEFORE spending RL budget (action scaling, reward timing, anchor, add the monitor term).",
+    "ablation_plan": [
+      "Decider: A/B the suspected reward term on/off; the monitor-success delta decides whether it is farming.",
+      "Ablate/intervene on 'total_reward'; LiNGAM proposes it decreases 'action_noise' (w=-0.889) \u2014 controlled A/B decides if the edge is real.",
+      "Ablate/intervene on 'near_fraction'; LiNGAM proposes it increases 'total_reward' (w=+0.750) \u2014 controlled A/B decides if the edge is real.",
+      "Ablate/intervene on 'total_reward'; LiNGAM proposes it increases 'grasp_fraction' (w=+0.694) \u2014 controlled A/B decides if the edge is real.",
+      "Ablate/intervene on 'total_reward'; LiNGAM proposes it increases 'obj_to_target_delta' (w=+0.689) \u2014 controlled A/B decides if the edge is real.",
+      "Ablate/intervene on 'obj_to_target_delta'; LiNGAM proposes it increases 'action_noise' (w=+0.307) \u2014 controlled A/B decides if the edge is real."
+    ],
+    "provenance": {
+      "n_rollouts": 80,
+      "continuous_used": [
+        "action_noise",
+        "near_fraction",
+        "grasp_fraction",
+        "obj_to_target_delta",
+        "total_reward"
+      ],
+      "continuous_dropped": {
+        "reward_progress_disagreement": "constant"
+      },
+      "categorical_strata": [
+        "task",
+        "mw_success"
+      ],
+      "lingam": "fit: n=80, d=5"
+    },
+    "_disclaimer": "DirectLiNGAM PROPOSES structure; controlled ablations DECIDE. Not proof of causality."
+  },
+  "_disclaimer": "PROPOSED; task-truth is MetaWorld-native (not a HyMeKo monitor); single run is a point estimate (env randomisation is seed-uncontrolled). Cross-view proves representation only.",
+  "causal_order": [
+    "near_fraction",
+    "total_reward",
+    "grasp_fraction",
+    "obj_to_target_delta",
+    "action_noise"
+  ],
+  "strongest_edges": [
+    [
+      "total_reward",
+      "action_noise",
+      -0.888854
+    ],
+    [
+      "near_fraction",
+      "total_reward",
+      0.749758
+    ],
+    [
+      "total_reward",
+      "grasp_fraction",
+      0.694121
+    ],
+    [
+      "total_reward",
+      "obj_to_target_delta",
+      0.689091
+    ],
+    [
+      "obj_to_target_delta",
+      "action_noise",
+      0.307046
+    ]
+  ],
+  "cross_view": {
+    "agree": true,
+    "backend": "engine",
+    "canonical_hash": "blake3:b21ce06c00eb6c9c936ff507071e93b03d8a8ce9324049429a3c5dde5ba7b0f1",
+    "n_edges_declared": 5,
+    "n_edges_engine": 5,
+    "star_nnz": 10,
+    "clique_nnz": 9,
+    "sum_arities": 10,
+    "edges_match": true,
+    "counts_match": true,
+    "notes": []
+  }
+}

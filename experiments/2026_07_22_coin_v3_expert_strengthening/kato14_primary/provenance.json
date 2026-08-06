@@ -1,0 +1,27 @@
+{
+ "gate": "STRENGTHENED_CANONICAL_DYNAMIC_EXPERT",
+ "verdict": "PASS",
+ "source_host": "kato14.katolab.nitech.ac.jp",
+ "source_commit": "fc67c58",
+ "bundle_hash": "6664ac459cca8f62",
+ "search": "CEM 10-knot residual suffix, pop64 iters25, honest robot_touched",
+ "expert": "E_valselect approach + per-seed best-of{handoff, replay-certified search suffix}",
+ "headline": {
+  "count": 6,
+  "n": 9,
+  "target": 6
+ },
+ "heldout": {
+  "count": 24,
+  "n": 30,
+  "target": 15
+ },
+ "artifact_sha16": {
+  "combined_heldout.json": "426590e58be4df0a",
+  "heldout_replay_cert.json": "29fc041db7670813",
+  "headline_replay_cert.json": "ff9284a7e375399d",
+  "headline_summary.json": "caf4d841c1870a6c",
+  "combined_headline.json": "5016fc520301a44e",
+  "heldout_summary.json": "38f855c90d04bc70"
+ }
+}

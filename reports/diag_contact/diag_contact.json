@@ -1,0 +1,14 @@
+{
+  "n_episodes": 50,
+  "outcomes": {
+    "delivered_grasp": 1,
+    "delivered_knock": 17,
+    "death": 3,
+    "timeout": 29
+  },
+  "delivery_rate": 0.36,
+  "grasp_fraction_of_deliveries": 0.056,
+  "any_grasp_delivery": true,
+  "median_contact_steps_per_delivery": 0,
+  "total_contact_steps": 4
+}

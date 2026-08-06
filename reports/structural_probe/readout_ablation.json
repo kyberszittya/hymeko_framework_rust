@@ -1,0 +1,137 @@
+{
+  "hsikan_hidden": 32,
+  "mlp_hidden": 56,
+  "n_train": 512,
+  "seeds": 5,
+  "epochs": 300,
+  "local_pool_over_concat": 10.898,
+  "verdict": "mean-pool IS the liability (concat \u226b pool on local)",
+  "rows": [
+    {
+      "target": "structural",
+      "config": "hsikan_pool",
+      "n_params": 3713,
+      "mse_median": 0.02914,
+      "mse_iqr": 0.002,
+      "per_seed": [
+        0.0266,
+        0.02803,
+        0.02914,
+        0.03002,
+        0.05301
+      ]
+    },
+    {
+      "target": "structural",
+      "config": "hsikan_concat",
+      "n_params": 3905,
+      "mse_median": 0.10166,
+      "mse_iqr": 0.02405,
+      "per_seed": [
+        0.07676,
+        0.09723,
+        0.10166,
+        0.12128,
+        0.22813
+      ]
+    },
+    {
+      "target": "structural",
+      "config": "mlp",
+      "n_params": 3697,
+      "mse_median": 0.14894,
+      "mse_iqr": 0.01757,
+      "per_seed": [
+        0.11976,
+        0.13682,
+        0.14894,
+        0.15439,
+        0.19346
+      ]
+    },
+    {
+      "target": "bag",
+      "config": "hsikan_pool",
+      "n_params": 3713,
+      "mse_median": 0.00052,
+      "mse_iqr": 8e-05,
+      "per_seed": [
+        0.00043,
+        0.00045,
+        0.00052,
+        0.00052,
+        0.00088
+      ]
+    },
+    {
+      "target": "bag",
+      "config": "hsikan_concat",
+      "n_params": 3905,
+      "mse_median": 0.00103,
+      "mse_iqr": 0.0005,
+      "per_seed": [
+        0.00069,
+        0.00094,
+        0.00103,
+        0.00144,
+        0.00212
+      ]
+    },
+    {
+      "target": "bag",
+      "config": "mlp",
+      "n_params": 3697,
+      "mse_median": 0.03503,
+      "mse_iqr": 0.0066,
+      "per_seed": [
+        0.02655,
+        0.03018,
+        0.03503,
+        0.03678,
+        0.03738
+      ]
+    },
+    {
+      "target": "local",
+      "config": "hsikan_pool",
+      "n_params": 3713,
+      "mse_median": 0.0267,
+      "mse_iqr": 0.01011,
+      "per_seed": [
+        0.02276,
+        0.0265,
+        0.0267,
+        0.03661,
+        0.04715
+      ]
+    },
+    {
+      "target": "local",
+      "config": "hsikan_concat",
+      "n_params": 3905,
+      "mse_median": 0.00245,
+      "mse_iqr": 0.00064,
+      "per_seed": [
+        0.00156,
+        0.0021,
+        0.00245,
+        0.00274,
+        0.0028
+      ]
+    },
+    {
+      "target": "local",
+      "config": "mlp",
+      "n_params": 3697,
+      "mse_median": 0.00212,
+      "mse_iqr": 0.00035,
+      "per_seed": [
+        0.00131,
+        0.00204,
+        0.00212,
+        0.00238,
+        0.00256
+      ]
+    }
+  ]
+}

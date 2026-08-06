@@ -1,0 +1,34 @@
+{
+  "1": {
+    "expert_version": 1,
+    "n_episodes": 8,
+    "lift_success": 0.75,
+    "place_success": 0.75,
+    "approach_steps": 1653,
+    "transit_steps": 611,
+    "approach_finger_table_rate": 0.472,
+    "approach_gripper_table_rate": 0.472,
+    "transit_finger_table_rate": 0.0,
+    "transit_gripper_table_rate": 0.0,
+    "approach_min_clearance": -0.0256,
+    "transit_min_clearance": 0.0,
+    "approach_finger_table_steps": 781,
+    "approach_gripper_table_steps": 781
+  },
+  "2": {
+    "expert_version": 2,
+    "n_episodes": 8,
+    "lift_success": 0.0,
+    "place_success": 0.0,
+    "approach_steps": 4960,
+    "transit_steps": 0,
+    "approach_finger_table_rate": 0.641,
+    "approach_gripper_table_rate": 0.897,
+    "transit_finger_table_rate": 0.0,
+    "transit_gripper_table_rate": 0.0,
+    "approach_min_clearance": -0.0051,
+    "transit_min_clearance": null,
+    "approach_finger_table_steps": 3178,
+    "approach_gripper_table_steps": 4451
+  }
+}

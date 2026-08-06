@@ -1,0 +1,8 @@
+{
+ "bridge": "corrected-physics E-approach -> FRESH corrected handoff BC (no scripted carry in rollout)",
+ "corrected_delivered": 3,
+ "corrected_grasp": 5,
+ "carry_demo_ok": 58,
+ "ckpt_sha256_12": "d3e696ebcc71",
+ "historical_frozen_bridge": "1/9 corrected (3/9 filtered) \u2014 filtered-physics policy, not a bridge-method test"
+}

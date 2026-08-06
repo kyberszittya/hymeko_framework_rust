@@ -1,0 +1,45 @@
+{
+  "mode": "full",
+  "arm": "reach_arm (emitted, 4-DOF, position-controlled)",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "n_epochs": 150,
+  "hidden": 64,
+  "wall_s": 277.3,
+  "rss_mb": null,
+  "result": {
+    "hsikan": {
+      "n_params": 28745,
+      "reach_median": 0.2401,
+      "reach_iqr": 0.0199,
+      "reach_worst": 0.261,
+      "floor_median": 0.4632,
+      "per_seed": [
+        0.2296,
+        0.2346,
+        0.2401,
+        0.2429,
+        0.261
+      ]
+    },
+    "mlp": {
+      "n_params": 13897,
+      "reach_median": 0.2262,
+      "reach_iqr": 0.0208,
+      "reach_worst": 0.2338,
+      "floor_median": 0.4519,
+      "per_seed": [
+        0.2026,
+        0.2181,
+        0.2262,
+        0.2285,
+        0.2338
+      ]
+    }
+  }
+}

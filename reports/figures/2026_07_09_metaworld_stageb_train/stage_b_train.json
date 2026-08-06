@@ -1,0 +1,77 @@
+{
+  "stage": "B",
+  "mode": "train",
+  "trained": true,
+  "results": {
+    "original": {
+      "certification": {
+        "delivers": true,
+        "discriminating": true,
+        "n_success": 3,
+        "n_rollouts": 12,
+        "mean_return_success": 793.9468,
+        "mean_return_failure": -128.7275
+      },
+      "episodes": 17,
+      "env_steps": 3060,
+      "wall_s": 0.9,
+      "returns": [
+        -252.09680717235452,
+        -253.23480447567175,
+        -252.41596304771008,
+        -253.24803905633985,
+        -254.40449645943372,
+        -254.091539951752,
+        -254.3867584528436,
+        -253.0768439122371,
+        -253.712364381003,
+        -251.44895273609717,
+        -253.8701132452803,
+        -253.43174197803546,
+        -254.61765342835528,
+        -253.48125771936247,
+        -253.92591708856443,
+        -254.595815618545,
+        -252.8230386608967
+      ],
+      "final_return": -252.8230386608967,
+      "checkpoint": "reports/figures/2026_07_09_metaworld_stageb_train/original/policy.pt",
+      "eval_command": "python -m hymeko_rl.experiments.exp_metaworld_reward_stageb --post-eval --task pick-place --profile original --checkpoint reports/figures/2026_07_09_metaworld_stageb_train/original/policy.pt"
+    },
+    "mw_in_place_off": {
+      "certification": {
+        "delivers": true,
+        "discriminating": true,
+        "n_success": 6,
+        "n_rollouts": 12,
+        "mean_return_success": 12.1989,
+        "mean_return_failure": -293.3715
+      },
+      "episodes": 17,
+      "env_steps": 3060,
+      "wall_s": 0.9,
+      "returns": [
+        -438.93029776880843,
+        -440.25687468584493,
+        -437.9703750965358,
+        -438.9310926104104,
+        -441.3395271158747,
+        -441.40299199265394,
+        -441.4554598249569,
+        -440.2596410915024,
+        -440.6837320324648,
+        -437.7987827743064,
+        -440.94396214059293,
+        -440.46772058789634,
+        -441.54043086730417,
+        -440.98262950954575,
+        -441.20880451086026,
+        -441.2052742054034,
+        -440.19800494635825
+      ],
+      "final_return": -440.19800494635825,
+      "checkpoint": "reports/figures/2026_07_09_metaworld_stageb_train/mw_in_place_off/policy.pt",
+      "eval_command": "python -m hymeko_rl.experiments.exp_metaworld_reward_stageb --post-eval --task pick-place --profile mw_in_place_off --checkpoint reports/figures/2026_07_09_metaworld_stageb_train/mw_in_place_off/policy.pt"
+    }
+  }
+}

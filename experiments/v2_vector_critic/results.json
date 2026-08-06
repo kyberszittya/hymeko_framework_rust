@@ -1,0 +1,57 @@
+{
+  "cosines": {
+    "contact": 0.1157,
+    "progress": 0.054,
+    "neg_body_progress": -0.044,
+    "delivery": -0.1145,
+    "antiexploit": -0.1292
+  },
+  "gradient_conflict": {
+    "contact": false,
+    "progress": false,
+    "neg_body_progress": true,
+    "delivery": true,
+    "antiexploit": true
+  },
+  "projections_fired_counts": {
+    "contact": 29,
+    "antiexploit": 0,
+    "body_progress": 55
+  },
+  "n_states": 150,
+  "branch": {
+    "dagger": {
+      "both_contact": 0.06,
+      "coin_progress": -0.01684,
+      "arm_body": 0.0067,
+      "short_monitor_score": -0.3143
+    },
+    "grad_total": {
+      "both_contact": 0.0733,
+      "coin_progress": -0.01643,
+      "arm_body": 0.0133,
+      "short_monitor_score": -0.3142
+    },
+    "proj": {
+      "both_contact": 0.0133,
+      "coin_progress": -0.01663,
+      "arm_body": 0.0,
+      "short_monitor_score": -0.3162
+    },
+    "random": {
+      "both_contact": 0.0333,
+      "coin_progress": -0.01649,
+      "arm_body": 0.0267,
+      "short_monitor_score": null
+    }
+  },
+  "KEY_TEST": {
+    "grad_total_lowers_contact": false,
+    "proj_preserves_or_raises_contact": false,
+    "proj_beats_grad_total_contact": false,
+    "proj_monitor_ge_grad_total": false,
+    "proj_monitor_ge_dagger": false,
+    "VECTOR_PROJECTED_PROMISING": false
+  },
+  "gate_step6_authorized": false
+}

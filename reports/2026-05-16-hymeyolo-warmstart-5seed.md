@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-16
 **Plan:** [docs/plans/2026-05-16-hymeyolo-warmstart-query-init/](../docs/plans/2026-05-16-hymeyolo-warmstart-query-init/) (tex/pdf/tikz/mmd)
-**Results dir:** [`signedkan_wip/experiments/results/hymeyolo_warmstart_5seed_20260516T101835Z/`](../signedkan_wip/experiments/results/hymeyolo_warmstart_5seed_20260516T101835Z/)
+**Results dir:** [`hymeko_neuro/experiments/results/hymeyolo_warmstart_5seed_20260516T101835Z/`](../hymeko_neuro/experiments/results/hymeyolo_warmstart_5seed_20260516T101835Z/)
 **Verdict:** ✅ **WIN — paired Δ = +0.124 at z=+4.68; 5/5 seeds beat control.** Stage-A-1 lever delivers, but **lifts mean rather than reducing variance**, contradicting the night-doc framing.
 
 ## 1. Summary
@@ -74,9 +74,9 @@ this report is purely the 5-seed validation result. New artefacts:
 
 | Path | Status |
 |---|---|
-| [`signedkan_wip/experiments/results/hymeyolo_warmstart_5seed_20260516T101835Z/`](../signedkan_wip/experiments/results/hymeyolo_warmstart_5seed_20260516T101835Z/) | 5 jsonl rows + orchestrator log; sweep window 12:18 → 13:06 CEST |
-| [`signedkan_wip/experiments/run_hymeyolo_warmstart_5seed_2026_05_16.sh`](../signedkan_wip/experiments/run_hymeyolo_warmstart_5seed_2026_05_16.sh) | orchestrator script (already on disk; this run is its first invocation) |
-| [`signedkan_wip/src/vision/hymeyolo_warmstart.py`](../signedkan_wip/src/vision/hymeyolo_warmstart.py) | saliency + FPS init function (shipped with the ricci-scale sweep patch) |
+| [`hymeko_neuro/experiments/results/hymeyolo_warmstart_5seed_20260516T101835Z/`](../hymeko_neuro/experiments/results/hymeyolo_warmstart_5seed_20260516T101835Z/) | 5 jsonl rows + orchestrator log; sweep window 12:18 → 13:06 CEST |
+| [`hymeko_neuro/experiments/run_hymeyolo_warmstart_5seed_2026_05_16.sh`](../hymeko_neuro/experiments/run_hymeyolo_warmstart_5seed_2026_05_16.sh) | orchestrator script (already on disk; this run is its first invocation) |
+| [`hymeko_neuro/experiments/vision/hymeyolo_warmstart.py`](../hymeko_neuro/experiments/vision/hymeyolo_warmstart.py) | saliency + FPS init function (shipped with the ricci-scale sweep patch) |
 
 No source code changed in this report's scope. The night patch had
 already wired `--warm-start` and `--warmstart-bootstrap-n` into
@@ -84,7 +84,7 @@ already wired `--warm-start` and `--warmstart-bootstrap-n` into
 
 ## 4. CORE.YAML items touched
 
-None. All artefacts in `signedkan_wip/` (non-core) or `reports/`.
+None. All artefacts in `hymeko_neuro/` (non-core) or `reports/`.
 
 ## 5. Experiment provenance
 

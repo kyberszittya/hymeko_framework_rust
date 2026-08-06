@@ -1,10 +1,10 @@
-use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
 use crate::common::ids::SymId;
 use crate::ir::hash::HashId;
 use crate::ir::ir::Ir;
 use crate::module_store::module_store::ModuleKey;
 use crate::resolution::resolve::Index;
+use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 /// The exact binary payload we push into the CBOR / QR code
 #[derive(Serialize, Deserialize)]

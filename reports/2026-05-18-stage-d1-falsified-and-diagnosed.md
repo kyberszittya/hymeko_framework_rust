@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-18
 **Plan:** [`docs/plans/2026-05-18-hymeyolo-stage-d1-pretrain/`](../docs/plans/2026-05-18-hymeyolo-stage-d1-pretrain/)
-**Run dir:** `signedkan_wip/experiments/results/stage_d1_voc2007_20260518T012029Z/`
+**Run dir:** `hymeko_neuro/experiments/results/stage_d1_voc2007_20260518T012029Z/`
 **Git SHA:** `2ccaa4d12fae1ff9cd533bd91cd84b28f11c3dab`
 **Wall:** 03:20 → 04:50 local = 18 min smoke; 5-seed gated out → 7.5 h GPU saved.
 
@@ -151,10 +151,10 @@ sharper, not blunter, because of the falsification.
 ## 6. Files
 
 ### Already on disk
-- `signedkan_wip/src/vision/hymeyolo_backbones.py` — `ResNet18ImageNetBackbone` class shipped 2026-05-18 (will stay; the plan didn't fail because of the backbone code).
-- `signedkan_wip/tests/test_resnet18_imagenet_backbone.py` — 5/5 tests passing.
-- `signedkan_wip/src/vision/train_voc_stagec.py` — `--backbone resnet18_imagenet` flag added; reusable for any future Stage D-x probe.
-- `signedkan_wip/experiments/run_stage_d1_voc2007_2026_05_18.sh` — keep; can re-run with new flags if needed.
+- `hymeko_neuro/experiments/vision/hymeyolo_backbones.py` — `ResNet18ImageNetBackbone` class shipped 2026-05-18 (will stay; the plan didn't fail because of the backbone code).
+- `hymeko_neuro/tests/test_resnet18_imagenet_backbone.py` — 5/5 tests passing.
+- `hymeko_neuro/experiments/vision/train_voc_stagec.py` — `--backbone resnet18_imagenet` flag added; reusable for any future Stage D-x probe.
+- `hymeko_neuro/experiments/run_stage_d1_voc2007_2026_05_18.sh` — keep; can re-run with new flags if needed.
 
 ### Next
 - `docs/plans/2026-05-18-hymeyolo-stage-d2-query-count/` — Stage D-2a plan (4-format, will write in the bottleneck-investigation thread next).

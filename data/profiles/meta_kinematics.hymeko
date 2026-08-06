@@ -1,0 +1,30 @@
+// Kinematics vocabulary (editor profile). Compact subset of
+// data/robotics/meta_kinematics.hymeko covering what the robot_arm hero cell
+// needs: link elements, joint edge-types, geometry primitives, and axes.
+meta_kinematics {}
+
+kinematics {
+    elements {
+        meta_element {}
+        link: + <isa> meta_element {}
+        @joint {}
+    }
+
+    geometry {
+        box {}
+        cylinder {}
+        sphere {}
+    }
+
+    axes {
+        axis_definition {}
+        AXIS_X: + <isa> axis_definition { ax [1.0, 0.0, 0.0]; }
+        AXIS_Y: + <isa> axis_definition { ax [0.0, 1.0, 0.0]; }
+        AXIS_Z: + <isa> axis_definition { ax [0.0, 0.0, 1.0]; }
+    }
+
+    @fixed_joint:      + <isa> elements.joint {}
+    @rev_joint:        + <isa> elements.joint {}
+    @conti_joint:      + <isa> elements.joint {}
+    @prismatic_joint:  + <isa> elements.joint {}
+}

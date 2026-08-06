@@ -1,0 +1,53 @@
+{
+ "search_exhausted": {
+  "git_stashes": 0,
+  "git_dangling_commits_coin": 0,
+  "git_dangling_blobs_coin": 0,
+  "other_branches_coin": 0,
+  "vscode_local_history": false,
+  "editor_swap_backup": 0,
+  "note": "searched all 1109 dangling blobs + 6 dangling commits for coin fragments (rollout_delivery/coop_push/DeliveryActor/p_push/bilateral_balance/v_plow/distal_targets) \u2192 ZERO hits; no editor local-history dir; no swap/backup files. The coin arc was NEVER in git and no file has a recoverable earlier on-disk version."
+ },
+ "candidates": [
+  {
+   "id": "C0_current_pushplow",
+   "location": "hymeko_rl/train/coin_delivery_actor.py + pad_aware_control.py",
+   "mtime": "2026-07-20T15:43..16:54",
+   "campaign": "ACTOR-1 + PAD-AWARE-CONTROL-0 (this session)",
+   "class": "EXACT_SNAPSHOT",
+   "chronology": "newest mtime; imports the current strict monitor"
+  },
+  {
+   "id": "C1_earlier_primitives",
+   "location": "hymeko_rl/experiments/coin_delivery1.py (p_grasp_carry/p_carry_pulse/p_push/p_carry_settle)",
+   "mtime": "2026-07-20T01:21",
+   "campaign": "COIN-DELIVERY-1 (overnight, earlier)",
+   "class": "EXACT_SNAPSHOT",
+   "chronology": "mtime + manifest 01:22; SAME push lineage as C0, LOOSE monitor (in_zone-ever)"
+  },
+  {
+   "id": "C2_earlier_RL",
+   "location": "hymeko_rl/train/coin_delivery_rl.py + experiments/coin_delivery_rl1.py/rl2.py",
+   "mtime": "2026-07-20T03:03..03:55",
+   "campaign": "COIN-DELIVERY-RL-1/2 (overnight)",
+   "class": "EXACT_SNAPSHOT",
+   "chronology": "manifest verdicts CASE_D matches-scripted / CASE_C residual-exhausted"
+  },
+  {
+   "id": "C3_earlier_acquisition",
+   "location": "hymeko_rl/train/coin_delivery_acquisition.py + primitives.py + hardstate.py",
+   "mtime": "2026-07-20T03:42..04:27",
+   "campaign": "acquisition/primitives (overnight)",
+   "class": "EXACT_SNAPSHOT",
+   "chronology": "manifest: stable_acq 5/5 but chained zone_entry 0"
+  },
+  {
+   "id": "C4_arcrl_RL_checkpoints",
+   "location": "experiments/2026_07_18_arcrl/*.pt (9 checkpoints)",
+   "mtime": "2026-07-18",
+   "campaign": "coin-TOSS genuine-RL R14-R60",
+   "class": "PARTIAL_SNAPSHOT",
+   "chronology": "DIFFERENT TASK: delivery-PRESERVATION (coin toss), not delivery-to-zone; success def not comparable"
+  }
+ ]
+}

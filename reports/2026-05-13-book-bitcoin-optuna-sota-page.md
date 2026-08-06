@@ -51,6 +51,6 @@ were cited.
 
 - Git SHA: `0c55fa8` (working tree already dirty before this task)
 - Referenced artifacts:
-  - `signedkan_wip/experiments/results/optuna_alpha_slashdot_20260513T010509Z.log`
-  - `signedkan_wip/experiments/results/follow_optuna_20260513T003359Z.log`
+  - `hymeko_neuro/experiments/results/optuna_alpha_slashdot_20260513T010509Z.log`
+  - `hymeko_neuro/experiments/results/follow_optuna_20260513T003359Z.log`
   - `docs/SOTA_RESULTS.md`

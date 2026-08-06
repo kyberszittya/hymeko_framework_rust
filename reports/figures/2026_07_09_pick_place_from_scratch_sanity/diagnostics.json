@@ -1,0 +1,170 @@
+{
+  "zero_action": {
+    "steps": 180,
+    "min_hand_obj": 0.20571596096270967,
+    "final_hand_obj": 0.2092757686306736,
+    "min_obj_target": 0.23721873064411209,
+    "ever_near": 0,
+    "near_fraction": 0.0,
+    "ever_grasp": 0,
+    "success": 0,
+    "reward_mean": -1.1350214002145367,
+    "components_mean": {
+      "in_place_reward": 0.1513619641414631,
+      "grasp_reward": 0.02198366854311518,
+      "near_object": 0.0,
+      "obj_to_target": 0.23722975155979786
+    },
+    "action_stats": {
+      "mean": 0.0,
+      "std": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "done": 0,
+    "trunc": 0
+  },
+  "random": {
+    "n": 100,
+    "min_hand_obj_median": 0.15891505104797005,
+    "min_hand_obj_best": 0.04946956381679547,
+    "frac_within_0.2": 0.96,
+    "frac_within_0.1": 0.14,
+    "frac_within_0.05": 0.01,
+    "frac_ever_near": 0.02,
+    "near_fraction_mean": 0.0015,
+    "ever_grasp_frac": 0.0,
+    "success_rate": 0.0,
+    "components_mean": {
+      "in_place_reward": 0.14426637633048173,
+      "grasp_reward": 0.02197826034380385,
+      "near_object": 0.0015,
+      "obj_to_target": 0.279742162703193
+    },
+    "action_stats": {
+      "mean": 0.000647705592600687,
+      "std": 0.5756458032131195,
+      "min": -0.9971445721387863,
+      "max": 0.9972680777311325
+    }
+  },
+  "scripted_reach": {
+    "n": 32,
+    "min_hand_obj_median": 0.026020560802887803,
+    "min_hand_obj_best": 0.02601322850332706,
+    "frac_within_0.2": 1.0,
+    "frac_within_0.1": 1.0,
+    "frac_within_0.05": 1.0,
+    "frac_ever_near": 1.0,
+    "near_fraction_mean": 0.9230902777777779,
+    "ever_grasp_frac": 0.0,
+    "success_rate": 0.0,
+    "components_mean": {
+      "in_place_reward": 0.14683792638113358,
+      "grasp_reward": 0.3936896132103851,
+      "near_object": 0.9230902777777779,
+      "obj_to_target": 0.270525787679433
+    },
+    "action_stats": {
+      "mean": -0.4174648215994239,
+      "std": 0.46552405320107937,
+      "min": -1.0,
+      "max": 0.8467500898987055
+    }
+  },
+  "bc": {
+    "n": 32,
+    "min_hand_obj_median": 0.045492108151533685,
+    "min_hand_obj_best": 0.03512536725815655,
+    "frac_within_0.2": 1.0,
+    "frac_within_0.1": 1.0,
+    "frac_within_0.05": 0.6875,
+    "frac_ever_near": 0.96875,
+    "near_fraction_mean": 0.8564236111111111,
+    "ever_grasp_frac": 0.75,
+    "success_rate": 0.9375,
+    "components_mean": {
+      "in_place_reward": 0.7619310937172437,
+      "grasp_reward": 0.7249647126235044,
+      "near_object": 0.8564236111111111,
+      "obj_to_target": 0.11096734036816029
+    },
+    "action_stats": {
+      "mean": 0.2385648664785549,
+      "std": 0.4669246766716242,
+      "min": -0.724105155095458,
+      "max": 0.9984020181000233
+    },
+    "bc_info": {
+      "demo_steps": 4320,
+      "demo_success_episodes": 24,
+      "bc_final_loss": 0.00319,
+      "bc_success_rate": 0.9583
+    }
+  },
+  "reach_ppo": {
+    "steps": 40000,
+    "returns_first": -46.75192699253382,
+    "returns_last": -26.80742574250627,
+    "min_hand_obj_median": 0.15237554377088341,
+    "frac_ever_near": 0.0,
+    "near_fraction_mean": 0.0,
+    "frac_within_0.05": 0.0
+  },
+  "reward_visibility": {
+    "original": {
+      "zero": {
+        "in_place_reward": 0.14111778732806451,
+        "grasp_reward": 0.020111789709735588,
+        "near_object": 0.0,
+        "obj_to_target": 0.2926078946715622
+      },
+      "random": {
+        "in_place_reward": 0.14438405945516186,
+        "grasp_reward": 0.01634902481396442,
+        "near_object": 0.0,
+        "obj_to_target": 0.273229307031157
+      },
+      "scripted_reach": {
+        "in_place_reward": 0.1382965136298273,
+        "grasp_reward": 0.3962148925654452,
+        "near_object": 0.9229166666666667,
+        "obj_to_target": 0.3025067318353701
+      },
+      "bc": {
+        "in_place_reward": 0.7905179656804557,
+        "grasp_reward": 0.7446355038697781,
+        "near_object": 0.8875,
+        "obj_to_target": 0.10025246610059474
+      }
+    },
+    "mw_in_place_off": {
+      "zero": {
+        "in_place_reward": 0.1406823420845282,
+        "grasp_reward": 0.02028029749657611,
+        "near_object": 0.0,
+        "obj_to_target": 0.286947189220385
+      },
+      "random": {
+        "in_place_reward": 0.14403075713653468,
+        "grasp_reward": 0.02540132148309865,
+        "near_object": 0.0,
+        "obj_to_target": 0.2716005145829339
+      },
+      "scripted_reach": {
+        "in_place_reward": 0.1433802276932588,
+        "grasp_reward": 0.3960682983894599,
+        "near_object": 0.9236111111111112,
+        "obj_to_target": 0.2770484310165869
+      },
+      "bc": {
+        "in_place_reward": 0.6269126544555343,
+        "grasp_reward": 0.610522330788615,
+        "near_object": 0.6340277777777779,
+        "obj_to_target": 0.14345549986356398
+      }
+    }
+  },
+  "diagnosis": "B",
+  "reason": "scripted+BC activate near, but reach-only PPO did not improve reach (min_dist 0.152 vs random 0.159; ever_near 0.00 vs 0.02) \u2014 PPO/action/obs setup"
+}

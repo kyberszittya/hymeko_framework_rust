@@ -1,0 +1,182 @@
+{
+  "mlp_s0": {
+    "config": {
+      "arch": "mlp",
+      "seed": 0,
+      "reward": "data/robotics/galambos_task_deliver_v2b.hymeko",
+      "scene": "v2_graded_contact_legality",
+      "n_demos": 200,
+      "bc_epochs": 150,
+      "n_eval": 24,
+      "eval_seed": 9000,
+      "n_samples": 16115,
+      "device": "cuda",
+      "checkpoint": "experiments/v2_bc0/mlp_s0.pt"
+    },
+    "metrics": {
+      "raw_delivery": 0.083,
+      "fingertip_dominant_delivery": 0.042,
+      "zero_body_contact_delivery": 0.0,
+      "body_assisted_delivery": 0.042,
+      "body_driven_exploit_delivery": 0.0,
+      "total_reward": -222.5,
+      "final_dist": 0.168,
+      "dist_delta": -0.0569,
+      "coin_vel_to_zone": -0.0192,
+      "fingertip_contact": 0.335,
+      "both_contact": 0.145,
+      "arm_body_contact_rate": 0.75,
+      "body_only_progress_to_target": 0.0014
+    }
+  },
+  "mlp_s1": {
+    "config": {
+      "arch": "mlp",
+      "seed": 1,
+      "reward": "data/robotics/galambos_task_deliver_v2b.hymeko",
+      "scene": "v2_graded_contact_legality",
+      "n_demos": 200,
+      "bc_epochs": 150,
+      "n_eval": 24,
+      "eval_seed": 9000,
+      "n_samples": 16148,
+      "device": "cuda",
+      "checkpoint": "experiments/v2_bc0/mlp_s1.pt"
+    },
+    "metrics": {
+      "raw_delivery": 0.25,
+      "fingertip_dominant_delivery": 0.208,
+      "zero_body_contact_delivery": 0.083,
+      "body_assisted_delivery": 0.042,
+      "body_driven_exploit_delivery": 0.0,
+      "total_reward": -209.06,
+      "final_dist": 0.1277,
+      "dist_delta": -0.0166,
+      "coin_vel_to_zone": -0.0075,
+      "fingertip_contact": 0.249,
+      "both_contact": 0.06,
+      "arm_body_contact_rate": 0.667,
+      "body_only_progress_to_target": 0.0016
+    }
+  },
+  "mlp_s2": {
+    "config": {
+      "arch": "mlp",
+      "seed": 2,
+      "reward": "data/robotics/galambos_task_deliver_v2b.hymeko",
+      "scene": "v2_graded_contact_legality",
+      "n_demos": 200,
+      "bc_epochs": 150,
+      "n_eval": 24,
+      "eval_seed": 9000,
+      "n_samples": 16005,
+      "device": "cuda",
+      "checkpoint": "experiments/v2_bc0/mlp_s2.pt"
+    },
+    "metrics": {
+      "raw_delivery": 0.333,
+      "fingertip_dominant_delivery": 0.333,
+      "zero_body_contact_delivery": 0.083,
+      "body_assisted_delivery": 0.0,
+      "body_driven_exploit_delivery": 0.0,
+      "total_reward": -181.42,
+      "final_dist": 0.1356,
+      "dist_delta": -0.0246,
+      "coin_vel_to_zone": -0.0112,
+      "fingertip_contact": 0.276,
+      "both_contact": 0.07,
+      "arm_body_contact_rate": 0.833,
+      "body_only_progress_to_target": 0.0024
+    }
+  },
+  "sa_hsikan_s0": {
+    "config": {
+      "arch": "sa_hsikan",
+      "seed": 0,
+      "reward": "data/robotics/galambos_task_deliver_v2b.hymeko",
+      "scene": "v2_graded_contact_legality",
+      "n_demos": 200,
+      "bc_epochs": 150,
+      "n_eval": 24,
+      "eval_seed": 9000,
+      "n_samples": 16115,
+      "device": "cuda",
+      "checkpoint": "experiments/v2_bc0/sa_hsikan_s0.pt"
+    },
+    "metrics": {
+      "raw_delivery": 0.458,
+      "fingertip_dominant_delivery": 0.458,
+      "zero_body_contact_delivery": 0.208,
+      "body_assisted_delivery": 0.0,
+      "body_driven_exploit_delivery": 0.0,
+      "total_reward": -201.01,
+      "final_dist": 0.1184,
+      "dist_delta": -0.0074,
+      "coin_vel_to_zone": -0.0047,
+      "fingertip_contact": 0.187,
+      "both_contact": 0.008,
+      "arm_body_contact_rate": 0.708,
+      "body_only_progress_to_target": 0.0023
+    }
+  },
+  "sa_hsikan_s1": {
+    "config": {
+      "arch": "sa_hsikan",
+      "seed": 1,
+      "reward": "data/robotics/galambos_task_deliver_v2b.hymeko",
+      "scene": "v2_graded_contact_legality",
+      "n_demos": 200,
+      "bc_epochs": 150,
+      "n_eval": 24,
+      "eval_seed": 9000,
+      "n_samples": 16148,
+      "device": "cuda",
+      "checkpoint": "experiments/v2_bc0/sa_hsikan_s1.pt"
+    },
+    "metrics": {
+      "raw_delivery": 0.375,
+      "fingertip_dominant_delivery": 0.333,
+      "zero_body_contact_delivery": 0.0,
+      "body_assisted_delivery": 0.042,
+      "body_driven_exploit_delivery": 0.0,
+      "total_reward": -202.24,
+      "final_dist": 0.1112,
+      "dist_delta": -0.0007,
+      "coin_vel_to_zone": -0.0016,
+      "fingertip_contact": 0.272,
+      "both_contact": 0.115,
+      "arm_body_contact_rate": 0.583,
+      "body_only_progress_to_target": 0.0015
+    }
+  },
+  "sa_hsikan_s2": {
+    "config": {
+      "arch": "sa_hsikan",
+      "seed": 2,
+      "reward": "data/robotics/galambos_task_deliver_v2b.hymeko",
+      "scene": "v2_graded_contact_legality",
+      "n_demos": 200,
+      "bc_epochs": 150,
+      "n_eval": 24,
+      "eval_seed": 9000,
+      "n_samples": 16005,
+      "device": "cuda",
+      "checkpoint": "experiments/v2_bc0/sa_hsikan_s2.pt"
+    },
+    "metrics": {
+      "raw_delivery": 0.417,
+      "fingertip_dominant_delivery": 0.292,
+      "zero_body_contact_delivery": 0.042,
+      "body_assisted_delivery": 0.125,
+      "body_driven_exploit_delivery": 0.0,
+      "total_reward": -203.04,
+      "final_dist": 0.1177,
+      "dist_delta": -0.0067,
+      "coin_vel_to_zone": -0.0048,
+      "fingertip_contact": 0.172,
+      "both_contact": 0.008,
+      "arm_body_contact_rate": 0.708,
+      "body_only_progress_to_target": 0.0036
+    }
+  }
+}

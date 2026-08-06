@@ -1,0 +1,8 @@
+{"gate":"PHYSICAL_CONTACT_CONTRACT_PASS","date":"2026-07-22",
+ "change":"make_planar_arms_mjcf structural geoms (base hub, link1, link2 capsules) now carry Collision.ARM_LEGALITY (contype 1 / conaffinity 3) instead of MuJoCo default 1/1 -> coin(bit2) physically collides with arm links.",
+ "before":{"arm_link_contype_conaffinity":"1/1 (ARM_DEFAULT, coin passes through)","coin_arm_mask":0},
+ "after":{"arm_link_contype_conaffinity":"1/3 (ARM_LEGALITY)","coin_arm_mask":2,"coin":"2/2","fingertip":"1/3 (preserved)"},
+ "embodiments":"POINT and CONCAVE_CLAMP(RING) identical policy","excludes_removed":"none (nexclude was 0; purely bit assignment)",
+ "tests":"hymeko_rl/tests/test_physical_contact_contract.py 8/8 PASS",
+ "seed_1011_diagnosis":"was -13.1mm inside link1_left (filtered, 0 contacts); under corrected physics its neutral reset now RAISES NEUTRAL_START (initial contact) => physically invalid, must be rejected/regenerated (sec 4).",
+ "penetration_tolerance_m":0.0005}

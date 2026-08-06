@@ -22,12 +22,12 @@ without re-typing 200 LOC of feature extraction.
 
 | File | Action |
 |---|---|
-| [signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_backbone.py](../signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_backbone.py) | NEW — `RicciStimBackbone` (188 LOC) |
-| [signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_classifier.py](../signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_classifier.py) | rewrite — 240 LOC → 100 LOC, wraps backbone |
-| [signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_detector.py](../signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_detector.py) | rewrite — 250 LOC → 130 LOC, wraps backbone |
-| [signedkan_wip/src/hymeko_gomb/soma/vision/__init__.py](../signedkan_wip/src/hymeko_gomb/soma/vision/__init__.py) | re-export `RicciStimBackbone` |
-| [signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_backbone.py](../signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_backbone.py) | NEW — 8 backbone tests |
-| [signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_classifier.py](../signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_classifier.py) | update — `m.walk_layer` → `m.backbone.walk_layer` etc. |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_backbone.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_backbone.py) | NEW — `RicciStimBackbone` (188 LOC) |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_classifier.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_classifier.py) | rewrite — 240 LOC → 100 LOC, wraps backbone |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_detector.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_detector.py) | rewrite — 250 LOC → 130 LOC, wraps backbone |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/__init__.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/__init__.py) | re-export `RicciStimBackbone` |
+| [hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_backbone.py](../hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_backbone.py) | NEW — 8 backbone tests |
+| [hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_classifier.py](../hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_classifier.py) | update — `m.walk_layer` → `m.backbone.walk_layer` etc. |
 
 Net LOC change: −172 (more than 50% reduction in the classifier and
 detector source).
@@ -80,16 +80,16 @@ RicciStimDetector:
 
 ```
 $ python -m pytest \
-    signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_backbone.py \
-    signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_classifier.py \
-    signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_detector.py -v
+    hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_backbone.py \
+    hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_classifier.py \
+    hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_detector.py -v
 =========== 30 passed in 27.0 s ===========
 ```
 
 Full Ricci-Stim suite (phases 1–9):
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_vision_*.py signedkan_wip/tests/test_gomb_soma_bochner_conv.py
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_vision_*.py hymeko_neuro/tests/test_gomb_soma_bochner_conv.py
 =========== 128 passed in 29.3 s ===========
 ```
 
@@ -170,7 +170,7 @@ codebase, this is a clean break with no migration cost.
 ## 8. Static analysis
 
 ```
-$ ruff check signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_*.py
+$ ruff check hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_*.py
    (clean)
 ```
 
@@ -215,7 +215,7 @@ No phase 10 work in this commit, per the one-phase-per-session rule.
 ## 12. Reproducibility
 
 ```python
-from signedkan_wip.src.hymeko_gomb.soma.vision import (
+from hymeko_neuro.models.hymeko_gomb.soma.vision import (
     RicciStimBackbone, RicciStimClassifier, RicciStimDetector,
 )
 

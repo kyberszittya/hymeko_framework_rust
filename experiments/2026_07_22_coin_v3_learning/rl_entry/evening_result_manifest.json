@@ -1,0 +1,44 @@
+{
+ "run": "coin_push_delivery_evening",
+ "verdict": "RESIDUAL_CRITIC_DEVELOPMENT_HARNESS_INVALIDATED",
+ "date": "2026-07-23",
+ "branch": "recovery/coin-hymeko-bundle-and-results",
+ "start_commit": "6f36cf3",
+ "gates_passed": [
+  "PHASE_GATED_RESIDUAL_UPDATE0_REPRODUCED",
+  "EARLY_PHASE_STRUCTURAL_PRESERVATION_PASS",
+  "PHASE_GATE_REPLAY_STATE_CONTRACT_PASS",
+  "RESIDUAL_TARGET_SMOOTHING_SCALE_CONTRACT_PASS"
+ ],
+ "gates_failed": [
+  "PHASE_GATED_RESIDUAL_CRITIC_DEVELOPMENT (standard)",
+  "RESIDUAL_ADVANTAGE_CRITIC_DEVELOPMENT"
+ ],
+ "sealed_panels_opened": "NONE",
+ "policy_final_test_bank": "8000-8049 UNTOUCHED",
+ "result_artifacts": {
+  "critic_dev.json": "b7ddaa4dcfd6f420",
+  "adv_scaled.json": "831b201c8eb60eac",
+  "adv_diag.json": "d92751fef5c7601f",
+  "figure": "fa2ff6a6e4896a8d"
+ },
+ "key_numbers": {
+  "advantage_in_sample_corr": 0.994,
+  "advantage_held_out_corr": 0.059,
+  "advantage_pairs": 1854,
+  "transport_gradA_wins": 0.9,
+  "contact_retention_gradA_wins": 0.4
+ },
+ "host": "Mac",
+ "cleanup": "no stray procs; no sealed/final panel opened",
+ "invalidation_mismatches": [
+  "A: full-action Gaussian collector not gated residual",
+  "B: truncated dropped from mask",
+  "C: cross-state advantage ranking",
+  "D: instantaneous obs (no velocity)",
+  "E: mechanism-balanced datasets not integrated",
+  "F: ad hoc dev gate",
+  "host: Mac not kato14 (parity required)"
+ ],
+ "route_blocked_withdrawn": true
+}

@@ -1,0 +1,19 @@
+{
+ "bridge": "frozen neutral E-approach->handoff->transport",
+ "physics": "corrected coin<->arm-link",
+ "panel": [
+  1011,
+  1045,
+  1164,
+  1174,
+  1202,
+  1278,
+  1358,
+  1447,
+  1568
+ ],
+ "corrected_delivered": 1,
+ "corrected_grasp": 5,
+ "historical_filtered": "3/9 composed (1045/1278/1447 delivered 10/10 each under filtered physics)",
+ "note": "D2 bank finding: the frozen E-approach squeezes the coin <=1.68mm into an arm capsule at grasp on POINT under corrected physics; the composed bridge is re-measured here honestly."
+}

@@ -126,11 +126,7 @@ fn emit_hymeko_roundtrips_from_editor_session() {
     let mut s = EditorSession::new();
     let a = s.add_vertex("base_link", 0);
     let b = s.add_vertex("spinner", 0);
-    s.add_hyperedge(
-        "spin_joint",
-        vec![(a, Sign::Plus), (b, Sign::Minus)],
-        1.0,
-    );
+    s.add_hyperedge("spin_joint", vec![(a, Sign::Plus), (b, Sign::Minus)], 1.0);
     let out = s.emit_hymeko("mini_arm_from_canvas");
     assert!(
         out.contains("mini_arm_from_canvas {}"),

@@ -237,6 +237,55 @@ impl DomainTransform for SysmlTransform {
     }
 }
 
+// ─── Requirements traceability (SysML v2 + DOT) — SMC #5 witness ───────────
+
+/// SysML v2 requirements-traceability emission (paper witness, SMC #5).
+/// Template-only: rendered via `render_from_templates` from
+/// `transforms/requirements_sysml/` — it consumes requirement/block decls and
+/// signed trace hyperedges, not a kinematic model, so `emit()` has no Rust
+/// fallback. The same template is reused in the WASM editor via `include_str!`.
+pub struct RequirementsSysmlTransform;
+
+impl DomainTransform for RequirementsSysmlTransform {
+    fn name(&self) -> &'static str {
+        "requirements_sysml"
+    }
+    fn extension(&self) -> &'static str {
+        "sysml"
+    }
+    fn accepts(&self) -> ModelKind {
+        ModelKind::Kinematic // unused on the template path; no kinematic extraction occurs
+    }
+    fn emit(&self, _model: &ModelView, _config: &TransformConfig) -> Option<String> {
+        None // template-only — see render_from_templates("requirements_sysml", …)
+    }
+    fn template_dir(&self) -> Option<&'static str> {
+        Some("requirements_sysml")
+    }
+}
+
+/// DOT traceability-graph emission for the same requirements witness (SMC #5).
+/// Template-only, paired with [`RequirementsSysmlTransform`].
+pub struct RequirementsDotTransform;
+
+impl DomainTransform for RequirementsDotTransform {
+    fn name(&self) -> &'static str {
+        "requirements_dot"
+    }
+    fn extension(&self) -> &'static str {
+        "dot"
+    }
+    fn accepts(&self) -> ModelKind {
+        ModelKind::Kinematic // unused on the template path
+    }
+    fn emit(&self, _model: &ModelView, _config: &TransformConfig) -> Option<String> {
+        None // template-only — see render_from_templates("requirements_dot", …)
+    }
+    fn template_dir(&self) -> Option<&'static str> {
+        Some("requirements_dot")
+    }
+}
+
 // ─── Gazebo world (gz sim) ────────────────────────────────────────────────
 
 /// `DomainTransform` front-end for the Gazebo world emitter.
@@ -371,16 +420,67 @@ fn emit_mjcf(model: &KinematicModel, config: &TransformConfig) -> String {
     let ctx = MjcfCtx::build(model);
 
     out.push_str("  <worldbody>\n");
-    let roots = find_roots(model);
+    // MuJoCo's <worldbody> *is* the world frame; emitting a `<body name="world">` collides
+    // with the implicit worldbody ("repeated name 'world'"). Map a root `world` frame onto
+    // it: emit its children as the top-level bodies (each child's incoming fixed-joint
+    // origin is preserved by emit_mjcf_body_open). Non-world roots pass through unchanged.
+    let roots: Vec<String> = find_roots(model)
+        .into_iter()
+        .flat_map(|r| {
+            if r == "world" {
+                model
+                    .joints
+                    .iter()
+                    .filter(|j| j.parent_link == "world")
+                    .map(|j| j.child_link.clone())
+                    .collect::<Vec<_>>()
+            } else {
+                vec![r]
+            }
+        })
+        .collect();
     emit_mjcf_body_stack(&mut out, &ctx, &roots);
     out.push_str("  </worldbody>\n\n");
+
+    // Adjacent links meet at their shared joint, so their collision geoms overlap there; the
+    // resulting self-contact applies a force that can pin the joint between them (measured on the
+    // planar grasper: a shoulder joint frozen at 0 under a ±1.2 rad command, tracking error
+    // 1.19 rad). Emit an explicit parent→child exclusion per joint so every consumer of the MJCF
+    // gets a physically self-consistent scene. `world` is the implicit worldbody (not an emitted
+    // body), so world-rooted joints have no parent body to exclude against and are skipped.
+    let mut seen = std::collections::HashSet::new();
+    let mut contact = String::new();
+    for j in &model.joints {
+        if j.parent_link == "world" {
+            continue;
+        }
+        if seen.insert((j.parent_link.as_str(), j.child_link.as_str())) {
+            contact.push_str(&format!(
+                "    <exclude body1=\"{}\" body2=\"{}\"/>\n",
+                j.parent_link, j.child_link
+            ));
+        }
+    }
+    if !contact.is_empty() {
+        out.push_str("  <contact>\n");
+        out.push_str(&contact);
+        out.push_str("  </contact>\n\n");
+    }
 
     out.push_str("  <actuator>\n");
     for j in &model.joints {
         if j.joint_type != JointType::Fixed {
+            // Bound the torque to the joint's declared effort limit (N·m); an unlimited
+            // joint leaves ctrlrange off (the consumer supplies its own default).
+            let ctrl = j
+                .limits
+                .as_ref()
+                .filter(|lim| lim.effort > 0.0)
+                .map(|lim| format!(" ctrlrange=\"{:.4} {:.4}\"", -lim.effort, lim.effort))
+                .unwrap_or_default();
             out.push_str(&format!(
-                "    <motor name=\"act_{}\" joint=\"{}\" gear=\"1\"/>\n",
-                j.name, j.name
+                "    <motor name=\"act_{}\" joint=\"{}\" gear=\"1\"{}/>\n",
+                j.name, j.name, ctrl
             ));
         }
     }
@@ -451,40 +551,71 @@ fn emit_mjcf_body_open(out: &mut String, ctx: &MjcfCtx<'_>, link_name: &str, ind
     out.push_str(">\n");
 
     if let Some(link) = ctx.link.get(link_name).copied() {
+        // The link's geometry centroid (its `origin [x y z]` offset) — used for both the COM and
+        // the geom pos, so the mass sits at the rod's centre and the geom spans from the joint.
+        let centroid = link
+            .origin
+            .as_ref()
+            .filter(|o| o.len() >= 3)
+            .map(|o| format!("{} {} {}", o[0], o[1], o[2]))
+            .unwrap_or_else(|| "0 0 0".to_string());
         if let Some(mass) = link.mass {
             let i = mass * 0.01;
+            // <inertial> COM at the geometry centroid (not the joint), so a link's mass is centred
+            // on its rod. A richer inertia tensor can refine the diaginertia later.
             out.push_str(&format!(
-                "{}<inertial mass=\"{}\" diaginertia=\"{} {} {}\"/>\n",
-                pad2, mass, i, i, i
+                "{}<inertial mass=\"{}\" pos=\"{}\" diaginertia=\"{} {} {}\"/>\n",
+                pad2, mass, centroid, i, i, i
             ));
         }
         if let Some(ref geom) = link.geometry {
-            let gs = match geom.shape {
-                GeometryShape::Box if geom.dimensions.len() >= 3 => {
-                    let d = &geom.dimensions;
-                    format!(
-                        "type=\"box\" size=\"{} {} {}\"",
-                        d[0] / 2.0,
-                        d[1] / 2.0,
-                        d[2] / 2.0
-                    )
+            // Explicit MuJoCo collision categories (additive): omitted entirely when None (historical default).
+            let coll = geom
+                .collision
+                .map(|c| format!(" contype=\"{}\" conaffinity=\"{}\"", c.contype, c.conaffinity))
+                .unwrap_or_default();
+            let mat = link
+                .color
+                .as_ref()
+                .map(|_| format!(" material=\"mat_{}\"", link.name))
+                .unwrap_or_default();
+            match geom.shape {
+                // Capsule: MJCF uses `fromto` (the cylinder-axis endpoints), NOT pos/size. Dims = [length, radius].
+                // The rod spans from the joint (0,0,0) to the far endpoint 2*origin (origin is the rod midpoint), so
+                // a connected arm's capsule reaches from its joint to the next joint. Radius = dimensions[1].
+                GeometryShape::Capsule if geom.dimensions.len() >= 2 => {
+                    let (ex, ey, ez) = link
+                        .origin
+                        .as_ref()
+                        .filter(|o| o.len() >= 3)
+                        .map(|o| (o[0] * 2.0, o[1] * 2.0, o[2] * 2.0))
+                        .unwrap_or((0.0, 0.0, 0.0));
+                    out.push_str(&format!(
+                        "{}<geom type=\"capsule\" fromto=\"0 0 0 {} {} {}\" size=\"{}\"{}{}/>  \n",
+                        pad2, ex, ey, ez, geom.dimensions[1], mat, coll
+                    ));
                 }
-                GeometryShape::Cylinder if geom.dimensions.len() >= 2 => {
-                    let d = &geom.dimensions;
-                    format!("type=\"cylinder\" size=\"{} {}\"", d[0], d[1] / 2.0)
+                _ => {
+                    let gs = match geom.shape {
+                        GeometryShape::Box if geom.dimensions.len() >= 3 => {
+                            let d = &geom.dimensions;
+                            format!("type=\"box\" size=\"{} {} {}\"", d[0] / 2.0, d[1] / 2.0, d[2] / 2.0)
+                        }
+                        GeometryShape::Cylinder if geom.dimensions.len() >= 2 => {
+                            let d = &geom.dimensions;
+                            format!("type=\"cylinder\" size=\"{} {}\"", d[0], d[1] / 2.0)
+                        }
+                        GeometryShape::Sphere if !geom.dimensions.is_empty() => {
+                            format!("type=\"sphere\" size=\"{}\"", geom.dimensions[0])
+                        }
+                        _ => String::new(),
+                    };
+                    if !gs.is_empty() {
+                        // geom centred at the link's geometry centroid (the `origin` offset) — a rod from the joint.
+                        out.push_str(&format!(
+                            "{}<geom {} pos=\"{}\"{}{}/>  \n", pad2, gs, centroid, mat, coll));
+                    }
                 }
-                GeometryShape::Sphere if !geom.dimensions.is_empty() => {
-                    format!("type=\"sphere\" size=\"{}\"", geom.dimensions[0])
-                }
-                _ => String::new(),
-            };
-            if !gs.is_empty() {
-                let mat = link
-                    .color
-                    .as_ref()
-                    .map(|_| format!(" material=\"mat_{}\"", link.name))
-                    .unwrap_or_default();
-                out.push_str(&format!("{}<geom {}{}/>  \n", pad2, gs, mat));
             }
         }
     }
@@ -837,6 +968,7 @@ mod mjcf_emit_tests {
                 geometry: Some(GeometryInfo {
                     shape: GeometryShape::Box,
                     dimensions: vec![0.05, 0.05, 0.05],
+                    collision: None,
                 }),
                 origin: None,
                 color: None,
@@ -874,5 +1006,44 @@ mod mjcf_emit_tests {
         assert!(xml.contains("</mujoco>"));
         let closes = xml.matches("</body>").count();
         assert_eq!(closes, 600, "expected one </body> per link");
+    }
+
+    /// Adjacent links overlap at their shared joint; the emitter must exclude each parent→child
+    /// contact so the self-contact does not pin the joint (the planar-grasper frozen-shoulder bug).
+    #[test]
+    fn mjcf_emits_parent_child_contact_excludes() {
+        let model = deep_chain_model(4); // L0→L1→L2→L3, 3 parent→child joints, no `world`
+        let cfg = hymeko_query::transforms::TransformConfig::default().with_name("chain");
+        let xml = emit_mjcf(&model, &cfg);
+        assert!(xml.contains("<contact>"), "expected a <contact> block");
+        assert!(xml.contains("<exclude body1=\"L0\" body2=\"L1\"/>"));
+        assert!(xml.contains("<exclude body1=\"L2\" body2=\"L3\"/>"));
+        assert_eq!(xml.matches("<exclude").count(), 3, "one exclude per parent→child joint");
+    }
+
+    /// `world` is the implicit worldbody, not an emitted body: world-rooted joints must NOT emit an
+    /// exclude (it would name a nonexistent body and fail to load).
+    #[test]
+    fn mjcf_skips_world_rooted_contact_exclude() {
+        let mut model = deep_chain_model(3); // L0→L1→L2
+        // Re-root the chain at `world`: world → L0.
+        model.joints.insert(
+            0,
+            JointInfo {
+                did: DeclId::new(2000),
+                name: "fix_world".to_string(),
+                joint_type: JointType::Fixed,
+                parent_link: "world".to_string(),
+                child_link: "L0".to_string(),
+                axis: None,
+                origin_xyz: Some([0.0, 0.0, 0.0]),
+                origin_rpy_deg: None,
+                limits: None,
+            },
+        );
+        let cfg = hymeko_query::transforms::TransformConfig::default().with_name("chain");
+        let xml = emit_mjcf(&model, &cfg);
+        assert!(!xml.contains("body1=\"world\""), "world must not appear in an exclude");
+        assert!(xml.contains("<exclude body1=\"L0\" body2=\"L1\"/>"));
     }
 }

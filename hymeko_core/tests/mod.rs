@@ -16,13 +16,13 @@ mod intermediate_tests;
 #[path = "traversal/mod.rs"]
 mod traversal;
 
-pub mod test_helpers;
 pub mod test_asserts;
+pub mod test_helpers;
 
-mod test_tensor_representations;
 mod aggregations;
+mod basic;
+mod benchmarks;
+mod computations;
 mod domain_transformations;
 mod hash;
-mod benchmarks;
-mod basic;
-mod computations;
+mod test_tensor_representations;

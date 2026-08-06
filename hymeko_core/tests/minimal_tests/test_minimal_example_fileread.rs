@@ -1,9 +1,8 @@
-use parser::ast::*;
-use log::info;
-use std::time::Instant;
-use crate::test_helpers::{log_test_footer, log_test_header};
 use super::constants::*;
-
+use crate::test_helpers::{log_test_footer, log_test_header};
+use log::info;
+use parser::ast::*;
+use std::time::Instant;
 
 #[test]
 fn test_minimal_example() {
@@ -12,7 +11,8 @@ fn test_minimal_example() {
         "Reads the minimal .hymeko example from disk and checks the top-level node.",
     );
     let start = Instant::now();
-    let source_code = parser::read_source_file(MINIMAL_EXAMPLE_PATH).expect("failed to read source file");
+    let source_code =
+        parser::read_source_file(MINIMAL_EXAMPLE_PATH).expect("failed to read source file");
 
     // 2. Parse it, tying the AST lifetimes to the String
     let d = parser::parse_description(&source_code).unwrap();
@@ -29,7 +29,11 @@ fn test_minimal_example() {
         HyperItem::Node(n) => assert_eq!(n.inner.name, CONTEXT_NODE_NAME),
         _ => panic!("Expected Node(context)"),
     }
-    info!("File {} parsed with {} top-level items", MINIMAL_EXAMPLE_PATH, d.items.len());
+    info!(
+        "File {} parsed with {} top-level items",
+        MINIMAL_EXAMPLE_PATH,
+        d.items.len()
+    );
     log_test_footer(
         "test_minimal_example",
         Some(start.elapsed()),
@@ -44,7 +48,8 @@ fn test_minimal_example_base_elements() {
         "Reads the base elements example and validates nodes/arcs.",
     );
     let start = Instant::now();
-    let source_code = parser::read_source_file(MINIMAL_EXAMPLE_BASE_ELEMENTS_PATH).expect("failed to read source file");
+    let source_code = parser::read_source_file(MINIMAL_EXAMPLE_BASE_ELEMENTS_PATH)
+        .expect("failed to read source file");
 
     // 2. Parse it, tying the AST lifetimes to the String
     let d = parser::parse_description(&source_code).unwrap();
@@ -71,9 +76,18 @@ fn test_minimal_example_base_elements() {
             assert_eq!(e.inner.name, EDGE_E1_NAME);
 
             // szedjük ki az arcokat a body-ból
-            let arcs: Vec<&HyperArc<&str>> = e.inner.body.iter().filter_map(|it| {
-                if let HyperItem::Arc(a) = it { Some(a) } else { None }
-            }).collect();
+            let arcs: Vec<&HyperArc<&str>> = e
+                .inner
+                .body
+                .iter()
+                .filter_map(|it| {
+                    if let HyperItem::Arc(a) = it {
+                        Some(a)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
 
             assert_eq!(arcs.len(), SINGLE_ARC_COUNT);
             assert_eq!(arcs[0].inner.refs.len(), ARC_REF_PAIR_COUNT);

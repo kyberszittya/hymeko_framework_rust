@@ -137,7 +137,7 @@ The Pareto-front of (mAP50 mean, acceptance rate, parameter cost):
 ## Experiment provenance
 
 - **Script:**
-  [signedkan_wip/experiments/run_hymeyolo_ricci_seeds123_redo_2026_05_13.sh](../signedkan_wip/experiments/run_hymeyolo_ricci_seeds123_redo_2026_05_13.sh)
+  [hymeko_neuro/experiments/run_hymeyolo_ricci_seeds123_redo_2026_05_13.sh](../hymeko_neuro/experiments/run_hymeyolo_ricci_seeds123_redo_2026_05_13.sh)
 - **Master log:**
   [reports/overnight_2026_05_11_stage7/REDO_seeds123_20260513T144352Z.master.log](overnight_2026_05_11_stage7/REDO_seeds123_20260513T144352Z.master.log)
 - **Python env:** miniconda3 (torch 2.11.0+cu130, cuda True).

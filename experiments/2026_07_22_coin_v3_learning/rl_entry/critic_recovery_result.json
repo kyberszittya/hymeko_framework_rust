@@ -1,0 +1,107 @@
+{
+ "panels": {
+  "auth_seeds_sha": "4805fdc4d521",
+  "final_seeds_sha": "9f843b9e532a"
+ },
+ "ablations": {
+  "A_demo": {
+   "n_traj": 64,
+   "auth": {
+    "spearman": 0.213,
+    "rank_acc": 0.57,
+    "succ_fail_sep": 380.89,
+    "ood_boundary": 0.028,
+    "ood_random": 0.272,
+    "twin_disagree": 70.439,
+    "n_deliver": 4,
+    "n_fail": 68
+   },
+   "pass": false
+  },
+  "B_+frozen": {
+   "n_traj": 114,
+   "auth": {
+    "spearman": 0.5,
+    "rank_acc": 0.675,
+    "succ_fail_sep": 18.15,
+    "ood_boundary": 0.096,
+    "ood_random": 0.283,
+    "twin_disagree": 4.993,
+    "n_deliver": 4,
+    "n_fail": 68
+   },
+   "pass": true
+  },
+  "C_+fails": {
+   "n_traj": 154,
+   "auth": {
+    "spearman": 0.12,
+    "rank_acc": 0.547,
+    "succ_fail_sep": -12.96,
+    "ood_boundary": 0.0,
+    "ood_random": 0.136,
+    "twin_disagree": 0.692,
+    "n_deliver": 4,
+    "n_fail": 68
+   },
+   "pass": false
+  },
+  "D_+perturb": {
+   "n_traj": 194,
+   "auth": {
+    "spearman": 0.565,
+    "rank_acc": 0.709,
+    "succ_fail_sep": 11.97,
+    "ood_boundary": 0.0,
+    "ood_random": 0.149,
+    "twin_disagree": 0.908,
+    "n_deliver": 4,
+    "n_fail": 68
+   },
+   "pass": true
+  }
+ },
+ "authorization_ckpts": {
+  "6000": {
+   "auth": {
+    "spearman": 0.514,
+    "rank_acc": 0.682,
+    "succ_fail_sep": 6.15,
+    "ood_boundary": 0.001,
+    "ood_random": 0.129,
+    "twin_disagree": 0.563,
+    "n_deliver": 4,
+    "n_fail": 68
+   },
+   "pass": true
+  },
+  "10000": {
+   "auth": {
+    "spearman": 0.565,
+    "rank_acc": 0.709,
+    "succ_fail_sep": 11.97,
+    "ood_boundary": 0.0,
+    "ood_random": 0.149,
+    "twin_disagree": 0.908,
+    "n_deliver": 4,
+    "n_fail": 68
+   },
+   "pass": true
+  }
+ },
+ "final_audit": {
+  "metrics": {
+   "spearman": 0.541,
+   "rank_acc": 0.704,
+   "succ_fail_sep": 13.93,
+   "ood_boundary": 0.0,
+   "ood_random": 0.125,
+   "twin_disagree": 0.526,
+   "n_deliver": 2,
+   "n_fail": 43
+  },
+  "pass": true
+ },
+ "verdict": "TD3_CRITIC_FINAL_AUDIT_PASS",
+ "coverage_load_bearing": true
+}

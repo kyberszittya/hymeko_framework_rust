@@ -1,0 +1,64 @@
+{
+ "contract": "O2_HOLD_AWARE_REWARD_V1",
+ "date": "2026-07-24",
+ "smoke": false,
+ "hold_fit": {
+  "clf_ce": 0.6513476967811584,
+  "res_mse": 0.9395831227302551,
+  "cluster_sizes": [
+   16,
+   10,
+   26,
+   21,
+   23,
+   10
+  ]
+ },
+ "hold_teacher_labels": 106,
+ "results": {
+  "square_1_1": {
+   "n": 24,
+   "canonical_k6": 4,
+   "canonical_rate": 0.167,
+   "hold_k6": 3,
+   "hold_rate": 0.125,
+   "negative_controls": {
+    "camping": 1,
+    "overshoot": 3,
+    "never_release": 0,
+    "farming": 5
+   }
+  },
+  "rect_2_1": {
+   "n": 24,
+   "canonical_k6": 2,
+   "canonical_rate": 0.083,
+   "hold_k6": 1,
+   "hold_rate": 0.042,
+   "negative_controls": {
+    "camping": 0,
+    "overshoot": 1,
+    "never_release": 0,
+    "farming": 11
+   }
+  },
+  "rect_3_1": {
+   "n": 24,
+   "canonical_k6": 3,
+   "canonical_rate": 0.125,
+   "hold_k6": 2,
+   "hold_rate": 0.083,
+   "negative_controls": {
+    "camping": 1,
+    "overshoot": 3,
+    "never_release": 0,
+    "farming": 11
+   }
+  }
+ },
+ "canonical_mean": 0.125,
+ "hold_mean": 0.083,
+ "expert_ceiling_from_canonical": 0.653,
+ "verdict": "RETENTION_CAPABILITY_NOT_REWARD_LIMITED",
+ "negative_control_note": "pinning/high_force NOT AUDITED this pass (need boundary/contact-force read); the other four are audited"
+}

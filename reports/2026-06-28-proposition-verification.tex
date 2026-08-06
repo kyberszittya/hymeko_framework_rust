@@ -1,0 +1,117 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!50!black, urlcolor=blue!50!black}
+\newcommand{\yes}{\textcolor{green!55!black}{\textbf{verified}}}
+\newcommand{\corr}{\textcolor{orange!85!black}{\textbf{corrected}}}
+
+\title{\textbf{Machine-Verification of the HyMeKo Propositions}\\[2pt]
+\large Symbolic proofs and property-tests against the real compiler (T-SMC appendix)}
+\author{Aiko (Claude Code), for Dr.\ Csaba Hajdu}
+\date{2026-06-28 (JST)}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent The article's four propositions are presented as proof-sketches-by-inspection, with the load-bearing
+one (Prop.~1) exiled to supplementary material --- the \#1 weakness a prior review flagged. We attack it
+mechanically. The propositions split by mathematical character, so the achievable rigor differs per proposition:
+the \emph{algebraic} claims (storage bound, collision bound) admit full \textbf{symbolic proofs} (\textsf{sympy});
+the \emph{structural} claims (alias invariance, emitter purity/independence) are \textbf{property-tested against
+the real compiler} (the engine's \texttt{parse\_dsl}$\to$\texttt{canonical\_hash} / emitters), which tests the
+actual artifact rather than an idealisation. Result: \textbf{three of four propositions are machine-confirmed},
+and the fourth surfaces a \textbf{precise, fixable correction} --- Prop.~1's \emph{byte-equal emit} claim fails
+under sibling reordering (the emitters carry source-order IDs), although its content-address claim holds on every
+one of 800 tested instances. Tooling installed and pinned via \texttt{uv}: \textsf{sympy 1.14, z3 4.16,
+hypothesis 6.15, networkx 3.6, pygraphviz 2.0}.
+\end{abstract}
+
+\section{Results at a glance}
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+Prop. & Claim & Method & Outcome \\
+\midrule
+P1 alias invariance & denotation-equal $\Rightarrow$ same IR \emph{and} & Hypothesis vs.\ real compiler, & hash: \yes\ (800/800)\\
+ & byte-equal emit & 800 reorderings $\times$ 4 fixtures & emit: \corr\ (0/400)\\
+P2 content-address & $h$ pure + collision-resistant & \textsf{sympy} bound + P1 mechanism & \yes\ (+ stated assumption)\\
+P3 proj.--emit indep. & emitters pure; $k$ emits, 1 compile & determinism property-test & \yes\ (4/4)\\
+P4 storage overhead & $\rho-1=O(\log n/\bar d)\to 1$ & \textsf{sympy} symbolic proof & \yes\ (full proof)\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{P4 --- storage overhead (full symbolic proof)}
+From the size equations $|H|_{\mathrm{IR}} = (n+m)c_{\mathrm{rec}} + m\bar d\,c_{\mathrm{inc}}$ and
+$|H|_{\mathrm{adj}} = m\bar d\,c_{\mathrm{inc}}$, \textsf{sympy} derives
+$\rho = 1 + c\,\frac{n+m}{m\bar d}$ ($c=c_{\mathrm{rec}}/c_{\mathrm{inc}}$), substitutes the assumption
+$n\le K m\log n$ to obtain $\rho-1 \le \frac{c(K\log n+1)}{\bar d} = O(\log n/\bar d)$, confirms
+$\lim_{\bar d\to\infty}(\rho-1)=0$, confirms strict monotone decrease ($\partial_{\bar d}(\rho-1)<0$), and
+reproduces the empirical witness exactly: with $n_{\mathrm{pool}}=m=200,\ c=1$, $\rho-1=2/\bar d$, giving
+$\rho=2.00$ at $\bar d=2$ and $\rho=1.01$ at $\bar d=200$. Every step is machine-checked
+(\texttt{verification/propositions/p4\_storage\_overhead.py}). This is a proof, not a sketch.
+
+\section{P2 --- content-addressability (symbolic bound + a stated assumption)}
+P2 has two parts. (a) \emph{$h$ depends only on the canonical IR} --- the same mechanism as P1, property-tested
+below at 800/800. (b) \emph{distinct IRs collide negligibly} --- a birthday bound on the 256-bit digest, proved
+symbolically: $P(\text{collision among }N) \le N^2/2^{257}$, so $P\le 2^{-128}$ while $N\le 2^{64.5}$ (work factor
+$2^{128}$); numerically $N{=}2^{32}\!\to\!2^{-193}$, $N{=}2^{64}\!\to\!2^{-129}$. \emph{Honest caveats}: the
+random-oracle premise for Blake3 is a cryptographic \emph{assumption}, not proved; and a 256-bit digest cannot be
+injective (pigeonhole), so equality-by-hash is \emph{practical}, not absolute --- which the article already
+concedes.
+
+\section{P1 \& P3 --- against the real compiler}
+We compile self-contained fixtures, apply denotation-preserving \emph{sibling reorderings} (the strongest
+automatable rewrite), and compare against the engine. Distinct fixtures hash distinctly (fano \texttt{b88715ed},
+generic \texttt{6a0c09d8}, k4 \texttt{0a8a903e}, sunflower \texttt{194c71e4}), so the test is non-degenerate.
+
+\paragraph{Verified.} The \textbf{canonical hash is invariant on all 800 reorderings} (4 fixtures $\times$ 200) ---
+zero violations: Prop.~1's content-address claim holds against the real compiler. Emitters are
+\textbf{deterministic} (4/4): re-compiling the same source in a fresh engine emits byte-identical DOT, so each
+emitter is a pure function of its input (Prop.~3's independence then follows --- a pure emitter that ignores the
+others can be run $k$ times off one compile).
+
+\paragraph{Corrected.} Prop.~1's \emph{stronger} claim --- denotation-equal sources emit \emph{byte-identical}
+text --- \textbf{fails under sibling reordering} (0/400 byte-equal DOT). The cause is precise: the emitters assign
+internal identifiers (\texttt{n2}, \texttt{e5}, \dots) in \emph{source-declaration order}, so a reordered source
+emits a DOT whose IDs are permuted (not merely the lines --- the ID$\leftrightarrow$label mapping changes). The
+graph is isomorphic; the serialisation is not byte-equal. \emph{Only the hash is order-canonicalised; the stored
+IR and its emit retain source order.} The article's existing \textsf{prop1\_alias} test uses
+\emph{alias-renaming} fixture pairs (where names canonicalise and byte-equality plausibly holds); it does not
+exercise sibling reordering, which is why this gap was invisible.
+
+\paragraph{Remedy (for the article).} Three options, in increasing strength: (i) \emph{scope} the byte-equal
+claim to alias/import rewrites and state the sibling-reorder guarantee at the canonical-hash level; (ii)
+\emph{canonicalise emit IDs} (assign by the canonical sort key before emitting), making byte-equality hold for
+reordering too; (iii) \emph{weaken} the claim to ``output equal up to isomorphism / equal canonical hash,'' which
+holds universally. Option~(i) is a one-paragraph edit; option~(ii) is the principled fix.
+
+\section{The rigor ladder (kept honest)}
+\begin{itemize}\itemsep2pt
+\item \textbf{Proved (symbolic):} P4 (storage), P2 collision bound --- \textsf{sympy}, fully rigorous.
+\item \textbf{Property-verified (real artifact, falsification over 800 instances):} P1 canonical-hash
+  invariance, P3 emitter determinism.
+\item \textbf{Assumed (not provable here):} Blake3 random-oracle (P2); sibling reordering taken as
+  denotation-preserving \emph{by} the engine's own canonical hash.
+\item \textbf{Corrected:} P1 byte-equal emit under sibling reordering.
+\item \textbf{z3:} installed, but the four propositions have no natural decidable-SMT formulation that adds over
+  \textsf{sympy}+property-testing; its value here is future work (signed-balance gauge properties, bounded
+  model-checking the resolver), not these four.
+\end{itemize}
+
+\section{What this buys the article}
+The appendix moves from ``proof sketches by inspection'' to ``symbolically proved where algebraic, and
+property-verified over 800 instances \emph{against the real compiler} where structural'' --- and the exercise
+\emph{found a precise, fixable defect} the prose proof had hidden. This directly answers the review's \#1 finding,
+and suggests a genuine new angle: a \textbf{machine-checked canonical-IR appendix} (or a short companion artifact)
+is a stronger contribution than one more robot fixture. Scripts:
+\texttt{verification/propositions/\{p1\_alias\_invariance, p2\_content\_birthday, p3\_emit\_purity,
+p4\_storage\_overhead\}.py}.
+
+\end{document}

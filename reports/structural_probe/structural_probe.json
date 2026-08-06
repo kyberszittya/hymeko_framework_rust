@@ -1,0 +1,73 @@
+{
+  "hsikan_hidden": 32,
+  "mlp_hidden": 56,
+  "hk_params": 3713,
+  "mlp_params": 3697,
+  "n_train": 256,
+  "n_test": 1024,
+  "seeds": 5,
+  "epochs": 300,
+  "advantage_ratio_mlp_over_hsikan": {
+    "structural": 1.463,
+    "bag": 17.26
+  },
+  "verdict": "INVESTIGATE (see report)",
+  "results": [
+    {
+      "target": "structural",
+      "backbone": "hsikan",
+      "n_params": 3713,
+      "mse_median": 0.23859,
+      "mse_iqr": 0.1493,
+      "per_seed": [
+        0.14155,
+        0.23709,
+        0.23859,
+        0.38639,
+        0.41156
+      ]
+    },
+    {
+      "target": "structural",
+      "backbone": "mlp",
+      "n_params": 3697,
+      "mse_median": 0.34908,
+      "mse_iqr": 0.06915,
+      "per_seed": [
+        0.29098,
+        0.32028,
+        0.34908,
+        0.38943,
+        0.50902
+      ]
+    },
+    {
+      "target": "bag",
+      "backbone": "hsikan",
+      "n_params": 3713,
+      "mse_median": 0.00443,
+      "mse_iqr": 0.00114,
+      "per_seed": [
+        0.00258,
+        0.00349,
+        0.00443,
+        0.00463,
+        0.00587
+      ]
+    },
+    {
+      "target": "bag",
+      "backbone": "mlp",
+      "n_params": 3697,
+      "mse_median": 0.07646,
+      "mse_iqr": 0.00889,
+      "per_seed": [
+        0.07046,
+        0.07328,
+        0.07646,
+        0.08217,
+        0.08297
+      ]
+    }
+  ]
+}

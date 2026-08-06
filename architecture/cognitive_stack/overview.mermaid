@@ -1,0 +1,56 @@
+graph TD
+%% Cognitive stack — component relationships (2026-06-11)
+%% Membrane: Clifford-FIR carries ALL inter-component signals as Cl(p,q) multivectors (synaptic transport).
+%% Legend: solid = implemented; dashed border note in class names below.
+
+%% Define Styles (repo convention, cf. architecture/akoire/overview.mermaid)
+    classDef planner fill:#f5f5f5,stroke:#888780,stroke-width:2px,stroke-dasharray:5 4,color:#000;
+    classDef protocol fill:#ffffff,stroke:#378ADD,stroke-width:2px,stroke-dasharray:5 4,color:#000;
+    classDef substrate fill:#E6F1FB,stroke:#185FA5,stroke-width:2px,color:#000;
+    classDef inference fill:#CECBF6,stroke:#534AB7,stroke-width:2px,color:#000;
+    classDef reflex fill:#E1F5EE,stroke:#0F6E56,stroke-width:2px,stroke-dasharray:5 4,color:#000;
+    classDef membrane fill:#EEEDFE,stroke:#7F77DD,stroke-width:3px,color:#000;
+
+    subgraph MEMBRANE ["Clifford-FIR membrane — synaptic transport: every edge below is a Cl(p,q) multivector through a learned FIR synapse"]
+
+        subgraph DELIB ["Deliberative loop (slow path)"]
+            HOTARU["HOTARU<br/>planner / graph sequencer<br/>policy over HIVE-delta space<br/><i>(planned — no disk artifact yet)</i>"]:::planner
+            AKOIRE["AKOIRE<br/>transaction protocol (spec v0.1)<br/>render → propose(LLM) → parse/lower → evaluate ⟂ → commit<br/><b>sole door for structural mutation</b>"]:::protocol
+        end
+
+        HIVE[("HIVE<br/>L0 canonical substrate<br/>signed typed hypergraph IR + canonical hash<br/>compile · project · emit — hymeko_core")]:::substrate
+
+        subgraph GOMB ["Gömb — three-shell inference cascade"]
+            CFIR["Clifford-FIR (shell role)<br/>edge decoration: grade assignment + FIR ring conv"]:::inference
+            HSIKAN["HSiKAN<br/>mixed-arity signed cycle pool · Catmull-Rom splines<br/>(standalone-capable)"]:::inference
+            CPML["CPML<br/>grade-preserving poly layers · grade-0 readout ⟨·⟩₀"]:::inference
+            CFIR --> HSIKAN --> CPML
+        end
+
+        CHORDEX["Soma-Chordex<br/>L1 reflex lane · ≤10 ms budget · bypasses AKOIRE gate<br/>single motor authority · contract-bounded, not gated<br/>Soma vision backbone implemented: quadtree · Hodge ∂₂ · stim graphs"]:::reflex
+
+        NAGARE["NAGARE 流れ<br/>dataflow execution substrate — hymeko_nagare<br/>SoA cycle pools · closed-form Clifford (fwd, bwd) op pairs · no autograd<br/>commutative MapReduce over cycles · Rayon / wgpu · → HSMM FPGA target"]:::substrate
+
+    end
+
+%% Deliberative edges
+    HOTARU -- "candidate delta sequences" --> AKOIRE
+    AKOIRE -- "commit / reject feedback" --> HOTARU
+    AKOIRE -- "commit delta" --> HIVE
+    HIVE -- "render ambience (HyMeKo lang)" --> AKOIRE
+    HIVE -- "project π(H): sparse signed tensor" --> CFIR
+    CPML -- "verdict → evaluate-gate plug-in" --> AKOIRE
+    CPML -- "state utility" --> HOTARU
+    HIVE -. "canonical hash → memoized state space / transposition tables" .-> HOTARU
+
+%% Reflex lane
+    EXT(("exteroception")) --> CHORDEX --> ACT(("actuators"))
+    CHORDEX -- "percept deltas (append-only, async)" --> HIVE
+    CPML -. "descending modulation · priors / set-points" .-> CHORDEX
+    HOTARU -. "reflex thresholds via slow loop only" .-> CHORDEX
+
+%% Execution substrate (runs-on / compiles-to)
+    GOMB -. "shells lower to (fwd, bwd) op pairs" .-> NAGARE
+    CHORDEX -. "reflex kernels (latency budget lives here)" .-> NAGARE
+    MEMBRANE -. "per-synapse FIR banks as NAGARE ops" .-> NAGARE
+    NAGARE -. "Nagare → HSMM compiler (FROZEN plan) → Zynq FPGA" .-> HSMM(("HSMM<br/>abstract machine"))

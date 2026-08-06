@@ -1,0 +1,30 @@
+{
+ "gate": "COIN_REWARD_EVALUATION_ALIGNMENT_PASS",
+ "contract": "canonical_k6 v3 K=6",
+ "result": "PASS",
+ "behaviors": {
+  "strict_delivery": {
+   "return": -20.06,
+   "steps": 99,
+   "terminated": true
+  },
+  "grasp_and_stall": {
+   "return": -79.29,
+   "steps": 160,
+   "terminated": false
+  },
+  "reach_no_hold": {
+   "return": -81.67
+  },
+  "oscillation": {
+   "return": -77.03
+  },
+  "zero_action": {
+   "return": -84.4
+  },
+  "away": {
+   "return": -144.0
+  }
+ },
+ "ordering": "strict_delivery(-20) >> non-delivering behaviors (-77..-144); delivery terminates on the 6th strict step"
+}

@@ -1,0 +1,29 @@
+[
+ {
+  "path": "experiments/2026_07_20_coin_generator_generator_s0r0/videos/generator_certifies_held_attr19.gif",
+  "sha256": "84bf7a1da1bd7fba44a787f9ce295de15b73a1729c9d92a47d81a67471cb84e1",
+  "config_id": "ATTR_64111_lr_contact_gap_+0.033_6e60c2e2",
+  "strict": true,
+  "attribution": 0.77,
+  "size_bytes": 872129,
+  "label": "GENERATOR certifies a held-out ATTRIBUTION_BOUNDARY config"
+ },
+ {
+  "path": "experiments/2026_07_20_coin_generator_generator_s0r0/videos/control_fails_held_attr19.gif",
+  "sha256": "79882ee72353c63bb36812608448d592ce7a3dd3ad6bdea01d3c296517a2aa8c",
+  "config_id": "ATTR_64111_lr_contact_gap_+0.033_6e60c2e2",
+  "strict": false,
+  "attribution": 0.814,
+  "size_bytes": 784296,
+  "label": "CONTROL fails the same held-out config"
+ },
+ {
+  "path": "experiments/2026_07_20_coin_generator_generator_s0r0/videos/generator_certifies_held_cert5.gif",
+  "sha256": "597f440c34eafb8a2571fa9fdfc5d9ff5c45e5bacb0fb3686aa917eaec953bf5",
+  "config_id": "CERT_64102_lr_contact_gap_+0.018_27d4f022",
+  "strict": true,
+  "attribution": 0.72,
+  "size_bytes": 554430,
+  "label": "GENERATOR certifies a held-out CERTIFIED_NEIGHBORHOOD config"
+ }
+]

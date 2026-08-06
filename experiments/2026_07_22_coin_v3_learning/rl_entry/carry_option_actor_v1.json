@@ -1,0 +1,85 @@
+{
+ "contract": "CARRY_OPTION_ACTOR_V1",
+ "date": "2026-07-24",
+ "no_new_campaign": true,
+ "smoke": false,
+ "precheck": {
+  "tiny_overfit_mse": 0.007736,
+  "k": 4,
+  "multimodality_cross_seed_L2": [
+   0.0,
+   1.186,
+   0.0,
+   1.466
+  ]
+ },
+ "bc_loss": 1.54034,
+ "bank_labels_final": 116,
+ "panel": {
+  "eval_n": 30,
+  "eval_families": {
+   "contact_retention": 29,
+   "transport": 1
+  }
+ },
+ "aggregate": {
+  "pi_0": {
+   "K6": 0.0,
+   "handoff": 0.0,
+   "any_exit": 0.0
+  },
+  "structured_expert": {
+   "K6": 0.467,
+   "handoff": 0.467,
+   "any_exit": 0.0
+  },
+  "BC_option": {
+   "K6": 0.0,
+   "handoff": 0.0,
+   "any_exit": 0.2
+  },
+  "DAgger_option": {
+   "K6": 0.0,
+   "handoff": 0.0,
+   "any_exit": 0.1,
+   "mean_options": 2.933,
+   "mean_aborts": 2.9
+  }
+ },
+ "per_family": {
+  "contact_retention": {
+   "n": 29,
+   "pi0": 0.0,
+   "DAgger": 0.0
+  },
+  "transport": {
+   "n": 1,
+   "pi0": 0.0,
+   "DAgger": 0.0
+  }
+ },
+ "solved": {
+  "pi_0": [],
+  "DAgger": [],
+  "expert": [
+   0,
+   2,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   22,
+   24,
+   25,
+   26
+  ],
+  "DAgger_minus_pi0": []
+ },
+ "gate_met": false,
+ "verdict": "OPTION_ACTOR_NO_BETTER_THAN_PI0",
+ "next_lever": "option 0.0 \u2264 pi_0 0.0 \u2014 diagnose (label scarcity 116, multimodality [0.0, 1.186, 0.0, 1.466], BC 0.0); one bounded corrective pass before any conclusion"
+}

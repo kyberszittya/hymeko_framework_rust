@@ -64,8 +64,8 @@ The AUC monotonic trend (0.71 at $c=1$ → 0.66 at $c=16$) confirms this: increa
 | `hymeko_graph/tests/per_vertex_adaptive.rs` | New: 7 integration tests — uniform-vector parity (× 2 pruner modes), `degree_adaptive_m_v` formula × 3 boundary cases, total-output bound, full-heap rate climb at $c \ge 2$. | +245 |
 | `hymeko_py/src/cycles.rs` | New PyO3 binding `enumerate_top_k_per_vertex_cycles_signed_adaptive_rs` taking `m_min × m_max × c × score_kind × pruner_kind`. | +110 |
 | `hymeko_py/src/lib.rs` | Registered new symbol. | +1 |
-| `signedkan_wip/src/n_tuples.py::construct_k` | New `HSIKAN_TOPK_MODE=per_vertex_adaptive` route + `HSIKAN_TOPK_M_V_C` / `_MIN` / `_MAX` env-vars. | +18 |
-| `signedkan_wip/experiments/run_adaptive_mv_sweep_2026_05_10.sh` | Orchestrator: 5-point $c$-sweep at the abbreviated Epinions config, results to TSV. | +43 |
+| `hymeko_neuro/n_tuples.py::construct_k` | New `HSIKAN_TOPK_MODE=per_vertex_adaptive` route + `HSIKAN_TOPK_M_V_C` / `_MIN` / `_MAX` env-vars. | +18 |
+| `hymeko_neuro/experiments/run_adaptive_mv_sweep_2026_05_10.sh` | Orchestrator: 5-point $c$-sweep at the abbreviated Epinions config, results to TSV. | +43 |
 | `reports/figures/degree_adaptive_mv_plot.py` | matplotlib gates plot (per the new plan §9 reporting requirement). | +130 |
 | `reports/figures/degree_adaptive_mv_gates.png` | Generated plot. | 144 kB |
 
@@ -165,7 +165,7 @@ The single-seed AUC delta at the abbreviated config (+6.7 pp) is large enough th
 | Python | 3.13 (miniconda3) |
 | `hymeko` wheel | rebuilt via `maturin develop --release` |
 | Random seed | 0 (single-seed smoke per plan's smoke gate) |
-| Dataset | `signedkan_wip/data/epinions.txt` — sha256 `8120d06a0bb4e65d4b821eba1072647ef3429e4e0a3c02e72bf0c534664f6fee` |
+| Dataset | `hymeko_neuro/assets/data/epinions.txt` — sha256 `8120d06a0bb4e65d4b821eba1072647ef3429e4e0a3c02e72bf0c534664f6fee` |
 | Workload | `--dataset epinions --hidden 4 --n-epochs 20 --seed 0`, `HSIKAN_MIXED_TUPLES=c3,c4`, `HSIKAN_TOPK_PRUNER=balance`, `HSIKAN_TOPK_M_V_MIN=1`, `HSIKAN_TOPK_M_V_MAX=128` |
 | Suppressions | None |
 

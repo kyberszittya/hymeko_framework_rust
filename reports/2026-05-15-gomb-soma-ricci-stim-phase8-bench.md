@@ -50,10 +50,10 @@ Config E of the ablation matrix is *exactly* "quadtree anchors + Bochner-Ricci p
 
 | File | Action |
 |---|---|
-| [signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_train.py](../signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_train.py) | NEW — 306 LOC; anchor-target assignment, detection loss, mAP50 proxy, train loop |
-| [signedkan_wip/experiments/run_ricci_stim_cluttered_mnist.py](../signedkan_wip/experiments/run_ricci_stim_cluttered_mnist.py) | NEW — Python runner with 5-config ablation matrix |
-| [signedkan_wip/experiments/run_ricci_stim_cluttered_mnist_smoke.sh](../signedkan_wip/experiments/run_ricci_stim_cluttered_mnist_smoke.sh) | NEW — orchestrator stub |
-| [signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_train.py](../signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_train.py) | NEW — 11 unit tests |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_train.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_train.py) | NEW — 306 LOC; anchor-target assignment, detection loss, mAP50 proxy, train loop |
+| [hymeko_neuro/experiments/run_ricci_stim_cluttered_mnist.py](../hymeko_neuro/experiments/run_ricci_stim_cluttered_mnist.py) | NEW — Python runner with 5-config ablation matrix |
+| [hymeko_neuro/experiments/run_ricci_stim_cluttered_mnist_smoke.sh](../hymeko_neuro/experiments/run_ricci_stim_cluttered_mnist_smoke.sh) | NEW — orchestrator stub |
+| [hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_train.py](../hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_train.py) | NEW — 11 unit tests |
 | [docs/plans/2026-05-14-gomb-soma-ricci-stim-bench/](../docs/plans/2026-05-14-gomb-soma-ricci-stim-bench/) | NEW plan dir (4 formats) |
 
 ## 4. CORE.YAML items touched
@@ -96,14 +96,14 @@ This is the precision-recall F1 at IoU 0.5, not the full COCO mAP50 (which is pe
 ## 6. Test results
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_train.py -v
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_train.py -v
 =========== 11 passed in 2.64s ===========
 ```
 
 Full Ricci-Stim suite (phases 1–10 + bench):
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_vision_*.py signedkan_wip/tests/test_gomb_soma_bochner_conv.py
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_vision_*.py hymeko_neuro/tests/test_gomb_soma_bochner_conv.py
 =========== 150 passed ===========
 ```
 
@@ -201,14 +201,14 @@ Revised acceptance for this single-session deliverable:
 
 ```bash
 # Single config × seed × scale (the smoke):
-python -m signedkan_wip.experiments.run_ricci_stim_cluttered_mnist \
+python -m hymeko_neuro.experiments.run_ricci_stim_cluttered_mnist \
     --config E --n-train 30 --n-eval 10 --n-epochs 1 \
     --seed 0 --device cuda --batch-size 4 \
     --out-jsonl /tmp/smoke.jsonl
 
 # To run all 5 configs × 1 seed once accelerated:
 for c in A B C D E; do
-  python -m signedkan_wip.experiments.run_ricci_stim_cluttered_mnist \
+  python -m hymeko_neuro.experiments.run_ricci_stim_cluttered_mnist \
       --config $c --n-train 5000 --n-eval 1000 --n-epochs 20 \
       --seed 0 --device cuda --batch-size 16 \
       --out-jsonl results/ablation.jsonl

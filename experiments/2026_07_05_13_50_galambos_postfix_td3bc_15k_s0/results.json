@@ -1,0 +1,47 @@
+{
+  "name": "galambos_postfix_td3bc_15k_s0",
+  "select": "delivery",
+  "total_steps": 15000,
+  "delivery_median": 0.25,
+  "delivery_per_seed": [
+    0.25
+  ],
+  "seeds": [
+    {
+      "seed": 0,
+      "peak": {
+        "delivery": 0.25,
+        "step": 0.0,
+        "stage": "bc_step0",
+        "both_contact": 0.0302
+      },
+      "curve": [
+        {
+          "step": 0.0,
+          "stage": "bc_step0",
+          "delivery": 0.25,
+          "both_contact": 0.0302
+        },
+        {
+          "step": 5000.0,
+          "stage": "rl_refined",
+          "delivery": 0.05,
+          "both_contact": 0.0058
+        },
+        {
+          "step": 10000.0,
+          "stage": "rl_refined",
+          "delivery": 0.15,
+          "both_contact": 0.0105
+        },
+        {
+          "step": 15000.0,
+          "stage": "rl_refined",
+          "delivery": 0.1,
+          "both_contact": 0.0027
+        }
+      ],
+      "wall_s": 139.7
+    }
+  ]
+}

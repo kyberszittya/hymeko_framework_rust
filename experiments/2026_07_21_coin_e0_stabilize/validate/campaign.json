@@ -1,0 +1,72 @@
+[
+ {
+  "arm": "CONTROL",
+  "seed": 0,
+  "bc_head": 2,
+  "peak_dev": 5,
+  "final_dev": 4,
+  "dev_curve": [
+   3,
+   3,
+   3,
+   3,
+   1,
+   1,
+   0,
+   0,
+   4,
+   5,
+   4,
+   4
+  ],
+  "best_step": 20000,
+  "ckpt": "experiments/2026_07_21_coin_e0_stabilize/validate/control_s0_best.pt",
+  "headline_states_8of10": 0,
+  "headline_per_state": {
+   "1011": 0,
+   "1045": 0,
+   "1164": 0,
+   "1174": 0,
+   "1202": 0,
+   "1278": 0,
+   "1358": 0,
+   "1447": 0,
+   "1568": 0
+  }
+ },
+ {
+  "arm": "STABILIZED",
+  "seed": 0,
+  "bc_head": 2,
+  "peak_dev": 7,
+  "final_dev": 4,
+  "dev_curve": [
+   3,
+   2,
+   7,
+   1,
+   3,
+   3,
+   2,
+   4,
+   4,
+   4,
+   4,
+   4
+  ],
+  "best_step": 6000,
+  "ckpt": "experiments/2026_07_21_coin_e0_stabilize/validate/stabilized_s0_best.pt",
+  "headline_states_8of10": 5,
+  "headline_per_state": {
+   "1011": 10,
+   "1045": 0,
+   "1164": 0,
+   "1174": 10,
+   "1202": 10,
+   "1278": 10,
+   "1358": 0,
+   "1447": 10,
+   "1568": 0
+  }
+ }
+]

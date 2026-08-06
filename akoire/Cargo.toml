@@ -1,0 +1,26 @@
+[package]
+name = "akoire"
+version = "0.1.0"
+edition = "2021"
+description = "AKOIRE — Layer-2 Cognitive OS harness: a closed agent loop that synthesizes HyQL refinements and gate-keeps them through the HyMeKo (Layer-1) parser."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/kyberszittya/hymeko_framework_rust"
+
+[lib]
+name = "akoire"
+
+# Layer-1 gatekeeper. `parser` is a CORE (lockdown: full) crate — we depend on
+# its public API (`parse_description`) only; we do not edit it.
+[dependencies]
+parser = { path = "../parser" }
+
+# Matches the criterion major already used by `parser` (0.8) to avoid a
+# duplicate criterion build in the workspace. tools.yaml pins criterion at
+# major "0", which permits any 0.y.z.
+[dev-dependencies]
+criterion = "0.8"
+hymeko_hive = { path = "../hymeko_hive" }
+
+[[bench]]
+name = "loop_bench"
+harness = false

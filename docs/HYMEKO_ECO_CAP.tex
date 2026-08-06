@@ -1,0 +1,306 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}
+\usepackage[a4paper,margin=2.0cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,longtable,array}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage[colorlinks=true,linkcolor=black,urlcolor=blue]{hyperref}
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\color{black!80}}{\thesection.}{0.6em}{}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+
+% Status badges
+\newcommand{\sProven}{\textcolor{green!55!black}{\textbf{PROVEN}}}
+\newcommand{\sShipped}{\textcolor{blue!65!black}{\textbf{SHIPPED}}}
+\newcommand{\sResearch}{\textcolor{orange!80!black}{\textbf{RESEARCH}}}
+\newcommand{\sFalsified}{\textcolor{red!75!black}{\textbf{FALSIFIED}}}
+\newcommand{\qual}[1]{{\footnotesize #1}}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\scopenote}[1]{\smallskip{\small\textit{#1}}\par\medskip}
+
+% Three-column capability table (capability | what evidence establishes | status)
+\newenvironment{captable}{%
+  \begin{longtable}{@{}p{4.9cm}p{8.1cm}>{\raggedright\arraybackslash}p{2.5cm}@{}}
+  \toprule
+  \textbf{Capability} & \textbf{What the evidence actually establishes} & \textbf{Status}\\
+  \midrule\endhead}{%
+  \bottomrule\end{longtable}}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries HyMeKo --- Capability Evidence Ledger}\\[4pt]
+  {\large A calibrated inventory --- claims tied to auditable artifacts, not ambition}\\[6pt]
+  {\small Compiled 2026-06-20\hspace{1.2em}|\hspace{1.2em}Companion: \emph{The HyMeKo System-Engineering View} (manifesto)}
+\end{center}
+\vspace{2pt}
+
+\section*{The standard this document holds itself to}
+\addtocounter{section}{0}
+Each row separates three things on purpose: \textbf{the specific claim}, \textbf{the
+artifact that checks it}, and --- where it matters --- \textbf{what the artifact does
+not establish}. Any line can be audited by opening the named file.
+
+\noindent\fbox{\parbox{\dimexpr\textwidth-2\fboxsep-2\fboxrule\relax}{%
+\textbf{Two honesty rules.}\quad
+(1)~A claim is only as strong as what is \emph{mechanically} checked: ``a test passes''
+means its own assertions hold, and does not silently extend to properties the test never
+examines. Where a test proves structure but not visual fidelity or numerical parity, the
+row or the section note says so.\quad
+(2)~\textbf{Provenance is marked.} Results re-verified this session are tagged
+\emph{(measured)}; results resting on a prior dated report are attributed to it rather
+than presented as freshly confirmed.
+\par\smallskip
+\textbf{Status legend.}\quad
+\sProven{} --- a passing test or committed artifact asserts the specific claim.\quad
+\sShipped{} --- works in a demo/report but is not pinned by a regression test, so it can
+regress silently.\quad
+\sResearch{} --- an open investigation, reported as positive, partial, null, or falsified
+--- whichever it is.
+\par\smallskip
+A status is never upgraded without an anchor; a row with a stale anchor is a defect, not a
+convenience.}}
+
+\section{Hypergraph core --- the single source of record}
+\begin{captable}
+Signed-incidence hypergraph; GGK 4-tuple $K=(B,G,\mu,r)$ with signed-incidence tensor
+  & Core types + the \code{K1}--\code{K4} axioms they satisfy are specified in
+    \code{docs/spec/g\_sphf\_axioms.tex} (cited in published work) and implemented in locked
+    \code{hymeko\_core}. The axioms are a design contract, not a machine-checked proof.
+  & \sProven{} \qual{(impl)}\\
+\addlinespace
+Canonical hashing of descriptions
+  & \code{canonical\_hash.rs}: hash is invariant under semantics-preserving rewrites and
+    changes under semantic ones; parity asserted across suites, so an accidental semantic
+    change surfaces as a failing test.
+  & \sProven\\
+\addlinespace
+Lower $\to$ resolve $\to$ intern compile pipeline (\code{ModuleStore})
+  & Production compile path exercised by the \code{hymeko\_core} suite ($\approx$133 tests
+    per the 2026-06-19 report). Not independently re-run this session.
+  & \sProven{} \qual{(per suite)}\\
+\end{captable}
+
+\section{The HyMeKo language}
+\begin{captable}
+LALR(1) grammar + parser (locked, generated tables)
+  & Round-trips the fixture corpus including alias resolution (\code{using\_alias.rs}).
+    Tables are generated, never hand-edited.
+  & \sProven\\
+\addlinespace
+Profiles, \code{<isa>} inheritance, tag annotations, tensor/edge values
+  & \code{data/minimal\_examples/**} + core import tests parse and lower each construct ---
+    proves the language accepts and lowers them, not that every semantic edge case is covered.
+  & \sProven\\
+\addlinespace
+\textbf{Cross-file imports} (\code{@"file.hymeko"}) sharing meta vocabulary
+  & \code{test\_import/} + \code{import\_examples/} compile a file against vocabulary declared
+    in another. Establishes kind-sharing across files.
+  & \sProven\\
+\addlinespace
+\textbf{Cross-profile instance references} (\code{using <desc>.<content> as a; (+ a.decl)})
+  & Core test \code{check\_xprofile\_instance\_ref}: the referenced \code{dist} decl's hash is
+    \emph{unchanged} vs.\ the inline form --- concrete evidence semantics were preserved, not
+    merely that it compiled (report 2026-06-19).
+  & \sProven\\
+\addlinespace
+Import-aware bundle reading on the Python side (\code{read\_bundle})
+  & Mirrors the compiler's import resolution so Python tooling sees the same merged decl set.
+    Stated limit: importer must also import the meta vocab the shared profile uses (no
+    transitive indexing yet).
+  & \sProven{} \qual{(w/ limit)}\\
+\end{captable}
+
+\section{Robotics --- kinematic extraction + multi-format emission}
+\begin{captable}
+Kinematic-model extraction
+  & Recovers links, typed joints, axis vectors, limits, geometry, origins.
+    \code{test\_imported\_real} asserts counts within a documented filter tolerance:
+    $\geq$8 links / $\geq$6 joints (WAM), $\geq$50 / $\geq$50 (DRC-Hubo).
+  & \sProven\\
+\addlinespace
+Emitters: URDF, SDF, MJCF, DOT, Mermaid, SysML (one IR $\to$ six views)
+  & Six emitters produce non-empty output carrying the correct robot header on real fixtures;
+    \code{test\_mdsd\_reuse} additionally asserts URDF contains real \code{<joint>} elements
+    with recovered unit axis vectors \emph{(measured)}.
+  & \sProven{} \qual{(structure)}\\
+\addlinespace
+Lean4 proof-obligation emission
+  & \code{emit\_lean4.rs} + tests emit non-empty Lean4 from the IR. Proves emission, not that
+    the obligations discharge.
+  & \sProven{} \qual{(emit)}\\
+\addlinespace
+HyMeKo $\to$ HyMeKo canonical round-trip
+  & \code{emit\_hymeko.rs} + \code{test\_bridge.rs} re-emit and check back: the information-loss
+    guard for any view generator.
+  & \sProven\\
+\addlinespace
+Emission on real published robots (Barrett WAM 7-DOF; DRC-Hubo 52-link humanoid) via import
+  & Translated URDFs compile + emit through the full pipeline --- the ``not only synthetic
+    morphologies'' evidence.
+  & \sProven\\
+\addlinespace
+\textbf{MDSD single-source reuse} for a full scenario
+  & \emph{(measured 2026-06-20)} imported form $\Rightarrow$ 5 links + 4 revolute joints with
+    unit axes, emits \code{<joint>}s; the bare baseline's generic \code{joint} emits none;
+    126 vs 189 lines ($-33\%$).
+  & \sProven\\
+\addlinespace
+Gazebo launch-bundle generation
+  & \code{test\_gazebo\_sim\_launch} builds URDF + world + launch; committed bundle at
+    \code{generated/gazebo\_launch/moveo/}.
+  & \sProven\\
+\addlinespace
+Robot generators (anthropomorphic arms; chain/tree/quadruped/humanoid scaling fixtures)
+  & Generation tests build valid descriptions across morphologies and sizes.
+  & \sProven\\
+\end{captable}
+\scopenote{Scope --- what §3 does \emph{not} claim. Emission is structural and kinematic,
+not visual: the importer strips mesh references and substitutes placeholder box geometry
+(documented in \code{test\_imported\_real.rs}), so a round-tripped robot will not visually
+reproduce the original; mesh-bearing emission is a separate, unbuilt line. Lean4 output is
+emitted, not proven to discharge.}
+
+\section{Query, rewrite, analysis}
+\begin{captable}
+Predicate query engine over the IR (\code{node}/\code{edge}/\code{inherits}/\code{and})
+  & Drives all of §3's extraction; the full \code{hymeko\_query} integration target runs
+    \textbf{214 pass}, 1 ignored \emph{(measured 2026-06-20)}.
+  & \sProven\\
+\addlinespace
+Structural entropy + cluster-split rewrite (emits a proposed \code{.hymeko})
+  & \code{test\_entropy.rs}, \code{test\_split.rs} compute entropy and a split that recompiles.
+  & \sProven\\
+\addlinespace
+Cycle/Berge enumeration, Friedler pruning, branch-and-bound scoring
+  & \code{hymeko\_graph} + \code{test\_fixture\_berge.rs} enumerate against fixtures with known
+    answers.
+  & \sProven\\
+\end{captable}
+
+\section{P-graph (process-network) layer}
+\begin{captable}
+P-graph schema + A1--A5 axioms; MSG / SSG / ABB
+  & \code{axiom\_witness.rs}, \code{byproduct\_filter\_phase11.rs} exhibit axiom witnesses and
+    the algorithmic constructions.
+  & \sProven\\
+\addlinespace
+Book validation against Friedler / Pimentel worked examples
+  & Suite reproduces the textbook Examples (3.2, 6.1, \dots) from \code{data/pgraph/Chapter*/}
+    --- matches published answers, the strongest correctness evidence available here.
+  & \sProven\\
+\addlinespace
+Audit protocols $\leftrightarrow$ reachability rules (leakage audit + P-graph axioms)
+  & Plan + argument + tests exist (2026-06-14); a candidate unification, not yet an external
+    result.
+  & \sResearch\\
+\end{captable}
+
+\section{ROS2 / simulation demos}
+\begin{captable}
+Multi-context (grasping / maintenance / safety) context-evaluation node
+  & Runs in \code{hymeko\_ros2\_demo} with \code{test\_evaluate\_context.py},
+    \code{test\_topic\_binding.py}.
+  & \sShipped\\
+\addlinespace
+UR5e Gazebo + MoveIt2 stack; dual-robot handover
+  & Launch files + sim assets present and demoed.
+  & \sShipped\\
+\addlinespace
+MuJoCo RL grasp/reach env emitted from \code{.hymeko}
+  & Built and run in the 2026-06-19 reports.
+  & \sShipped\\
+\end{captable}
+\scopenote{Scope. These are \sShipped, not \sProven: they work in the demo environment and
+have Python unit tests around pieces, but no single regression test pins the end-to-end
+ROS2/Gazebo path, so it can regress silently on an environment change.}
+
+\section{Reinforcement learning --- descriptions $\to$ MDP}
+\begin{captable}
+Declarative observation / reward specs in HyMeKo
+  & The MDP's observation and reward are authored as \code{.hymeko}, not Python; reports
+    \code{2026-06-19-hymeko-rl-declarative-*}.
+  & \sProven\\
+\addlinespace
+\code{AgentSpec.from\_hymeko} (obs + action bounds + reward + vertex count $\to$ one MDP)
+  & Composes a complete MDP from robot + task descriptions; parity test vs.\ the hand-built env
+    passes (97 \code{hymeko\_rl} tests green, per report 2026-06-19).
+  & \sProven{} \qual{(per suite)}\\
+\addlinespace
+Shared reward / observation models reused across agent descriptions
+  & \code{arm\_reach\_reward.hymeko} imported by multiple tasks; reward \code{dist} decl hash
+    unchanged vs.\ the duplicated form (semantics preserved).
+  & \sProven\\
+\addlinespace
+PPO fine-tuning on the BC-pretrained policy
+  & \textbf{Negative-to-open:} PPO currently \emph{degrades} the behaviour-cloned policy;
+    leading hypothesis is a truncation-bootstrap bug, not yet isolated. Paused.
+  & \sResearch{} \qual{(paused)}\\
+\end{captable}
+
+\section{Tooling surface}
+\begin{captable}
+CLI (\code{validate}, \code{compile}, \code{transform}, \code{query}, entropy, rewrite)
+  & \code{hymeko\_cli}; \code{validate} on a fresh scenario returned OK \emph{(measured 2026-06-20)}.
+  & \sProven\\
+\addlinespace
+In-browser WASM editor with relationship-enriched snapshots
+  & Built via \code{wasm-pack} (§1-approved 2026-06-12); runs in \code{docs/editor/}. No
+    automated browser regression.
+  & \sShipped\\
+\addlinespace
+IPC daemon + client; MCP server
+  & \code{hymeko\_daemon}/\code{hymeko\_client} (API frozen), \code{hymeko\_mcp} present.
+  & \sShipped\\
+\addlinespace
+Benchmark corpora + size sweeps
+  & \code{hymeko\_bench/corpora/} + artifact generator.
+  & \sShipped\\
+\end{captable}
+
+\section{Research lines --- reported as found}
+\begin{captable}
+Signed-link prediction; leakage audit (label-shuffle, G\"omb-strict)
+  & Audit harness + vectorisation ($\sim$6$\times$) + figure done; 5-seed grid running. The
+    contribution is the \emph{audit protocol}; results in progress.
+  & \sResearch\\
+\addlinespace
+HSiKAN geometric / triad attention; rotor tuning
+  & A/B head built; closing a $\sim$0.02--0.03 AUROC gap to SiGAT is the open question,
+    attributed (untested) to attention.
+  & \sResearch\\
+\addlinespace
+HyMeYOLO / Soma-vision detection
+  & \textbf{Mostly negative:} Soma-vision falsified for vision in the backlog; held-out VOC mAP
+    $\sim$0.015. Reported as a negative result, not a capability.
+  & \sResearch{} \qual{(negative)}\\
+\addlinespace
+\textbf{Cayley/Clifford rotor embedding} (inductive, leakage-free)
+  & \textbf{Positive, honest framing:} Pareto-efficient on signed-link --- near-best AUROC at
+    $\sim$270$\times$ fewer parameters, leakage-free under label-shuffle, 5 datasets $\times$ 5
+    seeds. Beats DADSGNN/SGCN; trails SiGAT by $\sim$0.02 at that size --- that trade \emph{is}
+    the result. 9 unit tests.
+  & \sResearch{} \qual{(validated)}\\
+\addlinespace
+S$^1$ \code{(cos,sin)} rotor encoding of RL \textbf{joint angles}
+  & \textbf{Falsified, narrowly:} one ablation arm. Revolute joints are range-limited
+    ($\pm2.5$ rad), never reach the $\pm\pi$ wrap, so the periodicity buys nothing (smoke:
+    0.329 vs 0.240 m). Does \emph{not} bear on the primitive above --- different mechanism,
+    different domain. Reverted.
+  & \sFalsified{} \qual{(scoped)}\\
+\end{captable}
+\scopenote{Reading §9 fairly. The two rotor rows are deliberately distinct: the embedding
+\emph{primitive} is a validated parameter-efficiency result; the RL joint-angle \emph{encoding}
+is a single falsified ablation. Neither implies the other. The vision line is reported as
+negative on purpose --- a ledger that hid its null results would not be worth reading.}
+
+\vfill
+\begin{center}\small\itshape
+This ledger earns its keep only by staying true: when a capability changes status, the row and
+its anchor change together. ``SHIPPED, not regression-pinned'' is preferred over rounding up to
+PROVEN.
+\end{center}
+
+\end{document}

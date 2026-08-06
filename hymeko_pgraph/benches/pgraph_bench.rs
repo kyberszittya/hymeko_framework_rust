@@ -7,10 +7,19 @@ use std::hint::black_box;
 
 use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 
-use hymeko_pgraph::{abb_solve, lower, maximal_structure, ssg_enumerate};
+use hymeko_pgraph::abb::solve_with_options;
+use hymeko_pgraph::msg::{MaximalStructureOptions, maximal_structure_with_options};
+use hymeko_pgraph::{
+    AbbOptions, abb_solve, lower, maximal_structure, ssg_dm_enumerate, ssg_enumerate,
+};
 use parser::parse_description;
 
 const HDA_SRC: &str = include_str!("../../data/pgraph/hda.hymeko");
+// Real book instances (Friedler/Orosz/Pimentel, P-graphs for PSE):
+//   Example 3.3 — 35 units, 3465 solution-structures (decision-mapping SSG).
+//   Example 14.1 — 12 units, ABB optimum 16.
+const EX3_3_SRC: &str = include_str!("../../data/pgraph/Chapter4/example4_3.hymeko");
+const EX14_1_SRC: &str = include_str!("../../data/pgraph/book/example14_1.hymeko");
 
 /// Generate a synthetic linear-chain P-graph with `n_units` units and
 /// one product. Each unit consumes one intermediate and produces the
@@ -173,12 +182,44 @@ fn bench_abb(c: &mut Criterion) {
     group.finish();
 }
 
+/// Literature-anchored benches on the real book instances: the
+/// decision-mapping SSG enumerating Example 3.3's 3465 solution-structures
+/// (the case the brute 2^n SSG cannot reach), and ABB on Example 14.1.
+fn bench_ssg_dm(c: &mut Criterion) {
+    let relaxed = MaximalStructureOptions {
+        strict_no_excess: false,
+    };
+    let relaxed_abb = AbbOptions {
+        strict_no_excess: false,
+        ..AbbOptions::default()
+    };
+
+    let mut group = c.benchmark_group("ssg_dm");
+
+    // Example 3.3: decision-mapping SSG → 3465 structures over a 29-unit
+    // relaxed maximal structure.
+    let p33 = lower(&parse_description(EX3_3_SRC).unwrap()).unwrap();
+    let m33 = maximal_structure_with_options(&p33, relaxed);
+    group.throughput(Throughput::Elements(3465));
+    group.bench_function(BenchmarkId::new("example3_3", "3465_structures"), |b| {
+        b.iter(|| black_box(ssg_dm_enumerate(&p33, &m33).len()))
+    });
+
+    // Example 14.1: ABB optimum (relaxed), 12 units.
+    let p14 = lower(&parse_description(EX14_1_SRC).unwrap()).unwrap();
+    let m14 = maximal_structure_with_options(&p14, relaxed);
+    group.bench_function(BenchmarkId::new("example14_1", "abb_optimum"), |b| {
+        b.iter(|| black_box(solve_with_options(&p14, &m14, relaxed_abb.clone()).is_some()))
+    });
+    group.finish();
+}
+
 criterion_group! {
     name = pgraph_benches;
     config = Criterion::default()
         .sample_size(15)
         .warm_up_time(std::time::Duration::from_millis(300))
         .measurement_time(std::time::Duration::from_secs(2));
-    targets = bench_parse_lower, bench_msg, bench_ssg, bench_abb
+    targets = bench_parse_lower, bench_msg, bench_ssg, bench_abb, bench_ssg_dm
 }
 criterion_main!(pgraph_benches);

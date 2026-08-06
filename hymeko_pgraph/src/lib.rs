@@ -44,24 +44,50 @@
 pub mod abb;
 pub mod axiom_extensions;
 pub mod axioms;
-pub mod dump;
 pub mod builder;
+pub mod cli;
+pub mod dump;
 pub mod lowering;
+pub mod meta_resolve;
 pub mod msg;
+#[cfg(feature = "pgip")]
 pub mod pgip_io;
+pub mod reachability;
+pub mod regime;
 pub mod schema;
 pub mod ssg;
+pub mod ssg_dm;
 
 pub use abb::{AbbOptions, AbbSolution, solve as abb_solve};
 pub use axiom_extensions::{ExtensionAxiomBundle, ExtensionAxiomViolation};
 pub use axioms::{AxiomBundle, AxiomTrace, AxiomViolation};
+pub use builder::{BuilderError, MaterialKind, PgraphBuilder};
+pub use cli::{
+    CliError, load_pgraph, render_entities, render_graphviz, render_pgraph,
+    render_solution, to_dot, to_friedler_dot,
+};
 pub use dump::{
-    DumpAlgorithm, PgraphAnalysisJson, analyze_lowered_with_full_options,
-    analyze_source, analyze_source_with_full_options, analyze_source_with_options,
+    DumpAlgorithm, PgraphAnalysisJson, SsgAlgorithm,
+    analyze_lowered_with_full_options,
+    analyze_lowered_with_regime, analyze_lowered_with_regime_full,
+    analyze_lowered_with_regime_topk,
+    analyze_source, analyze_source_with_full_options,
+    analyze_source_with_options, analyze_source_with_regime,
+    analyze_source_with_regime_full,
+    analyze_source_with_regime_topk,
 };
 pub use lowering::{LowerError, LoweredPGraph, lower};
-pub use builder::{BuilderError, MaterialKind, PgraphBuilder};
-pub use msg::{MaximalStructure, MaximalStructureOptions, maximal_structure, maximal_structure_with_options};
-pub use schema::{PGraphError, PGraphSchema, PNodeKind};
+pub use meta_resolve::{MetaResolveError, compile_sources, compile_to_lowered, lower_resolved};
+pub use msg::{
+    MaximalStructure, MaximalStructureOptions, maximal_structure, maximal_structure_with_options,
+    maximal_structure_with_regime,
+};
+#[cfg(feature = "pgip")]
 pub use pgip_io::{PgipError, read_pgip, write_pgip};
+pub use regime::{Canonical, Composite, CostDominance, NoExcess, Regime};
+pub use schema::{PGraphError, PGraphSchema, PNodeKind};
 pub use ssg::{SolutionStructure, SsgOptions, enumerate as ssg_enumerate};
+pub use ssg_dm::{
+    SsgDmOptions, SsgDmResult, enumerate as ssg_dm_enumerate,
+    enumerate_with_options as ssg_dm_enumerate_with_options,
+};

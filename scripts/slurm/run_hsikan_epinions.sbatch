@@ -43,7 +43,7 @@ if ! python3 -c "import hymeko" 2>/dev/null; then
 fi
 
 # ── 3-seed Epinions sweep ──────────────────────────────────────────
-OUT=signedkan_wip/experiments/results/hsikan_epinions_komondor.jsonl
+OUT=hymeko_neuro/experiments/results/hsikan_epinions_komondor.jsonl
 mkdir -p "$(dirname "$OUT")"
 > "$OUT"
 
@@ -52,7 +52,7 @@ for SEED in 0 1 2; do
   HSIKAN_TORCH_COMPILE=1 \
   HSIKAN_ARITIES=2,3,4 \
   HSIKAN_CHUNK_T=0 \
-  python3 -m signedkan_wip.src.run_final_cell \
+  python3 -m hymeko_neuro.run_final_cell \
     --dataset epinions --model HSiKAN \
     --hidden 16 --n-epochs 100 --max-k4 200000 \
     --seed "$SEED" \

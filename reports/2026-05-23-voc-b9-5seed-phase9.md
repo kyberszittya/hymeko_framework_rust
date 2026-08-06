@@ -3,7 +3,7 @@
 **Date**: 2026-05-23 (overnight 22:42 → 05:49 CEST)
 **Slug**: `voc-b9-5seed-phase9`
 **Git SHA**: `507d7e24d1cf03d359504bf14819b8e2274380e9`
-**Orchestrator log**: `signedkan_wip/experiments/results/voc_b9_5seed_20260522T202340Z/orchestrator.log`
+**Orchestrator log**: `hymeko_neuro/experiments/results/voc_b9_5seed_20260522T202340Z/orchestrator.log`
 **Predecessor**: `reports/2026-05-22-voc-stepcount-phase8.md`
 
 ---
@@ -108,7 +108,7 @@ Orchestrator-side variance: seed 0 took longest (5135 s, post-COLD-startup), see
 - Seeds 0–4 explicit via `--seed N`; trainer uses `torch.manual_seed` + numpy/random seeding (see `train_voc_stagec.py`).
 - Dataset hash: VOC2007 trainval (5011 images); fixture identical to C9 5-seed.
 - Trainer args identical to Phase 8 B9 except `--seed`.
-- Grid JSONL: `signedkan_wip/experiments/results/voc_b9_5seed_20260522T202340Z/grid.jsonl`.
+- Grid JSONL: `hymeko_neuro/experiments/results/voc_b9_5seed_20260522T202340Z/grid.jsonl`.
 - Per-seed JSONL + logs in the same dir.
 - Working tree at run time: clean for the trainer path; the in-flight `hymeko_graph::incidence` migration and Phase 7/8 reports were dirty but on different files.
 

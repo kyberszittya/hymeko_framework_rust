@@ -1,0 +1,104 @@
+{
+  "config": {
+    "k": 4,
+    "retries": 2,
+    "n_verif": 40,
+    "n_test": 80,
+    "seed_verif": 100,
+    "seed_test": 200
+  },
+  "formal_formula": "F(in_place >= 0.9)",
+  "formal_f1": 0.9412,
+  "ollama_available": true,
+  "openai_available": true,
+  "models": [
+    {
+      "model": "llama3.2:1b",
+      "size_gb": 1.32,
+      "raw_f1": 0.0,
+      "gate_f1": 0.9302,
+      "gate_minus_raw": 0.9302,
+      "raw_parse_rate": 0.0,
+      "raw_formula": null,
+      "gate_formula": "F(obj_to_target <= 0.118)",
+      "gate_attempts": 4,
+      "perf": {
+        "calls": 8.0,
+        "rtt_ms_median": 280.9,
+        "eval_ms_median": 152.3,
+        "load_ms_median": 114.0,
+        "tokens_per_s_median": 169.77
+      }
+    },
+    {
+      "model": "gemma2:2b",
+      "size_gb": 1.63,
+      "raw_f1": 0.0,
+      "gate_f1": 0.9398,
+      "gate_minus_raw": 0.9398,
+      "raw_parse_rate": 1.0,
+      "raw_formula": "F[0,5](obj_to_target <= 0.1 AND in_place >= 0.9 AND near_object >= 0.7 AND grasp_success == 1)",
+      "gate_formula": "F(obj_to_target <= 0.1)",
+      "gate_attempts": 4,
+      "perf": {
+        "calls": 8.0,
+        "rtt_ms_median": 527.2,
+        "eval_ms_median": 370.6,
+        "load_ms_median": 124.2,
+        "tokens_per_s_median": 121.44
+      }
+    },
+    {
+      "model": "phi3:3.8b",
+      "size_gb": 2.18,
+      "raw_f1": 0.0,
+      "gate_f1": 0.9302,
+      "gate_minus_raw": 0.9302,
+      "raw_parse_rate": 0.0,
+      "raw_formula": null,
+      "gate_formula": "F(obj_to_target <= 0.118)",
+      "gate_attempts": 9,
+      "perf": {
+        "calls": 13.0,
+        "rtt_ms_median": 547.6,
+        "eval_ms_median": 471.1,
+        "load_ms_median": 18.0,
+        "tokens_per_s_median": 98.07
+      }
+    },
+    {
+      "model": "qwen2.5:3b",
+      "size_gb": 1.93,
+      "raw_f1": 0.0,
+      "gate_f1": 0.625,
+      "gate_minus_raw": 0.625,
+      "raw_parse_rate": 0.0,
+      "raw_formula": null,
+      "gate_formula": "G(obj_to_target <= 1.18)",
+      "gate_attempts": 4,
+      "perf": {
+        "calls": 8.0,
+        "rtt_ms_median": 305.8,
+        "eval_ms_median": 181.9,
+        "load_ms_median": 101.4,
+        "tokens_per_s_median": 109.95
+      }
+    },
+    {
+      "model": "openai:gpt-4o-mini",
+      "size_gb": null,
+      "raw_f1": 0.0,
+      "gate_f1": 0.9302,
+      "gate_minus_raw": 0.9302,
+      "raw_parse_rate": 1.0,
+      "raw_formula": "F(in_place >= 1 AND obj_to_target <= 0)",
+      "gate_formula": "F(obj_to_target <= 0.118)",
+      "gate_attempts": 4,
+      "perf": {
+        "calls": 8.0,
+        "rtt_ms_median": 1152.1,
+        "tokens_per_s_median": 12.16
+      }
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 // Tiny P-graph for Gömb driver tests: pick one cycle pool + one train step.
 //
-// Unit names are mapped in signedkan_wip.src.gomb_pgraph_mapping.
+// Unit names are mapped in hymeko_neuro.experiments.gomb_pgraph_mapping.
 
 Gomb_Sweep_MSG {}
 

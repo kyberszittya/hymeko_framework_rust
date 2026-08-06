@@ -30,9 +30,9 @@ convergence within tolerance.
 
 | File | LOC | Notes |
 |---|---|---|
-| [signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_detector.py](../signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_detector.py) | 250 | `RicciStimDetector` + `DetectionOutput` |
-| [signedkan_wip/src/hymeko_gomb/soma/vision/__init__.py](../signedkan_wip/src/hymeko_gomb/soma/vision/__init__.py) | +5 / -0 | re-export |
-| [signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_detector.py](../signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_detector.py) | 244 | 11 tests |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_detector.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_detector.py) | 250 | `RicciStimDetector` + `DetectionOutput` |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/__init__.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/__init__.py) | +5 / -0 | re-export |
+| [hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_detector.py](../hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_detector.py) | 244 | 11 tests |
 
 ## 3. CORE.YAML items touched
 
@@ -85,7 +85,7 @@ problem at the loss-computation level.
 ## 5. Test results
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_detector.py -v
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_detector.py -v
 =========== 11 passed in 7.21s ===========
 ```
 
@@ -172,7 +172,7 @@ compute over the pooled head.
 ## 9. Static analysis
 
 ```
-$ ruff check signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_detector.py
+$ ruff check hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_detector.py
    (clean)
 ```
 
@@ -253,7 +253,7 @@ User picks.
 ## 14. Reproducibility
 
 ```python
-from signedkan_wip.src.hymeko_gomb.soma.vision import RicciStimDetector
+from hymeko_neuro.models.hymeko_gomb.soma.vision import RicciStimDetector
 
 d = RicciStimDetector(
     image_h=28, image_w=28, patch_size_initial=4,

@@ -1,0 +1,34 @@
+{
+ "n_traj": 166,
+ "merged": true,
+ "results": [
+  {
+   "seed": 0,
+   "val_loss": 0.0018278504721820354,
+   "headline_deliver": 0,
+   "delivered_seeds": []
+  },
+  {
+   "seed": 1,
+   "val_loss": 0.002187579171732068,
+   "headline_deliver": 0,
+   "delivered_seeds": []
+  },
+  {
+   "seed": 2,
+   "val_loss": 0.0022822979371994734,
+   "headline_deliver": 0,
+   "delivered_seeds": []
+  }
+ ],
+ "best_seed": 0,
+ "validation": {
+  "deliver": 2,
+  "n": 30,
+  "rate": 0.0667,
+  "delivered_seeds": [
+   7015,
+   7018
+  ]
+ }
+}

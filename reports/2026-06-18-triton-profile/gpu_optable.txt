@@ -1,0 +1,36 @@
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                                                   Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg     Self CUDA   Self CUDA %    CUDA total  CUDA time avg    # of Calls  
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                               Optimizer.step#Adam.step         0.00%       0.000us         0.00%       0.000us       0.000us     167.190ms        27.20%     167.190ms       1.393ms           120  
+                                        aten::_coalesce         2.93%     106.072ms        18.96%     685.502ms     936.478us     161.446ms        26.27%     189.077ms     258.302us           732  
+                                            aten::copy_         3.75%     135.641ms        16.87%     609.741ms      45.347us     105.611ms        17.18%     112.087ms       8.336us         13446  
+                                            aten::addmm         6.66%     240.854ms        35.47%        1.282s     466.204us      92.025ms        14.97%     236.250ms      85.909us          2750  
+_ZN14at_cuda_detail3cub6detail10merge_sort26DeviceMe...         0.00%       0.000us         0.00%       0.000us       0.000us      71.371ms        11.61%      71.371ms      38.269us          1865  
+_ZN2at6native18elementwise_kernelILi128ELi2EZNS0_22g...         0.00%       0.000us         0.00%       0.000us       0.000us      67.191ms        10.93%      67.191ms      14.465us          4645  
+                                 aten::_index_put_impl_         1.74%      62.925ms         5.18%     187.303ms     780.429us      66.019ms        10.74%      74.333ms     309.719us           240  
+_ZN44_GLOBAL__N__99c14716_11_Indexing_cu_2a2c434e24i...         0.00%       0.000us         0.00%       0.000us       0.000us      59.129ms         9.62%      59.129ms     246.371us           240  
+_ZN8cusparse17csrmm_alg1_kernelILb0ELb0ELb1EiiffffEE...         0.00%       0.000us         0.00%       0.000us       0.000us      37.455ms         6.09%      37.455ms      23.556us          1590  
+                                               aten::mm         2.70%      97.693ms        27.86%        1.007s     399.584us      33.874ms         5.51%     124.961ms      49.588us          2520  
+                                 ampere_sgemm_32x128_tn         0.00%       0.000us         0.00%       0.000us       0.000us      31.118ms         5.06%      31.118ms      44.264us           703  
+                                              aten::cat         0.76%      27.552ms         1.56%      56.314ms      54.833us      30.506ms         4.96%      30.681ms      29.874us          1027  
+_ZN2at6native5apply20coalesceValuesKernelIffEEvPxS3_...         0.00%       0.000us         0.00%       0.000us       0.000us      26.712ms         4.35%      26.712ms      36.492us           732  
+_ZN14at_cuda_detail3cub6detail10merge_sort30DeviceMe...         0.00%       0.000us         0.00%       0.000us       0.000us      23.851ms         3.88%      23.851ms      32.584us           732  
+_ZN2at6native40_GLOBAL__N__27eda9f4_8_Shape_cu_85d9f...         0.00%       0.000us         0.00%       0.000us       0.000us      19.122ms         3.11%      19.122ms      21.979us           870  
+                                              aten::sum         1.19%      43.098ms         2.17%      78.284ms      59.306us      17.507ms         2.85%      17.507ms      13.263us          1320  
+                                            aten::fill_         1.20%      43.435ms         4.31%     155.730ms      31.607us      15.908ms         2.59%      15.910ms       3.229us          4927  
+                         Memcpy DtoD (Device -> Device)         0.00%       0.000us         0.00%       0.000us       0.000us      15.356ms         2.50%      15.356ms       3.030us          5068  
+_ZN2at6native29vectorized_elementwise_kernelILi4ENS0...         0.00%       0.000us         0.00%       0.000us       0.000us      14.916ms         2.43%      14.916ms       3.546us          4207  
+_ZN2at6native29vectorized_elementwise_kernelILi2EZZN...         0.00%       0.000us         0.00%       0.000us       0.000us      13.609ms         2.21%      13.609ms      18.694us           728  
+_ZN2at6native13reduce_kernelILi128ELi4ENS0_8ReduceOp...         0.00%       0.000us         0.00%       0.000us       0.000us      12.723ms         2.07%      12.723ms      17.671us           720  
+                                             aten::add_         1.02%      36.769ms         2.43%      87.909ms      18.704us      12.548ms         2.04%      12.653ms       2.692us          4700  
+                        ampere_sgemm_32x32_sliced1x4_nt         0.00%       0.000us         0.00%       0.000us       0.000us      11.828ms         1.92%      11.828ms      49.284us           240  
+                       Memcpy HtoD (Pageable -> Device)         0.00%       0.000us         0.00%       0.000us       0.000us      11.612ms         1.89%      11.612ms     159.068us            73  
+                                              aten::mul         1.04%      37.594ms         2.16%      78.068ms      47.719us      11.266ms         1.83%      11.274ms       6.891us          1636  
+_ZN2at6native27unrolled_elementwise_kernelIZZZNS0_23...         0.00%       0.000us         0.00%       0.000us       0.000us      11.099ms         1.81%      11.099ms       3.490us          3180  
+_ZN2at6native29vectorized_elementwise_kernelILi2ENS0...         0.00%       0.000us         0.00%       0.000us       0.000us       9.094ms         1.48%       9.094ms       6.246us          1456  
+_ZN14at_cuda_detail3cub6detail10merge_sort30DeviceMe...         0.00%       0.000us         0.00%       0.000us       0.000us       8.999ms         1.46%       8.999ms       4.825us          1865  
+_ZN14at_cuda_detail3cub6detail13unique_by_key28Devic...         0.00%       0.000us         0.00%       0.000us       0.000us       8.986ms         1.46%       8.986ms      12.276us           732  
+                                             aten::div_         1.04%      37.714ms         2.09%      75.577ms      41.617us       8.811ms         1.43%       8.813ms       4.853us          1816  
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+Self CPU time total: 3.615s
+Self CUDA time total: 614.606ms

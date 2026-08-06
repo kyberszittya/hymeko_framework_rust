@@ -1,6 +1,6 @@
-# Neural network variants & layer geometry (signedkan_wip)
+# Neural network variants & layer geometry (hymeko_neuro)
 
-This page is a **field guide** to the main **PyTorch** architectures in `signedkan_wip/src/`: how tensors flow, which modules stack, and how experiment names map to code. For **equations** and citations see [HSiKAN architecture](./hsikan.md); for **Gömb vs factorial “orthogonal”** see [HymeKo-Gömb: “orthogonal” meanings](./gomb-orthogonal.md).
+This page is a **field guide** to the main **PyTorch** architectures in `hymeko_neuro/`: how tensors flow, which modules stack, and how experiment names map to code. For **equations** and citations see [HSiKAN architecture](./hsikan.md); for **Gömb vs factorial “orthogonal”** see [HymeKo-Gömb: “orthogonal” meanings](./gomb-orthogonal.md).
 
 ---
 
@@ -16,13 +16,13 @@ This page is a **field guide** to the main **PyTorch** architectures in `signedk
 | CPML stack (factorial / smoke) | `CPML` (`cpml.py`) | `run_cpml_factorial.py`, `run_cpml_smoke.py` |
 | HymeKo‑Gömb | `HymeKoGomb`, `MixedArityGomb`, ablations | `run_gomb_smoke.py`, `hymeko_gomb/cascade.py` |
 
-**Shared training kernel** for most signed‑graph rows: `cell_signed_graph` in `signedkan_wip/src/run_final_cell.py` (loads graph → builds per‑tuple sparse incidence → trains → reports test AUC).
+**Shared training kernel** for most signed‑graph rows: `cell_signed_graph` in `hymeko_neuro/run_final_cell.py` (loads graph → builds per‑tuple sparse incidence → trains → reports test AUC).
 
 ---
 
 ## 1. `SignedKANLayer` — one hypergraph “layer” over arity *k*
 
-**File:** `signedkan_wip/src/signedkan.py`
+**File:** `hymeko_neuro/signedkan.py`
 
 **Role:** Map vertex embeddings and a fixed set of signed **k‑tuples** (triangles, 4‑cycles, or walk‑vertices as tuples) into **tuple embeddings**, then (outside this class) into **edge logits** via sparse incidence \(M_e\).
 
@@ -38,7 +38,7 @@ This page is a **field guide** to the main **PyTorch** architectures in `signedk
 
 ## 2. `MultiLayerSignedKAN` — depth on the **vertex** manifold
 
-**File:** `signedkan_wip/src/signedkan.py` (`MultiLayerSignedKAN`, `MultiLayerSignedKANConfig`)
+**File:** `hymeko_neuro/signedkan.py` (`MultiLayerSignedKAN`, `MultiLayerSignedKANConfig`)
 
 **Stacking pattern (per layer \(\ell\)):**
 
@@ -57,7 +57,7 @@ This page is a **field guide** to the main **PyTorch** architectures in `signedk
 
 ## 3. `MixedAritySignedKAN` — one spline stack, many **tuple slots**
 
-**Package:** `signedkan_wip/src/mixed_arity_signedkan/` (`model.py`, `config.py`, `encoding_*.py`, `attention.py`)
+**Package:** `hymeko_neuro/models/mixed_arity_signedkan/` (`model.py`, `config.py`, `encoding_*.py`, `attention.py`)
 
 **Idea:** Reuse **one** `MultiLayerSignedKAN` (`cfg.base`) for **every** tuple specification (e.g. c3, c4, w2, w3). Each slot has the **same** spline weights (`share_weights=True` is **required**); what differs per slot is the **enumerated tuple set** and its sparse \(M_e^{(slot)}\).
 
@@ -98,7 +98,7 @@ This page is a **field guide** to the main **PyTorch** architectures in `signedk
 
 ## 5. CPML — **tiers as routes** (default) vs **inward pyramid** (legacy)
 
-**File:** `signedkan_wip/src/cpml.py` — `CPMLConfig.topology ∈ {route, pyramid}`, `tier_organization ∈ {structural, capsule_soft}` (`capsule_soft` **route only**).
+**File:** `hymeko_neuro/cpml.py` — `CPMLConfig.topology ∈ {route, pyramid}`, `tier_organization ∈ {structural, capsule_soft}` (`capsule_soft` **route only**).
 
 **Tier assignment:** vertices binned by **degree percentiles** (`TierSpec.cuts`) → `tier_of[v] ∈ {0,…,L−1}`. Under **`structural`** routing, tier **ℓ** uses only cycles that **touch** at least one vertex in tier ℓ — **tier is a routing predicate on cycles**.
 
@@ -123,14 +123,14 @@ This page is a **field guide** to the main **PyTorch** architectures in `signedk
 **HSiKAN vs MLP inside CPML:** `CPMLConfig.aggregator_kind` switches the per‑tier block between a stub MLP and a **Catmull–Rom / spline** aggregator — a **2×2** style factorial (aggregator × flat/tiered) at the CPML layer in smoke scripts; see `run_cpml_factorial.py` and `docs/plans/2026-05-11-cpml-xhc-architectures/`.
 
 **Gömb:** `GombConfig.cpml_topology` and **`cpml_tier_organization`** thread into every `InnerCPMLCore`. CLI:  
-`python -m signedkan_wip.src.run_gomb_smoke --cpml-topology route|pyramid --cpml-tier-organization structural|capsule_soft`  
+`python -m hymeko_neuro.run_gomb_smoke --cpml-topology route|pyramid --cpml-tier-organization structural|capsule_soft`  
 (`capsule_soft` requires `route`.)
 
 ---
 
 ## 6. HymeKo‑Gömb — three shells, fixed cascade order
 
-**Files:** `signedkan_wip/src/hymeko_gomb/cascade.py`, `shells.py`
+**Files:** `hymeko_neuro/models/hymeko_gomb/cascade.py`, `shells.py`
 
 **Full model `HymeKoGomb`:**
 

@@ -29,13 +29,32 @@
 #![deny(unsafe_code)]
 #![warn(missing_docs)]
 
+pub mod holonomy;
 pub mod ops;
 pub mod optimizer;
+pub mod runtime;
 
-pub use ops::adam::{adam_step, AdamState};
-pub use ops::clifford_fir::{
-    clifford_fir_backward, clifford_fir_forward, CliffordFIR,
+pub use ops::adam::{AdamState, adam_step};
+pub use ops::catmull_rom::{
+    CatmullRomBackward, CatmullRomCache, ChebyshevCrBackward, catmull_rom_backward,
+    catmull_rom_forward, chebyshev_control_points, chebyshev_cr_backward, chebyshev_cr_forward,
+    chebyshev_deploy_backward, chebyshev_deploy_forward, chebyshev_knot_basis,
 };
-pub use ops::linear::{linear_backward, linear_forward, LinearLayer};
+pub use ops::cayley_rotor::{cayley_rotor_backward, cayley_rotor_forward};
+pub use ops::clifford_fir::{CliffordFIR, clifford_fir_backward, clifford_fir_forward};
+pub use ops::fsr_mixer::{FsrMixer, FsrMixerBackward, FsrMixerCache, FsrRoute};
+pub use ops::fused_entropy_update::{
+    FusedEntropyUpdateBackward, FusedEntropyUpdateShape, fused_entropy_update_backward,
+    fused_entropy_update_forward,
+};
+pub use ops::linear::{LinearLayer, linear_backward, linear_forward};
 pub use ops::loss::{bce_with_logits_backward, bce_with_logits_forward};
+pub use ops::project_alpha_mix::{
+    ProjectAlphaMixBackward, ProjectAlphaMixShape, project_alpha_mix_backward,
+    project_alpha_mix_forward,
+};
 pub use ops::scatter::{scatter_mean_backward, scatter_mean_forward};
+pub use ops::signed_scatter::{
+    SignedScatterLanes, SignedScatterLayout, signed_scatter_backward, signed_scatter_forward,
+};
+pub use runtime::NagareRuntime;

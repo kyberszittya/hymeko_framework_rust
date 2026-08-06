@@ -56,17 +56,22 @@ JOINT_NAMES: List[str] = [
     "wrist_3_joint",
 ]
 
-# Reuse the dramatic 8-pose sequence from the direct path so the two
-# motion backends produce a visually equivalent demo.
+# A proper tabletop pick-and-place: the tool stays pointing down (elbow-up
+# wrist-down configuration), the base pans gently between a pick side
+# (+0.6 rad) and a place side (-0.6 rad), and the arm lowers/lifts by moving
+# only the shoulder-lift and wrist-1 a little. No 180-degree wrist flips and
+# no near-singular extremes, so MoveIt plans short, collision-free arcs.
+# Order: home -> above pick -> pick -> lift -> above place -> place ->
+# retreat -> home.
 POSES: List[Tuple[float, float, float, float, float, float]] = [
-    (0.0,    -1.57,    0.0,   -1.57,    0.0,    0.0),
-    (2.0,    -0.40,   -2.00,  -1.20,    1.57,   1.57),
-    (2.0,    -2.50,    2.20,  -2.20,    3.14,   3.14),
-    (-2.0,   -0.40,   -2.00,  -1.20,   -1.57,  -1.57),
-    (-2.0,   -2.50,    2.20,  -2.20,   -3.14,  -3.14),
-    (0.0,    -3.10,    0.10,  -1.57,    0.0,    0.0),
-    (0.0,    -1.57,   -1.20,  -1.50,    1.57,   0.0),
-    (0.0,    -1.57,    0.0,   -1.57,    0.0,    0.0),
+    (0.0,  -1.57,  1.57, -1.57, -1.57, 0.0),   # home (tool down)
+    (0.6,  -1.30,  1.50, -1.75, -1.57, 0.0),   # above pick
+    (0.6,  -1.10,  1.55, -2.00, -1.57, 0.0),   # pick (lower to table)
+    (0.6,  -1.30,  1.50, -1.75, -1.57, 0.0),   # lift
+    (-0.6, -1.30,  1.50, -1.75, -1.57, 0.0),   # above place
+    (-0.6, -1.10,  1.55, -2.00, -1.57, 0.0),   # place (lower to table)
+    (-0.6, -1.30,  1.50, -1.75, -1.57, 0.0),   # retreat
+    (0.0,  -1.57,  1.57, -1.57, -1.57, 0.0),   # home
 ]
 
 MOVE_ACTION = "/move_action"

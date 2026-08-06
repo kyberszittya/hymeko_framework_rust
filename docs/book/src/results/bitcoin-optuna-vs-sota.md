@@ -29,6 +29,6 @@ xychart-beta
 
 ## Sources
 
-- Optuna Alpha best (0.9972, trial 23): `signedkan_wip/experiments/results/optuna_alpha_slashdot_20260513T010509Z.log`
-- Optuna OTC progression: `signedkan_wip/experiments/results/follow_optuna_20260513T003359Z.log`
+- Optuna Alpha best (0.9972, trial 23): `hymeko_neuro/experiments/results/optuna_alpha_slashdot_20260513T010509Z.log`
+- Optuna OTC progression: `hymeko_neuro/experiments/results/follow_optuna_20260513T003359Z.log`
 - SOTA reference table: `docs/SOTA_RESULTS.md`

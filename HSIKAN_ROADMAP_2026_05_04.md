@@ -41,7 +41,7 @@ table update, HyMeKo→star pipeline, αₖ probe):
   lands and emits at parity.  HSiKAN and Walk-HSiKAN now have
   the same IR-emit pipeline with hash-distinct layer kinds.
 - **Bonus — SGT (Signed Graph Transformer) baseline.**
-  `signedkan_wip/src/baselines/sgt.py` + `run_sgt_sweep.py`.
+  `hymeko_neuro/baselines/sgt.py` + `run_sgt_sweep.py`.
   3-seed × 6-dataset sweep finds an honest two-regime story:
   HSiKAN dominates **cycle-rich** SBM ($0.91$/$0.96$ vs SGT
   $0.56$/$0.69$); SGT dominates **dense walk-rich** Slashdot
@@ -76,7 +76,7 @@ Hot regressions checked: `mnist_highway_10`, `mnist_resmlp_3/20`,
 | 1 | Camera-ready 5-seed bench (Bitcoin / SBM / Slashdot) | tonight, ~4h | **done** (~3.5h) | — |
 | 2 | ph18 entropy seed-sweep + λ-grid (highway-10/20, resmlp-40) | tomorrow morning, ~6h | **done** (~2h) | — |
 | 3 | Sinusoidal-distillation control baselines | tomorrow afternoon, ~3h | **done** (~5min — fast) | — |
-| 4 | HyMeKo-source HSiKAN composition (factor + dataflow IR) | week-long | **prep+stub round-trip done; AUC parity deferred** | real signedkan_wip helper port |
+| 4 | HyMeKo-source HSiKAN composition (factor + dataflow IR) | week-long | **prep+stub round-trip done; AUC parity deferred** | real hymeko_neuro helper port |
 | 5 | Walk-HSiKAN prototype (open-walk arity channel) | week-long | **enumerator + HyMeKo source done** | real σ-walk aggregation |
 
 ---
@@ -98,9 +98,9 @@ margin against SiGAT is plausibly seed-noise.
 - SGCN-Slashdot × 5 seeds = 5
 
 **Output:**
-`signedkan_wip/experiments/results/overnight_camera_ready.jsonl`
+`hymeko_neuro/experiments/results/overnight_camera_ready.jsonl`
 
-**Launch:** `bash signedkan_wip/src/run_overnight_camera_ready.sh`
+**Launch:** `bash hymeko_neuro/assets/scripts/run_overnight_camera_ready.sh`
 
 **Deliverable on completion:** updated `Table I` with mean ± std,
 and a paper-section sentence "results are 5-seed mean ± std at
@@ -144,7 +144,7 @@ variants (highway-20, resmlp-40) returned null or trended negative.
 **Output:**
 `python/benches/thesis_iv_hard/results/ph18c_*.json`
 
-**Chainer:** `signedkan_wip/src/run_chained_overnight.sh` polls
+**Chainer:** `hymeko_neuro/assets/scripts/run_chained_overnight.sh` polls
 `overnight_camera_ready.jsonl` for the expected ~75 lines, then
 launches the ph18c sweep automatically.
 
@@ -176,7 +176,7 @@ baselines.  A reviewer can object: "any smooth function over
    bias is specific to KAN training, not a property of any
    trained-on-this-data activation.
 
-**Script:** `signedkan_wip/src/run_sinusoid_controls.py` (to be
+**Script:** `hymeko_neuro/run_sinusoid_controls.py` (to be
 written; reuses `run_prune_distill.py` distillation utilities)
 
 **Deliverable on completion:**  a short table in §III.G or a
@@ -283,7 +283,7 @@ Append a dated line whenever a milestone moves.
   claim defends itself decisively.  SMC paper §III.G updated with
   the control-baseline paragraph (compressed in-line, no extra
   table; bibliography overflow status unchanged).  Script:
-  `signedkan_wip/src/run_sinusoid_controls.py`.
+  `hymeko_neuro/run_sinusoid_controls.py`.
 - **2026-05-04 12:15** — **Epinions added; HSiKAN scaling
   limit identified, paper §IV.B updated**.
   Epinions (131k vertices, 841k edges, 85% positive) results:
@@ -320,7 +320,7 @@ Append a dated line whenever a milestone moves.
 - **2026-05-04 11:30** — **Two new wins**:
 
   **(a) SGT baseline + 4-dataset 3-seed sweep.**
-  `signedkan_wip/src/baselines/sgt.py` — Signed Graph Transformer
+  `hymeko_neuro/baselines/sgt.py` — Signed Graph Transformer
   with pre-LN encoder + sign-aware sparse self-attention.  3-seed
   sweep across Bitcoin Alpha / OTC / SBM-200 / SBM-400:
   ```
@@ -397,7 +397,7 @@ Append a dated line whenever a milestone moves.
   layers are placeholder math; the real architectural fidelity
   (Catmull-Rom spline activations, σ-mask aggregation, $M_e^{(k)}$
   sparse-CSR application) requires replacing the stubs with the
-  real `signedkan_wip.src.signedkan` code, which is the genuinely
+  real `hymeko_neuro.signedkan` code, which is the genuinely
   week-long Item #4-final task.  But the IR-can-represent-and-emit
   HSiKAN claim is now empirically green, which is a real
   architectural-parity milestone for the journal extension.

@@ -6,10 +6,10 @@ Joint-mix Slashdot previously OOM’d on ~8 GB VRAM because four joint slots e
 
 ## Files touched
 
-- `signedkan_wip/src/run_gomb_smoke.py` — `_subsample_joint_pools`, `--joint-slot-cap`, default cap on SNAP when `joint_slot_cap` unset
-- `signedkan_wip/src/run_gomb_tune.py` — `_build_cmd` appends `--joint-slot-cap`; `for_joint_mix_tuning` sets `joint_slot_cap` for slashdot/epinions
-- `signedkan_wip/tests/test_hymeko_gomb.py` — `test_subsample_joint_pools_reduces_rows`; joint_slot_cap assertions on slashdot compact/wide; build_cmd already asserts `--joint-slot-cap`
-- `signedkan_wip/experiments/run_gomb_external_auc_tuning.sh` — default `RUN_SLASHDOT_JOINT=1`, comment update
+- `hymeko_neuro/run_gomb_smoke.py` — `_subsample_joint_pools`, `--joint-slot-cap`, default cap on SNAP when `joint_slot_cap` unset
+- `hymeko_neuro/run_gomb_tune.py` — `_build_cmd` appends `--joint-slot-cap`; `for_joint_mix_tuning` sets `joint_slot_cap` for slashdot/epinions
+- `hymeko_neuro/tests/test_hymeko_gomb.py` — `test_subsample_joint_pools_reduces_rows`; joint_slot_cap assertions on slashdot compact/wide; build_cmd already asserts `--joint-slot-cap`
+- `hymeko_neuro/experiments/run_gomb_external_auc_tuning.sh` — default `RUN_SLASHDOT_JOINT=1`, comment update
 - `reports/2026-05-12-gomb-slashdot-joint-slotcap.md` — this report
 
 ## CORE.YAML items touched
@@ -18,12 +18,12 @@ None.
 
 ## Test results
 
-- Command: `PYTHONPATH=. pytest -p no:randomly signedkan_wip/tests/test_hymeko_gomb.py -q`
+- Command: `PYTHONPATH=. pytest -p no:randomly hymeko_neuro/tests/test_hymeko_gomb.py -q`
 - Result: **33 passed** in ~14 s (CPU).
 
 ## Performance / smoke (CUDA)
 
-- Command: `PYTHONPATH=. python -m signedkan_wip.src.run_gomb_tune --datasets slashdot --joint-mix --trials 1 --search-seed 41 --data-seed 0 --edge-split 80_10_10 --n-epochs 10 --device cuda --timeout-s 7200 --architecture compact --out reports/gomb_tune_slashdot_joint_slotcap.jsonl`
+- Command: `PYTHONPATH=. python -m hymeko_neuro.run_gomb_tune --datasets slashdot --joint-mix --trials 1 --search-seed 41 --data-seed 0 --edge-split 80_10_10 --n-epochs 10 --device cuda --timeout-s 7200 --architecture compact --out reports/gomb_tune_slashdot_joint_slotcap.jsonl`
 - Result: **exit 0**; subprocess wall ~91 s; row includes `"joint_slot_cap": 12000`, `"returncode": 0`, `"model": "joint_mix_gomb[c3,c4,w2,w3]"`.
 - Peak RSS not measured in this run (short smoke; no `systemd-run` wrapper).
 

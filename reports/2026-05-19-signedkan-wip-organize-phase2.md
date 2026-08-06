@@ -1,17 +1,17 @@
-# signedkan_wip reorganisation — phase 2 (Slices E, G-1, F, H-pilot)
+# hymeko_neuro reorganisation — phase 2 (Slices E, G-1, F, H-pilot)
 
 **Date:** 2026-05-19 (evening, after Slices A-D)
 **Plan parent:** [`docs/plans/2026-05-19-signedkan-wip-organize/`](../docs/plans/2026-05-19-signedkan-wip-organize/)
-**Verdict:** **Three deferred slices shipped + Slice H pilot + 10 new tests.** `signedkan_wip/src/` top-level Python file count dropped from **152 (start of day)** → **12** (92 % reduction). Three new properly-curated packages (`src/datasets/`, `src/kinematic/`, `src/core/`); the `ExperimentBase` ABC plus `SimpleExperiment` adapter and observer protocol are fleshed out; one representative `run_*.py` (`run_early_stop.py`) migrated to demonstrate the OO pattern; 10 unit tests pin the observer machinery. **Zero net test regression**: pre-reorg 16 failed / 827 passed; post all five slices, **16 failed / 837 passed** (+10 from the new test file).
+**Verdict:** **Three deferred slices shipped + Slice H pilot + 10 new tests.** `hymeko_neuro/` top-level Python file count dropped from **152 (start of day)** → **12** (92 % reduction). Three new properly-curated packages (`src/datasets/`, `src/kinematic/`, `src/core/`); the `ExperimentBase` ABC plus `SimpleExperiment` adapter and observer protocol are fleshed out; one representative `run_*.py` (`run_early_stop.py`) migrated to demonstrate the OO pattern; 10 unit tests pin the observer machinery. **Zero net test regression**: pre-reorg 16 failed / 827 passed; post all five slices, **16 failed / 837 passed** (+10 from the new test file).
 
 ## 1. What landed (cumulative)
 
 | Slice | Move | Files | Where | Imports rewritten |
 |:---|:---|---:|:---|---:|
-| A | markdown plans/summaries | 12 | `signedkan_wip/docs/archive/` | 0 |
-| B | run_*.py experiment scripts | 101 | `signedkan_wip/experiments/runs/` | ~55 |
+| A | markdown plans/summaries | 12 | `hymeko_neuro/assets/docs/archive/` | 0 |
+| B | run_*.py experiment scripts | 101 | `hymeko_neuro/experiments/runs/` | ~55 |
 | C | bench/eval/aggregate/annotate | 5 | `experiments/bench/`, `experiments/eval/` | ~8 |
-| D | top-level demo scripts | 3 | `signedkan_wip/demos/` | ~5 |
+| D | top-level demo scripts | 3 | `hymeko_neuro/demos/` | ~5 |
 | **E** | **datasets*.py → datasets/ package** | 5 | `src/datasets/` (legacy + continuous + meshes + small + synth) | ~40 |
 | **G-1** | **kinematic + mujoco** | 4 | `src/kinematic/` (fixtures + graph + mujoco_bridge + render) | ~12 |
 | **F** | **23 core HSiKAN modules → core/ package** | 23 | `src/core/` | **~190** |
@@ -22,9 +22,9 @@
 
 ```
                                   start of day    after A-D    after E+G-1+F
-signedkan_wip/src/ top *.py            152            44              12       ← 95 % gone
-signedkan_wip/ root *.md                14             2               2
-signedkan_wip/ subpackages               17           18              20       (+ datasets, kinematic, core)
+hymeko_neuro/ top *.py            152            44              12       ← 95 % gone
+hymeko_neuro/ root *.md                14             2               2
+hymeko_neuro/ subpackages               17           18              20       (+ datasets, kinematic, core)
 ```
 
 Each new package has a **curated `__init__.py` with explicit
@@ -183,10 +183,10 @@ canonical OO anchors:
 
 | Pattern | Count |
 |:---|---:|
-| `signedkan_wip.src.<core_mod>` → `signedkan_wip.src.core.<core_mod>` | 138 |
-| `signedkan_wip.src.datasets_X` → `signedkan_wip.src.datasets` (re-export) | ~10 |
-| `signedkan_wip.src.kinematic_X` → `signedkan_wip.src.kinematic` (re-export) | ~10 |
-| `signedkan_wip.src.run_X` → `signedkan_wip.experiments.runs.run_X` | ~80 |
+| `hymeko_neuro.<core_mod>` → `hymeko_neuro.hyperedge.<core_mod>` | 138 |
+| `hymeko_neuro.datasets_X` → `hymeko_neuro.data.datasets` (re-export) | ~10 |
+| `hymeko_neuro.kinematic_X` → `hymeko_neuro.experiments.kinematic` (re-export) | ~10 |
+| `hymeko_neuro.run_X` → `hymeko_neuro.experiments.runs.run_X` | ~80 |
 | `from .<core_mod>` (top-level src/) → `from .core.<core_mod>` | 39 |
 | `from ..<X>` from src/sub/ → `from ..core.<X>` or `..datasets.<X>` etc | ~10 |
 | `from .. import <core_mod>` → `from ..core import <core_mod>` | 6 |
@@ -270,10 +270,10 @@ working, with one representative `run_*.py` migrated, with 10
 passing tests. **Net file moves today: 153; net import sites
 rewritten: ~340; net test regression: zero**.
 
-`signedkan_wip/src/` is now an actual semantic structure:
+`hymeko_neuro/` is now an actual semantic structure:
 
 ```
-signedkan_wip/src/
+hymeko_neuro/
 ├── __init__.py
 ├── 12 small top-level files (kept; future slice G-2)
 ├── adapters/, baselines/, benchmarks/, chicken/
@@ -294,7 +294,7 @@ the pattern is established and tested.
 **Companion artefacts:**
 - Plan (4-format): [`docs/plans/2026-05-19-signedkan-wip-organize/`](../docs/plans/2026-05-19-signedkan-wip-organize/)
 - Phase-1 report (Slices A-D, morning): [`reports/2026-05-19-signedkan-wip-organize.md`](2026-05-19-signedkan-wip-organize.md)
-- ExperimentBase: [`signedkan_wip/experiments/runs/_experiment_base.py`](../signedkan_wip/experiments/runs/_experiment_base.py)
-- Tests: [`signedkan_wip/tests/test_experiment_base.py`](../signedkan_wip/tests/test_experiment_base.py)
-- Pilot migration: [`signedkan_wip/experiments/runs/run_early_stop.py`](../signedkan_wip/experiments/runs/run_early_stop.py)
-- New packages: [`signedkan_wip/src/datasets/`](../signedkan_wip/src/datasets/), [`signedkan_wip/src/kinematic/`](../signedkan_wip/src/kinematic/), [`signedkan_wip/src/core/`](../signedkan_wip/src/core/)
+- ExperimentBase: [`hymeko_neuro/experiments/runs/_experiment_base.py`](../hymeko_neuro/experiments/runs/_experiment_base.py)
+- Tests: [`hymeko_neuro/tests/test_experiment_base.py`](../hymeko_neuro/tests/test_experiment_base.py)
+- Pilot migration: [`hymeko_neuro/experiments/runs/run_early_stop.py`](../hymeko_neuro/experiments/runs/run_early_stop.py)
+- New packages: [`hymeko_neuro/data/datasets/`](../hymeko_neuro/data/datasets/), [`hymeko_neuro/experiments/kinematic/`](../hymeko_neuro/experiments/kinematic/), [`hymeko_neuro/hyperedge/`](../hymeko_neuro/hyperedge/)

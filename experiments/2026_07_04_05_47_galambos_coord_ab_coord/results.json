@@ -1,0 +1,166 @@
+{
+  "name": "galambos_coord_ab_coord",
+  "select": "delivery",
+  "total_steps": 200000,
+  "delivery_median": 0.12,
+  "delivery_per_seed": [
+    0.06,
+    0.12,
+    0.2
+  ],
+  "seeds": [
+    {
+      "seed": 0,
+      "peak": {
+        "delivery": 0.2,
+        "step": 50000.0,
+        "both_contact": 0.0048
+      },
+      "curve": [
+        {
+          "step": 25000.0,
+          "delivery": 0.1,
+          "both_contact": 0.0036
+        },
+        {
+          "step": 50000.0,
+          "delivery": 0.2,
+          "both_contact": 0.0048
+        },
+        {
+          "step": 75000.0,
+          "delivery": 0.1,
+          "both_contact": 0.0
+        },
+        {
+          "step": 100000.0,
+          "delivery": 0.08,
+          "both_contact": 0.0012
+        },
+        {
+          "step": 125000.0,
+          "delivery": 0.0,
+          "both_contact": 0.0022
+        },
+        {
+          "step": 150000.0,
+          "delivery": 0.1,
+          "both_contact": 0.0003
+        },
+        {
+          "step": 175000.0,
+          "delivery": 0.1,
+          "both_contact": 0.0016
+        },
+        {
+          "step": 200000.0,
+          "delivery": 0.16,
+          "both_contact": 0.0003
+        }
+      ],
+      "wall_s": 2458.2
+    },
+    {
+      "seed": 1,
+      "peak": {
+        "delivery": 0.06,
+        "step": 125000.0,
+        "both_contact": 0.0
+      },
+      "curve": [
+        {
+          "step": 25000.0,
+          "delivery": 0.04,
+          "both_contact": 0.0008
+        },
+        {
+          "step": 50000.0,
+          "delivery": 0.04,
+          "both_contact": 0.0007
+        },
+        {
+          "step": 75000.0,
+          "delivery": 0.04,
+          "both_contact": 0.0003
+        },
+        {
+          "step": 100000.0,
+          "delivery": 0.0,
+          "both_contact": 0.0072
+        },
+        {
+          "step": 125000.0,
+          "delivery": 0.06,
+          "both_contact": 0.0
+        },
+        {
+          "step": 150000.0,
+          "delivery": 0.06,
+          "both_contact": 0.0016
+        },
+        {
+          "step": 175000.0,
+          "delivery": 0.04,
+          "both_contact": 0.0004
+        },
+        {
+          "step": 200000.0,
+          "delivery": 0.06,
+          "both_contact": 0.0016
+        }
+      ],
+      "wall_s": 2452.7
+    },
+    {
+      "seed": 2,
+      "peak": {
+        "delivery": 0.12,
+        "step": 25000.0,
+        "both_contact": 0.0016
+      },
+      "curve": [
+        {
+          "step": 25000.0,
+          "delivery": 0.12,
+          "both_contact": 0.0016
+        },
+        {
+          "step": 50000.0,
+          "delivery": 0.04,
+          "both_contact": 0.0014
+        },
+        {
+          "step": 75000.0,
+          "delivery": 0.0,
+          "both_contact": 0.0
+        },
+        {
+          "step": 100000.0,
+          "delivery": 0.08,
+          "both_contact": 0.003
+        },
+        {
+          "step": 125000.0,
+          "delivery": 0.04,
+          "both_contact": 0.0007
+        },
+        {
+          "step": 150000.0,
+          "delivery": 0.0,
+          "both_contact": 0.0003
+        },
+        {
+          "step": 175000.0,
+          "delivery": 0.06,
+          "both_contact": 0.0006
+        },
+        {
+          "step": 200000.0,
+          "delivery": 0.02,
+          "both_contact": 0.0003
+        }
+      ],
+      "wall_s": 2544.2
+    }
+  ]
+}

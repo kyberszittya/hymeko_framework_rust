@@ -1,0 +1,132 @@
+{
+  "step1_null": {
+    "step": 1,
+    "reward": -115.15,
+    "ft_dom": 0.75,
+    "monitor_pass": 0.417,
+    "monitor_score": 0.2779,
+    "violation_reason": "no_right_fingertip_contact",
+    "reward_vs_monitor_consistency": {
+      "aligned": false,
+      "concordance": 0.0,
+      "violations": [
+        "reward prefers body_shove_exploit but monitor prefers mlp_dagger_selected",
+        "reward prefers null_wrapper but monitor prefers mlp_dagger_selected",
+        "reward prefers body_shove_exploit but monitor prefers null_wrapper"
+      ]
+    },
+    "critic_vs_monitor_consistency": "n/a (critic not trained)",
+    "tensor_contract": "PASS",
+    "policy_provenance": "PASS",
+    "actor_checkpoint_hash": "edf4fe81f04bbda26393ca9f230828b9",
+    "anchor_checkpoint_hash": "edf4fe81f04bbda26393ca9f230828b9",
+    "selected_dagger_stage": "d3",
+    "reward_file": "data/robotics/galambos_task_deliver_v2b.hymeko",
+    "env_file": "PlanarGraspEnv(contact_legality=True, difficulty=0.3, max_steps=300)  # v2 graded scene",
+    "param_hash_unchanged": true,
+    "reproduces_selected_ftdom": true,
+    "PASS": true
+  },
+  "step2_critic_only": {
+    "step": 2,
+    "reward": -115.15,
+    "ft_dom": 0.75,
+    "monitor_pass": 0.417,
+    "monitor_score": 0.2779,
+    "violation_reason": "no_right_fingertip_contact",
+    "reward_vs_monitor_consistency": {
+      "aligned": false,
+      "concordance": 0.0,
+      "violations": [
+        "reward prefers body_shove_exploit but monitor prefers mlp_dagger_selected",
+        "reward prefers critic_only but monitor prefers mlp_dagger_selected",
+        "reward prefers body_shove_exploit but monitor prefers critic_only"
+      ]
+    },
+    "critic_vs_monitor_consistency": {
+      "critic_Q": {
+        "mlp_dagger_selected": -6.546,
+        "body_shove_exploit": -5.7,
+        "one_fingertip": -6.758
+      },
+      "monitor_score": {
+        "mlp_dagger_selected": 0.278,
+        "body_shove_exploit": -0.202,
+        "one_fingertip": -0.273
+      },
+      "ranking": [
+        "body_shove_exploit",
+        "mlp_dagger_selected",
+        "one_fingertip"
+      ],
+      "inverted": true,
+      "violations": [
+        "Q ranks body_shove_exploit above mlp_dagger_selected but monitor prefers mlp_dagger_selected"
+      ]
+    },
+    "tensor_contract": "PASS",
+    "policy_provenance": "PASS",
+    "actor_checkpoint_hash": "edf4fe81f04bbda26393ca9f230828b9",
+    "anchor_checkpoint_hash": "edf4fe81f04bbda26393ca9f230828b9",
+    "selected_dagger_stage": "d3",
+    "reward_file": "data/robotics/galambos_task_deliver_v2b.hymeko",
+    "env_file": "PlanarGraspEnv(contact_legality=True, difficulty=0.3, max_steps=300)  # v2 graded scene",
+    "param_hash_unchanged": true,
+    "PASS": true
+  },
+  "step3_guarded_smoke": {
+    "step": 3,
+    "reward": -442.04,
+    "ft_dom": 0.0,
+    "monitor_pass": 0.0,
+    "monitor_score": -0.4432,
+    "violation_reason": "coin_pushed_away_during_approach",
+    "reward_vs_monitor_consistency": {
+      "aligned": false,
+      "concordance": 0.667,
+      "violations": [
+        "reward prefers body_shove_exploit but monitor prefers mlp_dagger_selected"
+      ]
+    },
+    "critic_vs_monitor_consistency": {
+      "critic_Q": {
+        "mlp_dagger_selected": -18.142,
+        "body_shove_exploit": -18.903,
+        "one_fingertip": -18.41
+      },
+      "monitor_score": {
+        "mlp_dagger_selected": 0.278,
+        "body_shove_exploit": -0.202,
+        "one_fingertip": -0.273
+      },
+      "ranking": [
+        "mlp_dagger_selected",
+        "one_fingertip",
+        "body_shove_exploit"
+      ],
+      "inverted": true,
+      "violations": [
+        "Q ranks one_fingertip above body_shove_exploit but monitor prefers body_shove_exploit"
+      ]
+    },
+    "tensor_contract": "PASS",
+    "policy_provenance": "PASS",
+    "actor_checkpoint_hash": "edf4fe81f04bbda26393ca9f230828b9",
+    "anchor_checkpoint_hash": "edf4fe81f04bbda26393ca9f230828b9",
+    "selected_dagger_stage": "d3",
+    "reward_file": "data/robotics/galambos_task_deliver_v2b.hymeko",
+    "env_file": "PlanarGraspEnv(contact_legality=True, difficulty=0.3, max_steps=300)  # v2 graded scene",
+    "ft_dom_before": 0.75,
+    "exploit_before": 0.0,
+    "acceptance": {
+      "ft_dom_ge_baseline": false,
+      "monitor_pass_ge_selected": false,
+      "monitor_score_ge_selected": false,
+      "no_body_driven_rise": true,
+      "critic_not_inverted": false,
+      "provenance_pass": true,
+      "tensor_contract_pass": true
+    },
+    "PASS": false
+  }
+}

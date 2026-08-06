@@ -126,7 +126,7 @@ This explains the F1 collapse at α=0 in the hybrid α-blend smoke: pure-diversi
 | OS / Kernel | Linux 6.17.0-23-generic x86_64 |
 | CPU | AMD Ryzen 7 3700X (16 threads) |
 | Probe | `target/release/examples/probe_adaptive_c_sweep` (built from `hymeko_graph/examples/probe_adaptive_c_sweep.rs`) |
-| Dataset | `signedkan_wip/data/epinions.txt` — sha256 `8120d06a0bb4e65d4b821eba1072647ef3429e4e0a3c02e72bf0c534664f6fee` (131,828 vertices, 840,799 edges, 14.7% negative) |
+| Dataset | `hymeko_neuro/assets/data/epinions.txt` — sha256 `8120d06a0bb4e65d4b821eba1072647ef3429e4e0a3c02e72bf0c534664f6fee` (131,828 vertices, 840,799 edges, 14.7% negative) |
 | Probe wall | ~23 min total (6 c values × 225–230 s/c, with mild rayon contention from in-flight 5-seed) |
 | 5-seed validation | running concurrently, ID `bpyj110rr`, results pending |
 | Plot tool | matplotlib 3.x via `reports/figures/lift_studies_c_sweep_plot.py` |

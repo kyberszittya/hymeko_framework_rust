@@ -1,0 +1,2307 @@
+{
+ "pi0_sha": "1902454c",
+ "scale": "full",
+ "gate_thresholds": {
+  "transport_corr_Q1": 0.2,
+  "transport_gap5": 0.6,
+  "transport_gradwin": 0.55,
+  "transport_harmful_rej": 0.6,
+  "transport_boundary_pref_max": 0.5,
+  "contact_gradwin": 0.55
+ },
+ "banks": {
+  "std_train": {
+   "range": [
+    6000,
+    6100
+   ],
+   "n": 100,
+   "sha16": "a4b72fd389b19367"
+  },
+  "std_dev": {
+   "range": [
+    6100,
+    6200
+   ],
+   "n": 100,
+   "sha16": "f8d4c4439e5cd3c7"
+  },
+  "std_sealed": {
+   "range": [
+    6200,
+    6250
+   ],
+   "n": 50,
+   "sha16": "e96bea52a6874bc1"
+  },
+  "adv_train": {
+   "range": [
+    6300,
+    6400
+   ],
+   "n": 100,
+   "sha16": "e0a657ae6618946d"
+  },
+  "adv_dev": {
+   "range": [
+    6400,
+    6500
+   ],
+   "n": 100,
+   "sha16": "d32646d0e0ef7081"
+  },
+  "adv_sealed": {
+   "range": [
+    6500,
+    6550
+   ],
+   "n": 50,
+   "sha16": "b827b3b94d82402c"
+  }
+ },
+ "banks_disjoint": true,
+ "ablation_arms": {
+  "instant": {
+   "0": {
+    "transport": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.002,
+     "centered_corr_Q2_vs_dG": 0.065,
+     "allpair_acc": 0.557,
+     "acc_gap1": 0.556,
+     "acc_gap5": 0.573,
+     "acc_gap10": 0.546,
+     "q1q2_order_agree": 0.408,
+     "harmful_rej": 0.7,
+     "harmful_rej_ci": [
+      0.4,
+      1.0
+     ],
+     "top1_regret": 3.581,
+     "prob_sel_worse_than_zero": 0.5,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.6,
+     "gradQ1_wins_ci": [
+      0.3,
+      0.9
+     ],
+     "grad_n": 10
+    },
+    "entry": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.007,
+     "centered_corr_Q2_vs_dG": 0.001,
+     "allpair_acc": 0.484,
+     "acc_gap1": 0.526,
+     "acc_gap5": 0.521,
+     "acc_gap10": 0.497,
+     "q1q2_order_agree": 0.624,
+     "harmful_rej": 0.7,
+     "harmful_rej_ci": [
+      0.4,
+      1.0
+     ],
+     "top1_regret": 6.421,
+     "prob_sel_worse_than_zero": 0.4,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.6,
+     "gradQ1_wins_ci": [
+      0.3,
+      0.9
+     ],
+     "grad_n": 10
+    },
+    "settling": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.202,
+     "centered_corr_Q2_vs_dG": 0.113,
+     "allpair_acc": 0.463,
+     "acc_gap1": 0.413,
+     "acc_gap5": 0.422,
+     "acc_gap10": 0.336,
+     "q1q2_order_agree": 0.473,
+     "harmful_rej": 0.5,
+     "harmful_rej_ci": [
+      0.2,
+      0.8
+     ],
+     "top1_regret": 24.454,
+     "prob_sel_worse_than_zero": 0.6,
+     "prob_sel_breaks_contact": 0.9,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.6,
+     "gradQ1_wins_ci": [
+      0.3,
+      0.9
+     ],
+     "grad_n": 10
+    },
+    "contact_retention": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.036,
+     "centered_corr_Q2_vs_dG": -0.019,
+     "allpair_acc": 0.482,
+     "acc_gap1": 0.478,
+     "acc_gap5": 0.44,
+     "acc_gap10": 0.433,
+     "q1q2_order_agree": 0.422,
+     "harmful_rej": 0.4,
+     "harmful_rej_ci": [
+      0.1,
+      0.7
+     ],
+     "top1_regret": 33.255,
+     "prob_sel_worse_than_zero": 0.9,
+     "prob_sel_breaks_contact": 0.9,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.3,
+     "gradQ1_wins_ci": [
+      0.0,
+      0.6
+     ],
+     "grad_n": 10
+    }
+   },
+   "1000": {
+    "transport": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.104,
+     "centered_corr_Q2_vs_dG": -0.094,
+     "allpair_acc": 0.481,
+     "acc_gap1": 0.515,
+     "acc_gap5": 0.439,
+     "acc_gap10": 0.454,
+     "q1q2_order_agree": 0.936,
+     "harmful_rej": 0.6,
+     "harmful_rej_ci": [
+      0.3,
+      0.9
+     ],
+     "top1_regret": 6.538,
+     "prob_sel_worse_than_zero": 0.4,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.4,
+     "gradQ1_wins_ci": [
+      0.1,
+      0.7
+     ],
+     "grad_n": 10
+    },
+    "entry": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.057,
+     "centered_corr_Q2_vs_dG": -0.036,
+     "allpair_acc": 0.396,
+     "acc_gap1": 0.364,
+     "acc_gap5": 0.44,
+     "acc_gap10": 0.556,
+     "q1q2_order_agree": 0.909,
+     "harmful_rej": 0.6,
+     "harmful_rej_ci": [
+      0.3,
+      0.9
+     ],
+     "top1_regret": 7.057,
+     "prob_sel_worse_than_zero": 0.6,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.4,
+     "gradQ1_wins_ci": [
+      0.1,
+      0.7
+     ],
+     "grad_n": 10
+    },
+    "settling": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.028,
+     "centered_corr_Q2_vs_dG": 0.027,
+     "allpair_acc": 0.581,
+     "acc_gap1": 0.601,
+     "acc_gap5": 0.542,
+     "acc_gap10": 0.508,
+     "q1q2_order_agree": 0.913,
+     "harmful_rej": 0.8,
+     "harmful_rej_ci": [
+      0.5,
+      1.0
+     ],
+     "top1_regret": 4.349,
+     "prob_sel_worse_than_zero": 0.3,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.7,
+     "gradQ1_wins_ci": [
+      0.4,
+      1.0
+     ],
+     "grad_n": 10
+    },
+    "contact_retention": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.054,
+     "centered_corr_Q2_vs_dG": -0.077,
+     "allpair_acc": 0.474,
+     "acc_gap1": 0.484,
+     "acc_gap5": 0.439,
+     "acc_gap10": 0.449,
+     "q1q2_order_agree": 0.918,
+     "harmful_rej": 0.6,
+     "harmful_rej_ci": [
+      0.3,
+      0.9
+     ],
+     "top1_regret": 36.674,
+     "prob_sel_worse_than_zero": 0.7,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.5,
+     "gradQ1_wins_ci": [
+      0.2,
+      0.8
+     ],
+     "grad_n": 10
+    }
+   },
+   "3000": {
+    "transport": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.106,
+     "centered_corr_Q2_vs_dG": -0.105,
+     "allpair_acc": 0.494,
+     "acc_gap1": 0.511,
+     "acc_gap5": 0.436,
+     "acc_gap10": 0.426,
+     "q1q2_order_agree": 0.926,
+     "harmful_rej": 0.7,
+     "harmful_rej_ci": [
+      0.4,
+      1.0
+     ],
+     "top1_regret": 6.4,
+     "prob_sel_worse_than_zero": 0.3,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.6,
+     "gradQ1_wins_ci": [
+      0.3,
+      0.9
+     ],
+     "grad_n": 10
+    },
+    "entry": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.058,
+     "centered_corr_Q2_vs_dG": -0.027,
+     "allpair_acc": 0.396,
+     "acc_gap1": 0.366,
+     "acc_gap5": 0.43,
+     "acc_gap10": 0.555,
+     "q1q2_order_agree": 0.883,
+     "harmful_rej": 0.3,
+     "harmful_rej_ci": [
+      0.1,
+      0.6
+     ],
+     "top1_regret": 7.867,
+     "prob_sel_worse_than_zero": 0.7,
+     "prob_sel_breaks_contact": 0.8,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.2,
+     "gradQ1_wins_ci": [
+      0.0,
+      0.5
+     ],
+     "grad_n": 10
+    },
+    "settling": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.058,
+     "centered_corr_Q2_vs_dG": 0.058,
+     "allpair_acc": 0.59,
+     "acc_gap1": 0.641,
+     "acc_gap5": 0.572,
+     "acc_gap10": 0.551,
+     "q1q2_order_agree": 0.898,
+     "harmful_rej": 0.7,
+     "harmful_rej_ci": [
+      0.4,
+      0.902
+     ],
+     "top1_regret": 4.308,
+     "prob_sel_worse_than_zero": 0.4,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.7,
+     "gradQ1_wins_ci": [
+      0.4,
+      1.0
+     ],
+     "grad_n": 10
+    },
+    "contact_retention": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.041,
+     "centered_corr_Q2_vs_dG": -0.053,
+     "allpair_acc": 0.498,
+     "acc_gap1": 0.51,
+     "acc_gap5": 0.489,
+     "acc_gap10": 0.501,
+     "q1q2_order_agree": 0.924,
+     "harmful_rej": 0.7,
+     "harmful_rej_ci": [
+      0.4,
+      0.9
+     ],
+     "top1_regret": 35.996,
+     "prob_sel_worse_than_zero": 0.6,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.6,
+     "gradQ1_wins_ci": [
+      0.3,
+      0.9
+     ],
+     "grad_n": 10
+    }
+   },
+   "6000": {
+    "transport": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.074,
+     "centered_corr_Q2_vs_dG": -0.089,
+     "allpair_acc": 0.482,
+     "acc_gap1": 0.519,
+     "acc_gap5": 0.47,
+     "acc_gap10": 0.483,
+     "q1q2_order_agree": 0.945,
+     "harmful_rej": 0.6,
+     "harmful_rej_ci": [
+      0.3,
+      0.9
+     ],
+     "top1_regret": 5.949,
+     "prob_sel_worse_than_zero": 0.4,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.6,
+     "gradQ1_wins_ci": [
+      0.3,
+      0.9
+     ],
+     "grad_n": 10
+    },
+    "entry": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.003,
+     "centered_corr_Q2_vs_dG": 0.023,
+     "allpair_acc": 0.447,
+     "acc_gap1": 0.495,
+     "acc_gap5": 0.613,
+     "acc_gap10": 0.595,
+     "q1q2_order_agree": 0.872,
+     "harmful_rej": 0.4,
+     "harmful_rej_ci": [
+      0.1,
+      0.7
+     ],
+     "top1_regret": 7.636,
+     "prob_sel_worse_than_zero": 0.6,
+     "prob_sel_breaks_contact": 0.8,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.4,
+     "gradQ1_wins_ci": [
+      0.1,
+      0.7
+     ],
+     "grad_n": 10
+    },
+    "settling": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.157,
+     "centered_corr_Q2_vs_dG": 0.168,
+     "allpair_acc": 0.657,
+     "acc_gap1": 0.718,
+     "acc_gap5": 0.677,
+     "acc_gap10": 0.702,
+     "q1q2_order_agree": 0.897,
+     "harmful_rej": 0.7,
+     "harmful_rej_ci": [
+      0.4,
+      0.902
+     ],
+     "top1_regret": 3.739,
+     "prob_sel_worse_than_zero": 0.5,
+     "prob_sel_breaks_contact": 0.8,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.9,
+     "gradQ1_wins_ci": [
+      0.7,
+      1.0
+     ],
+     "grad_n": 10
+    },
+    "contact_retention": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.096,
+     "centered_corr_Q2_vs_dG": -0.102,
+     "allpair_acc": 0.487,
+     "acc_gap1": 0.482,
+     "acc_gap5": 0.438,
+     "acc_gap10": 0.423,
+     "q1q2_order_agree": 0.92,
+     "harmful_rej": 0.5,
+     "harmful_rej_ci": [
+      0.2,
+      0.8
+     ],
+     "top1_regret": 37.708,
+     "prob_sel_worse_than_zero": 0.7,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.5,
+     "gradQ1_wins_ci": [
+      0.2,
+      0.8
+     ],
+     "grad_n": 10
+    }
+   },
+   "10000": {
+    "transport": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.075,
+     "centered_corr_Q2_vs_dG": -0.069,
+     "allpair_acc": 0.48,
+     "acc_gap1": 0.51,
+     "acc_gap5": 0.471,
+     "acc_gap10": 0.485,
+     "q1q2_order_agree": 0.939,
+     "harmful_rej": 0.6,
+     "harmful_rej_ci": [
+      0.3,
+      0.9
+     ],
+     "top1_regret": 5.854,
+     "prob_sel_worse_than_zero": 0.4,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.7,
+     "gradQ1_wins_ci": [
+      0.4,
+      1.0
+     ],
+     "grad_n": 10
+    },
+    "entry": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.065,
+     "centered_corr_Q2_vs_dG": 0.068,
+     "allpair_acc": 0.518,
+     "acc_gap1": 0.596,
+     "acc_gap5": 0.67,
+     "acc_gap10": 0.584,
+     "q1q2_order_agree": 0.871,
+     "harmful_rej": 0.3,
+     "harmful_rej_ci": [
+      0.0,
+      0.6
+     ],
+     "top1_regret": 7.387,
+     "prob_sel_worse_than_zero": 0.8,
+     "prob_sel_breaks_contact": 0.8,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.6,
+     "gradQ1_wins_ci": [
+      0.3,
+      0.9
+     ],
+     "grad_n": 10
+    },
+    "settling": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.194,
+     "centered_corr_Q2_vs_dG": 0.27,
+     "allpair_acc": 0.616,
+     "acc_gap1": 0.67,
+     "acc_gap5": 0.653,
+     "acc_gap10": 0.678,
+     "q1q2_order_agree": 0.873,
+     "harmful_rej": 0.8,
+     "harmful_rej_ci": [
+      0.5,
+      1.0
+     ],
+     "top1_regret": 4.637,
+     "prob_sel_worse_than_zero": 0.2,
+     "prob_sel_breaks_contact": 0.9,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.7,
+     "gradQ1_wins_ci": [
+      0.4,
+      0.9
+     ],
+     "grad_n": 10
+    },
+    "contact_retention": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.13,
+     "centered_corr_Q2_vs_dG": -0.12,
+     "allpair_acc": 0.473,
+     "acc_gap1": 0.457,
+     "acc_gap5": 0.413,
+     "acc_gap10": 0.395,
+     "q1q2_order_agree": 0.91,
+     "harmful_rej": 0.5,
+     "harmful_rej_ci": [
+      0.2,
+      0.8
+     ],
+     "top1_regret": 38.07,
+     "prob_sel_worse_than_zero": 0.7,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.2,
+     "gradQ1_wins_ci": [
+      0.0,
+      0.5
+     ],
+     "grad_n": 10
+    }
+   },
+   "20000": {
+    "transport": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.046,
+     "centered_corr_Q2_vs_dG": -0.049,
+     "allpair_acc": 0.456,
+     "acc_gap1": 0.527,
+     "acc_gap5": 0.462,
+     "acc_gap10": 0.468,
+     "q1q2_order_agree": 0.876,
+     "harmful_rej": 0.8,
+     "harmful_rej_ci": [
+      0.5,
+      1.0
+     ],
+     "top1_regret": 5.741,
+     "prob_sel_worse_than_zero": 0.3,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.4,
+     "gradQ1_wins_ci": [
+      0.1,
+      0.7
+     ],
+     "grad_n": 10
+    },
+    "entry": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.093,
+     "centered_corr_Q2_vs_dG": 0.088,
+     "allpair_acc": 0.543,
+     "acc_gap1": 0.623,
+     "acc_gap5": 0.673,
+     "acc_gap10": 0.575,
+     "q1q2_order_agree": 0.94,
+     "harmful_rej": 0.5,
+     "harmful_rej_ci": [
+      0.2,
+      0.8
+     ],
+     "top1_regret": 5.439,
+     "prob_sel_worse_than_zero": 0.5,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.4,
+     "gradQ1_wins_ci": [
+      0.1,
+      0.7
+     ],
+     "grad_n": 10
+    },
+    "settling": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.177,
+     "centered_corr_Q2_vs_dG": 0.205,
+     "allpair_acc": 0.59,
+     "acc_gap1": 0.637,
+     "acc_gap5": 0.634,
+     "acc_gap10": 0.664,
+     "q1q2_order_agree": 0.927,
+     "harmful_rej": 0.8,
+     "harmful_rej_ci": [
+      0.5,
+      1.0
+     ],
+     "top1_regret": 4.021,
+     "prob_sel_worse_than_zero": 0.3,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.7,
+     "gradQ1_wins_ci": [
+      0.4,
+      1.0
+     ],
+     "grad_n": 10
+    },
+    "contact_retention": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.13,
+     "centered_corr_Q2_vs_dG": -0.141,
+     "allpair_acc": 0.479,
+     "acc_gap1": 0.464,
+     "acc_gap5": 0.426,
+     "acc_gap10": 0.412,
+     "q1q2_order_agree": 0.871,
+     "harmful_rej": 0.6,
+     "harmful_rej_ci": [
+      0.3,
+      0.9
+     ],
+     "top1_regret": 33.02,
+     "prob_sel_worse_than_zero": 0.6,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.3,
+     "gradQ1_wins_ci": [
+      0.1,
+      0.6
+     ],
+     "grad_n": 10
+    }
+   },
+   "40000": {
+    "transport": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.001,
+     "centered_corr_Q2_vs_dG": -0.036,
+     "allpair_acc": 0.447,
+     "acc_gap1": 0.512,
+     "acc_gap5": 0.503,
+     "acc_gap10": 0.498,
+     "q1q2_order_agree": 0.884,
+     "harmful_rej": 0.5,
+     "harmful_rej_ci": [
+      0.2,
+      0.8
+     ],
+     "top1_regret": 3.386,
+     "prob_sel_worse_than_zero": 0.5,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.4,
+     "gradQ1_wins_ci": [
+      0.1,
+      0.7
+     ],
+     "grad_n": 10
+    },
+    "entry": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.115,
+     "centered_corr_Q2_vs_dG": 0.108,
+     "allpair_acc": 0.589,
+     "acc_gap1": 0.675,
+     "acc_gap5": 0.7,
+     "acc_gap10": 0.603,
+     "q1q2_order_agree": 0.875,
+     "harmful_rej": 0.5,
+     "harmful_rej_ci": [
+      0.2,
+      0.8
+     ],
+     "top1_regret": 4.063,
+     "prob_sel_worse_than_zero": 0.5,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.4,
+     "gradQ1_wins_ci": [
+      0.1,
+      0.7
+     ],
+     "grad_n": 10
+    },
+    "settling": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.154,
+     "centered_corr_Q2_vs_dG": 0.185,
+     "allpair_acc": 0.57,
+     "acc_gap1": 0.644,
+     "acc_gap5": 0.633,
+     "acc_gap10": 0.651,
+     "q1q2_order_agree": 0.912,
+     "harmful_rej": 0.9,
+     "harmful_rej_ci": [
+      0.7,
+      1.0
+     ],
+     "top1_regret": 4.604,
+     "prob_sel_worse_than_zero": 0.1,
+     "prob_sel_breaks_contact": 0.9,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.6,
+     "gradQ1_wins_ci": [
+      0.3,
+      0.9
+     ],
+     "grad_n": 10
+    },
+    "contact_retention": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.144,
+     "centered_corr_Q2_vs_dG": -0.136,
+     "allpair_acc": 0.464,
+     "acc_gap1": 0.435,
+     "acc_gap5": 0.389,
+     "acc_gap10": 0.369,
+     "q1q2_order_agree": 0.877,
+     "harmful_rej": 0.7,
+     "harmful_rej_ci": [
+      0.4,
+      1.0
+     ],
+     "top1_regret": 32.635,
+     "prob_sel_worse_than_zero": 0.6,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.1,
+     "gradQ1_wins_ci": [
+      0.0,
+      0.3
+     ],
+     "grad_n": 10
+    }
+   }
+  },
+  "causal": {
+   "0": {
+    "transport": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.001,
+     "centered_corr_Q2_vs_dG": -0.072,
+     "allpair_acc": 0.488,
+     "acc_gap1": 0.454,
+     "acc_gap5": 0.446,
+     "acc_gap10": 0.446,
+     "q1q2_order_agree": 0.769,
+     "harmful_rej": 0.9,
+     "harmful_rej_ci": [
+      0.7,
+      1.0
+     ],
+     "top1_regret": 2.997,
+     "prob_sel_worse_than_zero": 0.3,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.3,
+     "gradQ1_wins_ci": [
+      0.0,
+      0.6
+     ],
+     "grad_n": 10
+    },
+    "entry": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.045,
+     "centered_corr_Q2_vs_dG": 0.017,
+     "allpair_acc": 0.583,
+     "acc_gap1": 0.566,
+     "acc_gap5": 0.521,
+     "acc_gap10": 0.494,
+     "q1q2_order_agree": 0.744,
+     "harmful_rej": 0.6,
+     "harmful_rej_ci": [
+      0.3,
+      0.9
+     ],
+     "top1_regret": 11.042,
+     "prob_sel_worse_than_zero": 0.4,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.7,
+     "gradQ1_wins_ci": [
+      0.4,
+      0.9
+     ],
+     "grad_n": 10
+    },
+    "settling": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.254,
+     "centered_corr_Q2_vs_dG": 0.188,
+     "allpair_acc": 0.5,
+     "acc_gap1": 0.538,
+     "acc_gap5": 0.548,
+     "acc_gap10": 0.64,
+     "q1q2_order_agree": 0.856,
+     "harmful_rej": 0.7,
+     "harmful_rej_ci": [
+      0.4,
+      0.9
+     ],
+     "top1_regret": 2.952,
+     "prob_sel_worse_than_zero": 0.4,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.4,
+     "gradQ1_wins_ci": [
+      0.1,
+      0.7
+     ],
+     "grad_n": 10
+    },
+    "contact_retention": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.038,
+     "centered_corr_Q2_vs_dG": -0.02,
+     "allpair_acc": 0.521,
+     "acc_gap1": 0.522,
+     "acc_gap5": 0.533,
+     "acc_gap10": 0.503,
+     "q1q2_order_agree": 0.78,
+     "harmful_rej": 0.8,
+     "harmful_rej_ci": [
+      0.5,
+      1.0
+     ],
+     "top1_regret": 22.638,
+     "prob_sel_worse_than_zero": 0.5,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.7,
+     "gradQ1_wins_ci": [
+      0.4,
+      1.0
+     ],
+     "grad_n": 10
+    }
+   },
+   "1000": {
+    "transport": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.041,
+     "centered_corr_Q2_vs_dG": -0.052,
+     "allpair_acc": 0.51,
+     "acc_gap1": 0.528,
+     "acc_gap5": 0.499,
+     "acc_gap10": 0.512,
+     "q1q2_order_agree": 0.948,
+     "harmful_rej": 0.5,
+     "harmful_rej_ci": [
+      0.2,
+      0.8
+     ],
+     "top1_regret": 5.931,
+     "prob_sel_worse_than_zero": 0.6,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.6,
+     "gradQ1_wins_ci": [
+      0.3,
+      0.9
+     ],
+     "grad_n": 10
+    },
+    "entry": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.021,
+     "centered_corr_Q2_vs_dG": -0.013,
+     "allpair_acc": 0.429,
+     "acc_gap1": 0.451,
+     "acc_gap5": 0.555,
+     "acc_gap10": 0.571,
+     "q1q2_order_agree": 0.967,
+     "harmful_rej": 0.5,
+     "harmful_rej_ci": [
+      0.2,
+      0.8
+     ],
+     "top1_regret": 7.717,
+     "prob_sel_worse_than_zero": 0.7,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.2,
+     "gradQ1_wins_ci": [
+      0.0,
+      0.5
+     ],
+     "grad_n": 10
+    },
+    "settling": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.014,
+     "centered_corr_Q2_vs_dG": -0.014,
+     "allpair_acc": 0.602,
+     "acc_gap1": 0.61,
+     "acc_gap5": 0.549,
+     "acc_gap10": 0.526,
+     "q1q2_order_agree": 0.953,
+     "harmful_rej": 0.5,
+     "harmful_rej_ci": [
+      0.2,
+      0.8
+     ],
+     "top1_regret": 5.78,
+     "prob_sel_worse_than_zero": 0.6,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.6,
+     "gradQ1_wins_ci": [
+      0.3,
+      0.9
+     ],
+     "grad_n": 10
+    },
+    "contact_retention": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.065,
+     "centered_corr_Q2_vs_dG": -0.079,
+     "allpair_acc": 0.472,
+     "acc_gap1": 0.483,
+     "acc_gap5": 0.431,
+     "acc_gap10": 0.429,
+     "q1q2_order_agree": 0.962,
+     "harmful_rej": 0.8,
+     "harmful_rej_ci": [
+      0.5,
+      1.0
+     ],
+     "top1_regret": 31.492,
+     "prob_sel_worse_than_zero": 0.6,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.4,
+     "gradQ1_wins_ci": [
+      0.1,
+      0.7
+     ],
+     "grad_n": 10
+    }
+   },
+   "3000": {
+    "transport": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.05,
+     "centered_corr_Q2_vs_dG": -0.054,
+     "allpair_acc": 0.497,
+     "acc_gap1": 0.513,
+     "acc_gap5": 0.484,
+     "acc_gap10": 0.485,
+     "q1q2_order_agree": 0.958,
+     "harmful_rej": 0.5,
+     "harmful_rej_ci": [
+      0.2,
+      0.8
+     ],
+     "top1_regret": 5.931,
+     "prob_sel_worse_than_zero": 0.6,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.4,
+     "gradQ1_wins_ci": [
+      0.1,
+      0.7
+     ],
+     "grad_n": 10
+    },
+    "entry": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.019,
+     "centered_corr_Q2_vs_dG": -0.008,
+     "allpair_acc": 0.434,
+     "acc_gap1": 0.464,
+     "acc_gap5": 0.564,
+     "acc_gap10": 0.584,
+     "q1q2_order_agree": 0.966,
+     "harmful_rej": 0.4,
+     "harmful_rej_ci": [
+      0.1,
+      0.7
+     ],
+     "top1_regret": 10.946,
+     "prob_sel_worse_than_zero": 0.7,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.1,
+     "gradQ1_wins_ci": [
+      0.0,
+      0.3
+     ],
+     "grad_n": 10
+    },
+    "settling": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.03,
+     "centered_corr_Q2_vs_dG": 0.038,
+     "allpair_acc": 0.612,
+     "acc_gap1": 0.619,
+     "acc_gap5": 0.548,
+     "acc_gap10": 0.535,
+     "q1q2_order_agree": 0.95,
+     "harmful_rej": 0.4,
+     "harmful_rej_ci": [
+      0.1,
+      0.7
+     ],
+     "top1_regret": 5.857,
+     "prob_sel_worse_than_zero": 0.7,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.8,
+     "gradQ1_wins_ci": [
+      0.5,
+      1.0
+     ],
+     "grad_n": 10
+    },
+    "contact_retention": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.078,
+     "centered_corr_Q2_vs_dG": -0.08,
+     "allpair_acc": 0.474,
+     "acc_gap1": 0.481,
+     "acc_gap5": 0.431,
+     "acc_gap10": 0.429,
+     "q1q2_order_agree": 0.969,
+     "harmful_rej": 0.9,
+     "harmful_rej_ci": [
+      0.7,
+      1.0
+     ],
+     "top1_regret": 31.203,
+     "prob_sel_worse_than_zero": 0.5,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.5,
+     "gradQ1_wins_ci": [
+      0.2,
+      0.8
+     ],
+     "grad_n": 10
+    }
+   },
+   "6000": {
+    "transport": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.057,
+     "centered_corr_Q2_vs_dG": -0.054,
+     "allpair_acc": 0.472,
+     "acc_gap1": 0.5,
+     "acc_gap5": 0.483,
+     "acc_gap10": 0.516,
+     "q1q2_order_agree": 0.95,
+     "harmful_rej": 0.5,
+     "harmful_rej_ci": [
+      0.2,
+      0.8
+     ],
+     "top1_regret": 5.791,
+     "prob_sel_worse_than_zero": 0.5,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.7,
+     "gradQ1_wins_ci": [
+      0.4,
+      1.0
+     ],
+     "grad_n": 10
+    },
+    "entry": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.016,
+     "centered_corr_Q2_vs_dG": 0.026,
+     "allpair_acc": 0.482,
+     "acc_gap1": 0.547,
+     "acc_gap5": 0.633,
+     "acc_gap10": 0.601,
+     "q1q2_order_agree": 0.956,
+     "harmful_rej": 0.5,
+     "harmful_rej_ci": [
+      0.2,
+      0.8
+     ],
+     "top1_regret": 6.922,
+     "prob_sel_worse_than_zero": 0.5,
+     "prob_sel_breaks_contact": 0.9,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.4,
+     "gradQ1_wins_ci": [
+      0.1,
+      0.7
+     ],
+     "grad_n": 10
+    },
+    "settling": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.106,
+     "centered_corr_Q2_vs_dG": 0.101,
+     "allpair_acc": 0.661,
+     "acc_gap1": 0.678,
+     "acc_gap5": 0.615,
+     "acc_gap10": 0.619,
+     "q1q2_order_agree": 0.951,
+     "harmful_rej": 0.5,
+     "harmful_rej_ci": [
+      0.2,
+      0.8
+     ],
+     "top1_regret": 4.706,
+     "prob_sel_worse_than_zero": 0.6,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.8,
+     "gradQ1_wins_ci": [
+      0.5,
+      1.0
+     ],
+     "grad_n": 10
+    },
+    "contact_retention": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.119,
+     "centered_corr_Q2_vs_dG": -0.119,
+     "allpair_acc": 0.47,
+     "acc_gap1": 0.462,
+     "acc_gap5": 0.415,
+     "acc_gap10": 0.395,
+     "q1q2_order_agree": 0.967,
+     "harmful_rej": 0.8,
+     "harmful_rej_ci": [
+      0.5,
+      1.0
+     ],
+     "top1_regret": 31.641,
+     "prob_sel_worse_than_zero": 0.7,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.4,
+     "gradQ1_wins_ci": [
+      0.1,
+      0.7
+     ],
+     "grad_n": 10
+    }
+   },
+   "10000": {
+    "transport": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.066,
+     "centered_corr_Q2_vs_dG": -0.064,
+     "allpair_acc": 0.462,
+     "acc_gap1": 0.499,
+     "acc_gap5": 0.477,
+     "acc_gap10": 0.509,
+     "q1q2_order_agree": 0.938,
+     "harmful_rej": 0.4,
+     "harmful_rej_ci": [
+      0.1,
+      0.7
+     ],
+     "top1_regret": 5.576,
+     "prob_sel_worse_than_zero": 0.7,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.5,
+     "gradQ1_wins_ci": [
+      0.2,
+      0.8
+     ],
+     "grad_n": 10
+    },
+    "entry": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.056,
+     "centered_corr_Q2_vs_dG": 0.047,
+     "allpair_acc": 0.502,
+     "acc_gap1": 0.569,
+     "acc_gap5": 0.658,
+     "acc_gap10": 0.592,
+     "q1q2_order_agree": 0.955,
+     "harmful_rej": 0.6,
+     "harmful_rej_ci": [
+      0.3,
+      0.9
+     ],
+     "top1_regret": 6.624,
+     "prob_sel_worse_than_zero": 0.4,
+     "prob_sel_breaks_contact": 0.8,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.4,
+     "gradQ1_wins_ci": [
+      0.1,
+      0.7
+     ],
+     "grad_n": 10
+    },
+    "settling": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.17,
+     "centered_corr_Q2_vs_dG": 0.116,
+     "allpair_acc": 0.671,
+     "acc_gap1": 0.714,
+     "acc_gap5": 0.663,
+     "acc_gap10": 0.689,
+     "q1q2_order_agree": 0.943,
+     "harmful_rej": 0.9,
+     "harmful_rej_ci": [
+      0.7,
+      1.0
+     ],
+     "top1_regret": 5.714,
+     "prob_sel_worse_than_zero": 0.1,
+     "prob_sel_breaks_contact": 0.9,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.7,
+     "gradQ1_wins_ci": [
+      0.4,
+      1.0
+     ],
+     "grad_n": 10
+    },
+    "contact_retention": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.155,
+     "centered_corr_Q2_vs_dG": -0.137,
+     "allpair_acc": 0.464,
+     "acc_gap1": 0.45,
+     "acc_gap5": 0.403,
+     "acc_gap10": 0.379,
+     "q1q2_order_agree": 0.951,
+     "harmful_rej": 0.6,
+     "harmful_rej_ci": [
+      0.3,
+      0.9
+     ],
+     "top1_regret": 48.846,
+     "prob_sel_worse_than_zero": 0.7,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.3,
+     "gradQ1_wins_ci": [
+      0.0,
+      0.6
+     ],
+     "grad_n": 10
+    }
+   },
+   "20000": {
+    "transport": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.066,
+     "centered_corr_Q2_vs_dG": -0.077,
+     "allpair_acc": 0.441,
+     "acc_gap1": 0.507,
+     "acc_gap5": 0.471,
+     "acc_gap10": 0.51,
+     "q1q2_order_agree": 0.907,
+     "harmful_rej": 0.6,
+     "harmful_rej_ci": [
+      0.3,
+      0.9
+     ],
+     "top1_regret": 5.794,
+     "prob_sel_worse_than_zero": 0.4,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.5,
+     "gradQ1_wins_ci": [
+      0.2,
+      0.8
+     ],
+     "grad_n": 10
+    },
+    "entry": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.08,
+     "centered_corr_Q2_vs_dG": 0.067,
+     "allpair_acc": 0.534,
+     "acc_gap1": 0.602,
+     "acc_gap5": 0.677,
+     "acc_gap10": 0.573,
+     "q1q2_order_agree": 0.911,
+     "harmful_rej": 0.6,
+     "harmful_rej_ci": [
+      0.3,
+      0.9
+     ],
+     "top1_regret": 5.7,
+     "prob_sel_worse_than_zero": 0.5,
+     "prob_sel_breaks_contact": 0.9,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.5,
+     "gradQ1_wins_ci": [
+      0.2,
+      0.8
+     ],
+     "grad_n": 10
+    },
+    "settling": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.221,
+     "centered_corr_Q2_vs_dG": 0.194,
+     "allpair_acc": 0.653,
+     "acc_gap1": 0.711,
+     "acc_gap5": 0.67,
+     "acc_gap10": 0.702,
+     "q1q2_order_agree": 0.926,
+     "harmful_rej": 0.6,
+     "harmful_rej_ci": [
+      0.3,
+      0.9
+     ],
+     "top1_regret": 4.29,
+     "prob_sel_worse_than_zero": 0.4,
+     "prob_sel_breaks_contact": 0.9,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.8,
+     "gradQ1_wins_ci": [
+      0.5,
+      1.0
+     ],
+     "grad_n": 10
+    },
+    "contact_retention": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.157,
+     "centered_corr_Q2_vs_dG": -0.147,
+     "allpair_acc": 0.467,
+     "acc_gap1": 0.448,
+     "acc_gap5": 0.389,
+     "acc_gap10": 0.369,
+     "q1q2_order_agree": 0.931,
+     "harmful_rej": 0.5,
+     "harmful_rej_ci": [
+      0.2,
+      0.8
+     ],
+     "top1_regret": 30.636,
+     "prob_sel_worse_than_zero": 0.7,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.5,
+     "gradQ1_wins_ci": [
+      0.2,
+      0.8
+     ],
+     "grad_n": 10
+    }
+   },
+   "40000": {
+    "transport": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.034,
+     "centered_corr_Q2_vs_dG": -0.035,
+     "allpair_acc": 0.436,
+     "acc_gap1": 0.504,
+     "acc_gap5": 0.504,
+     "acc_gap10": 0.517,
+     "q1q2_order_agree": 0.87,
+     "harmful_rej": 0.7,
+     "harmful_rej_ci": [
+      0.4,
+      0.9
+     ],
+     "top1_regret": 4.973,
+     "prob_sel_worse_than_zero": 0.4,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.5,
+     "gradQ1_wins_ci": [
+      0.2,
+      0.8
+     ],
+     "grad_n": 10
+    },
+    "entry": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.087,
+     "centered_corr_Q2_vs_dG": 0.094,
+     "allpair_acc": 0.553,
+     "acc_gap1": 0.629,
+     "acc_gap5": 0.687,
+     "acc_gap10": 0.599,
+     "q1q2_order_agree": 0.876,
+     "harmful_rej": 0.7,
+     "harmful_rej_ci": [
+      0.4,
+      1.0
+     ],
+     "top1_regret": 4.452,
+     "prob_sel_worse_than_zero": 0.4,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.4,
+     "gradQ1_wins_ci": [
+      0.1,
+      0.7
+     ],
+     "grad_n": 10
+    },
+    "settling": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": 0.229,
+     "centered_corr_Q2_vs_dG": 0.196,
+     "allpair_acc": 0.586,
+     "acc_gap1": 0.618,
+     "acc_gap5": 0.596,
+     "acc_gap10": 0.624,
+     "q1q2_order_agree": 0.871,
+     "harmful_rej": 0.6,
+     "harmful_rej_ci": [
+      0.3,
+      0.9
+     ],
+     "top1_regret": 3.953,
+     "prob_sel_worse_than_zero": 0.5,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.6,
+     "gradQ1_wins_ci": [
+      0.3,
+      0.9
+     ],
+     "grad_n": 10
+    },
+    "contact_retention": {
+     "n": 10,
+     "centered_corr_Q1_vs_dG": -0.162,
+     "centered_corr_Q2_vs_dG": -0.164,
+     "allpair_acc": 0.473,
+     "acc_gap1": 0.457,
+     "acc_gap5": 0.391,
+     "acc_gap10": 0.358,
+     "q1q2_order_agree": 0.91,
+     "harmful_rej": 0.5,
+     "harmful_rej_ci": [
+      0.2,
+      0.8
+     ],
+     "top1_regret": 33.196,
+     "prob_sel_worse_than_zero": 0.7,
+     "prob_sel_breaks_contact": 1.0,
+     "boundary_pref": 1.0,
+     "gradQ1_wins": 0.3,
+     "gradQ1_wins_ci": [
+      0.0,
+      0.6
+     ],
+     "grad_n": 10
+    }
+   }
+  }
+ },
+ "losses": {
+  "instant": [
+   [
+    0,
+    4.697329521179199
+   ],
+   [
+    5000,
+    1.424851655960083
+   ],
+   [
+    10000,
+    2.9552114009857178
+   ],
+   [
+    15000,
+    7.921897888183594
+   ],
+   [
+    20000,
+    11.917043685913086
+   ],
+   [
+    25000,
+    9.622854232788086
+   ],
+   [
+    30000,
+    7.891656875610352
+   ],
+   [
+    35000,
+    12.826875686645508
+   ]
+  ],
+  "causal": [
+   [
+    0,
+    4.9770965576171875
+   ],
+   [
+    5000,
+    0.9645053148269653
+   ],
+   [
+    10000,
+    3.0093610286712646
+   ],
+   [
+    15000,
+    9.202914237976074
+   ],
+   [
+    20000,
+    11.77700424194336
+   ],
+   [
+    25000,
+    10.281532287597656
+   ],
+   [
+    30000,
+    8.159791946411133
+   ],
+   [
+    35000,
+    12.68809700012207
+   ]
+  ]
+ },
+ "ablation": {
+  "causal_minus_instant_mean_over_trained_ckpts": {
+   "transport.centered_corr_Q1_vs_dG": 0.015,
+   "transport.acc_gap5": 0.023,
+   "transport.gradQ1_wins": 0.017,
+   "contact_retention.centered_corr_Q1_vs_dG": -0.024,
+   "contact_retention.acc_gap5": -0.022,
+   "contact_retention.gradQ1_wins": 0.033
+  },
+  "fraction_ckpts_causal_better": {
+   "transport.centered_corr_Q1_vs_dG": 0.67,
+   "transport.acc_gap5": 1.0,
+   "transport.gradQ1_wins": 0.67,
+   "contact_retention.centered_corr_Q1_vs_dG": 0.0,
+   "contact_retention.acc_gap5": 0.17,
+   "contact_retention.gradQ1_wins": 0.5
+  },
+  "verdict": "RESIDUAL_CRITIC_CAUSAL_STATE_NO_GAIN"
+ },
+ "standard_development_pass": false,
+ "advantage_arm": "causal",
+ "advantage_dev": {
+  "0": {
+   "transport": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": 0.013,
+    "centered_corr_Q2_vs_dG": 0.03,
+    "allpair_acc": 0.484,
+    "acc_gap1": 0.507,
+    "acc_gap5": 0.51,
+    "acc_gap10": 0.531,
+    "q1q2_order_agree": 0.727,
+    "harmful_rej": 0.8,
+    "harmful_rej_ci": [
+     0.5,
+     1.0
+    ],
+    "top1_regret": 19.564,
+    "prob_sel_worse_than_zero": 0.3,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.3,
+    "gradQ1_wins_ci": [
+     0.1,
+     0.6
+    ],
+    "grad_n": 10
+   },
+   "entry": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": -0.003,
+    "centered_corr_Q2_vs_dG": 0.031,
+    "allpair_acc": 0.492,
+    "acc_gap1": 0.429,
+    "acc_gap5": 0.44,
+    "acc_gap10": 0.455,
+    "q1q2_order_agree": 0.747,
+    "harmful_rej": 0.9,
+    "harmful_rej_ci": [
+     0.7,
+     1.0
+    ],
+    "top1_regret": 13.645,
+    "prob_sel_worse_than_zero": 0.2,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.4,
+    "gradQ1_wins_ci": [
+     0.1,
+     0.7
+    ],
+    "grad_n": 10
+   },
+   "settling": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": 0.132,
+    "centered_corr_Q2_vs_dG": 0.202,
+    "allpair_acc": 0.544,
+    "acc_gap1": 0.601,
+    "acc_gap5": 0.587,
+    "acc_gap10": 0.502,
+    "q1q2_order_agree": 0.764,
+    "harmful_rej": 0.6,
+    "harmful_rej_ci": [
+     0.3,
+     0.9
+    ],
+    "top1_regret": 11.903,
+    "prob_sel_worse_than_zero": 0.6,
+    "prob_sel_breaks_contact": 0.8,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.8,
+    "gradQ1_wins_ci": [
+     0.5,
+     1.0
+    ],
+    "grad_n": 10
+   },
+   "contact_retention": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": 0.022,
+    "centered_corr_Q2_vs_dG": -0.056,
+    "allpair_acc": 0.538,
+    "acc_gap1": 0.519,
+    "acc_gap5": 0.519,
+    "acc_gap10": 0.576,
+    "q1q2_order_agree": 0.748,
+    "harmful_rej": 0.8,
+    "harmful_rej_ci": [
+     0.5,
+     1.0
+    ],
+    "top1_regret": 11.895,
+    "prob_sel_worse_than_zero": 0.2,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.7,
+    "gradQ1_wins_ci": [
+     0.4,
+     0.9
+    ],
+    "grad_n": 10
+   }
+  },
+  "250": {
+   "transport": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": -0.11,
+    "centered_corr_Q2_vs_dG": -0.083,
+    "allpair_acc": 0.547,
+    "acc_gap1": 0.473,
+    "acc_gap5": 0.4,
+    "acc_gap10": 0.358,
+    "q1q2_order_agree": 0.964,
+    "harmful_rej": 0.6,
+    "harmful_rej_ci": [
+     0.3,
+     0.9
+    ],
+    "top1_regret": 21.024,
+    "prob_sel_worse_than_zero": 0.4,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.6,
+    "gradQ1_wins_ci": [
+     0.3,
+     0.9
+    ],
+    "grad_n": 10
+   },
+   "entry": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": 0.074,
+    "centered_corr_Q2_vs_dG": 0.041,
+    "allpair_acc": 0.58,
+    "acc_gap1": 0.586,
+    "acc_gap5": 0.595,
+    "acc_gap10": 0.558,
+    "q1q2_order_agree": 0.987,
+    "harmful_rej": 1.0,
+    "harmful_rej_ci": [
+     1.0,
+     1.0
+    ],
+    "top1_regret": 24.333,
+    "prob_sel_worse_than_zero": 0.3,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.8,
+    "gradQ1_wins_ci": [
+     0.5,
+     1.0
+    ],
+    "grad_n": 10
+   },
+   "settling": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": -0.057,
+    "centered_corr_Q2_vs_dG": -0.044,
+    "allpair_acc": 0.525,
+    "acc_gap1": 0.515,
+    "acc_gap5": 0.497,
+    "acc_gap10": 0.479,
+    "q1q2_order_agree": 0.972,
+    "harmful_rej": 0.7,
+    "harmful_rej_ci": [
+     0.4,
+     1.0
+    ],
+    "top1_regret": 11.155,
+    "prob_sel_worse_than_zero": 0.7,
+    "prob_sel_breaks_contact": 0.8,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.9,
+    "gradQ1_wins_ci": [
+     0.7,
+     1.0
+    ],
+    "grad_n": 10
+   },
+   "contact_retention": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": 0.126,
+    "centered_corr_Q2_vs_dG": 0.115,
+    "allpair_acc": 0.553,
+    "acc_gap1": 0.598,
+    "acc_gap5": 0.618,
+    "acc_gap10": 0.612,
+    "q1q2_order_agree": 0.97,
+    "harmful_rej": 0.7,
+    "harmful_rej_ci": [
+     0.4,
+     0.902
+    ],
+    "top1_regret": 3.96,
+    "prob_sel_worse_than_zero": 0.3,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.7,
+    "gradQ1_wins_ci": [
+     0.4,
+     1.0
+    ],
+    "grad_n": 10
+   }
+  },
+  "500": {
+   "transport": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": -0.093,
+    "centered_corr_Q2_vs_dG": -0.095,
+    "allpair_acc": 0.536,
+    "acc_gap1": 0.464,
+    "acc_gap5": 0.402,
+    "acc_gap10": 0.363,
+    "q1q2_order_agree": 0.924,
+    "harmful_rej": 0.6,
+    "harmful_rej_ci": [
+     0.3,
+     0.9
+    ],
+    "top1_regret": 21.011,
+    "prob_sel_worse_than_zero": 0.4,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.5,
+    "gradQ1_wins_ci": [
+     0.2,
+     0.8
+    ],
+    "grad_n": 10
+   },
+   "entry": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": 0.038,
+    "centered_corr_Q2_vs_dG": 0.027,
+    "allpair_acc": 0.55,
+    "acc_gap1": 0.567,
+    "acc_gap5": 0.568,
+    "acc_gap10": 0.523,
+    "q1q2_order_agree": 0.985,
+    "harmful_rej": 1.0,
+    "harmful_rej_ci": [
+     1.0,
+     1.0
+    ],
+    "top1_regret": 24.305,
+    "prob_sel_worse_than_zero": 0.3,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.5,
+    "gradQ1_wins_ci": [
+     0.2,
+     0.8
+    ],
+    "grad_n": 10
+   },
+   "settling": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": -0.088,
+    "centered_corr_Q2_vs_dG": -0.096,
+    "allpair_acc": 0.512,
+    "acc_gap1": 0.472,
+    "acc_gap5": 0.474,
+    "acc_gap10": 0.455,
+    "q1q2_order_agree": 0.964,
+    "harmful_rej": 0.7,
+    "harmful_rej_ci": [
+     0.4,
+     1.0
+    ],
+    "top1_regret": 10.985,
+    "prob_sel_worse_than_zero": 0.7,
+    "prob_sel_breaks_contact": 0.9,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.4,
+    "gradQ1_wins_ci": [
+     0.1,
+     0.7
+    ],
+    "grad_n": 10
+   },
+   "contact_retention": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": 0.106,
+    "centered_corr_Q2_vs_dG": 0.126,
+    "allpair_acc": 0.542,
+    "acc_gap1": 0.569,
+    "acc_gap5": 0.609,
+    "acc_gap10": 0.616,
+    "q1q2_order_agree": 0.944,
+    "harmful_rej": 0.8,
+    "harmful_rej_ci": [
+     0.5,
+     1.0
+    ],
+    "top1_regret": 4.41,
+    "prob_sel_worse_than_zero": 0.1,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.8,
+    "gradQ1_wins_ci": [
+     0.5,
+     1.0
+    ],
+    "grad_n": 10
+   }
+  },
+  "1000": {
+   "transport": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": -0.049,
+    "centered_corr_Q2_vs_dG": -0.069,
+    "allpair_acc": 0.498,
+    "acc_gap1": 0.491,
+    "acc_gap5": 0.432,
+    "acc_gap10": 0.419,
+    "q1q2_order_agree": 0.789,
+    "harmful_rej": 0.5,
+    "harmful_rej_ci": [
+     0.2,
+     0.8
+    ],
+    "top1_regret": 21.111,
+    "prob_sel_worse_than_zero": 0.5,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.6,
+    "gradQ1_wins_ci": [
+     0.3,
+     0.9
+    ],
+    "grad_n": 10
+   },
+   "entry": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": 0.04,
+    "centered_corr_Q2_vs_dG": 0.093,
+    "allpair_acc": 0.545,
+    "acc_gap1": 0.569,
+    "acc_gap5": 0.583,
+    "acc_gap10": 0.548,
+    "q1q2_order_agree": 0.813,
+    "harmful_rej": 0.9,
+    "harmful_rej_ci": [
+     0.7,
+     1.0
+    ],
+    "top1_regret": 29.708,
+    "prob_sel_worse_than_zero": 0.4,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.1,
+    "gradQ1_wins_ci": [
+     0.0,
+     0.3
+    ],
+    "grad_n": 10
+   },
+   "settling": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": -0.095,
+    "centered_corr_Q2_vs_dG": 0.009,
+    "allpair_acc": 0.486,
+    "acc_gap1": 0.436,
+    "acc_gap5": 0.488,
+    "acc_gap10": 0.458,
+    "q1q2_order_agree": 0.786,
+    "harmful_rej": 0.5,
+    "harmful_rej_ci": [
+     0.2,
+     0.8
+    ],
+    "top1_regret": 13.399,
+    "prob_sel_worse_than_zero": 0.6,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.7,
+    "gradQ1_wins_ci": [
+     0.4,
+     0.9
+    ],
+    "grad_n": 10
+   },
+   "contact_retention": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": 0.113,
+    "centered_corr_Q2_vs_dG": 0.122,
+    "allpair_acc": 0.551,
+    "acc_gap1": 0.541,
+    "acc_gap5": 0.617,
+    "acc_gap10": 0.611,
+    "q1q2_order_agree": 0.636,
+    "harmful_rej": 0.6,
+    "harmful_rej_ci": [
+     0.3,
+     0.9
+    ],
+    "top1_regret": 11.563,
+    "prob_sel_worse_than_zero": 0.5,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.5,
+    "gradQ1_wins_ci": [
+     0.2,
+     0.8
+    ],
+    "grad_n": 10
+   }
+  },
+  "2000": {
+   "transport": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": -0.068,
+    "centered_corr_Q2_vs_dG": -0.048,
+    "allpair_acc": 0.5,
+    "acc_gap1": 0.506,
+    "acc_gap5": 0.441,
+    "acc_gap10": 0.433,
+    "q1q2_order_agree": 0.801,
+    "harmful_rej": 0.7,
+    "harmful_rej_ci": [
+     0.4,
+     1.0
+    ],
+    "top1_regret": 19.4,
+    "prob_sel_worse_than_zero": 0.3,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.4,
+    "gradQ1_wins_ci": [
+     0.1,
+     0.7
+    ],
+    "grad_n": 10
+   },
+   "entry": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": 0.059,
+    "centered_corr_Q2_vs_dG": 0.095,
+    "allpair_acc": 0.555,
+    "acc_gap1": 0.579,
+    "acc_gap5": 0.595,
+    "acc_gap10": 0.558,
+    "q1q2_order_agree": 0.834,
+    "harmful_rej": 0.8,
+    "harmful_rej_ci": [
+     0.5,
+     1.0
+    ],
+    "top1_regret": 24.474,
+    "prob_sel_worse_than_zero": 0.5,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.6,
+    "gradQ1_wins_ci": [
+     0.3,
+     0.9
+    ],
+    "grad_n": 10
+   },
+   "settling": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": -0.114,
+    "centered_corr_Q2_vs_dG": -0.036,
+    "allpair_acc": 0.473,
+    "acc_gap1": 0.438,
+    "acc_gap5": 0.489,
+    "acc_gap10": 0.451,
+    "q1q2_order_agree": 0.862,
+    "harmful_rej": 0.5,
+    "harmful_rej_ci": [
+     0.2,
+     0.8
+    ],
+    "top1_regret": 15.564,
+    "prob_sel_worse_than_zero": 0.6,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.4,
+    "gradQ1_wins_ci": [
+     0.1,
+     0.7
+    ],
+    "grad_n": 10
+   },
+   "contact_retention": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": 0.039,
+    "centered_corr_Q2_vs_dG": 0.116,
+    "allpair_acc": 0.523,
+    "acc_gap1": 0.499,
+    "acc_gap5": 0.601,
+    "acc_gap10": 0.599,
+    "q1q2_order_agree": 0.718,
+    "harmful_rej": 0.7,
+    "harmful_rej_ci": [
+     0.4,
+     1.0
+    ],
+    "top1_regret": 10.133,
+    "prob_sel_worse_than_zero": 0.5,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.6,
+    "gradQ1_wins_ci": [
+     0.3,
+     0.9
+    ],
+    "grad_n": 10
+   }
+  },
+  "4000": {
+   "transport": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": -0.055,
+    "centered_corr_Q2_vs_dG": -0.036,
+    "allpair_acc": 0.452,
+    "acc_gap1": 0.477,
+    "acc_gap5": 0.437,
+    "acc_gap10": 0.416,
+    "q1q2_order_agree": 0.735,
+    "harmful_rej": 0.7,
+    "harmful_rej_ci": [
+     0.4,
+     1.0
+    ],
+    "top1_regret": 19.268,
+    "prob_sel_worse_than_zero": 0.3,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.4,
+    "gradQ1_wins_ci": [
+     0.1,
+     0.7
+    ],
+    "grad_n": 10
+   },
+   "entry": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": 0.016,
+    "centered_corr_Q2_vs_dG": 0.148,
+    "allpair_acc": 0.53,
+    "acc_gap1": 0.553,
+    "acc_gap5": 0.566,
+    "acc_gap10": 0.529,
+    "q1q2_order_agree": 0.677,
+    "harmful_rej": 0.7,
+    "harmful_rej_ci": [
+     0.4,
+     1.0
+    ],
+    "top1_regret": 18.958,
+    "prob_sel_worse_than_zero": 0.4,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.4,
+    "gradQ1_wins_ci": [
+     0.1,
+     0.7
+    ],
+    "grad_n": 10
+   },
+   "settling": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": -0.034,
+    "centered_corr_Q2_vs_dG": 0.014,
+    "allpair_acc": 0.516,
+    "acc_gap1": 0.538,
+    "acc_gap5": 0.558,
+    "acc_gap10": 0.485,
+    "q1q2_order_agree": 0.8,
+    "harmful_rej": 0.7,
+    "harmful_rej_ci": [
+     0.4,
+     0.9
+    ],
+    "top1_regret": 12.509,
+    "prob_sel_worse_than_zero": 0.5,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.7,
+    "gradQ1_wins_ci": [
+     0.4,
+     0.9
+    ],
+    "grad_n": 10
+   },
+   "contact_retention": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": 0.097,
+    "centered_corr_Q2_vs_dG": 0.143,
+    "allpair_acc": 0.481,
+    "acc_gap1": 0.466,
+    "acc_gap5": 0.481,
+    "acc_gap10": 0.558,
+    "q1q2_order_agree": 0.728,
+    "harmful_rej": 0.6,
+    "harmful_rej_ci": [
+     0.3,
+     0.9
+    ],
+    "top1_regret": 11.125,
+    "prob_sel_worse_than_zero": 0.4,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.4,
+    "gradQ1_wins_ci": [
+     0.1,
+     0.7
+    ],
+    "grad_n": 10
+   }
+  },
+  "8000": {
+   "transport": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": -0.071,
+    "centered_corr_Q2_vs_dG": -0.028,
+    "allpair_acc": 0.466,
+    "acc_gap1": 0.491,
+    "acc_gap5": 0.482,
+    "acc_gap10": 0.486,
+    "q1q2_order_agree": 0.658,
+    "harmful_rej": 0.8,
+    "harmful_rej_ci": [
+     0.5,
+     1.0
+    ],
+    "top1_regret": 19.059,
+    "prob_sel_worse_than_zero": 0.2,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.5,
+    "gradQ1_wins_ci": [
+     0.2,
+     0.8
+    ],
+    "grad_n": 10
+   },
+   "entry": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": 0.09,
+    "centered_corr_Q2_vs_dG": 0.151,
+    "allpair_acc": 0.517,
+    "acc_gap1": 0.608,
+    "acc_gap5": 0.624,
+    "acc_gap10": 0.593,
+    "q1q2_order_agree": 0.703,
+    "harmful_rej": 0.7,
+    "harmful_rej_ci": [
+     0.4,
+     1.0
+    ],
+    "top1_regret": 16.346,
+    "prob_sel_worse_than_zero": 0.4,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.4,
+    "gradQ1_wins_ci": [
+     0.1,
+     0.7
+    ],
+    "grad_n": 10
+   },
+   "settling": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": -0.109,
+    "centered_corr_Q2_vs_dG": 0.032,
+    "allpair_acc": 0.477,
+    "acc_gap1": 0.475,
+    "acc_gap5": 0.489,
+    "acc_gap10": 0.453,
+    "q1q2_order_agree": 0.82,
+    "harmful_rej": 0.7,
+    "harmful_rej_ci": [
+     0.4,
+     0.9
+    ],
+    "top1_regret": 12.508,
+    "prob_sel_worse_than_zero": 0.5,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.6,
+    "gradQ1_wins_ci": [
+     0.3,
+     0.9
+    ],
+    "grad_n": 10
+   },
+   "contact_retention": {
+    "n": 10,
+    "centered_corr_Q1_vs_dG": 0.065,
+    "centered_corr_Q2_vs_dG": 0.152,
+    "allpair_acc": 0.493,
+    "acc_gap1": 0.44,
+    "acc_gap5": 0.521,
+    "acc_gap10": 0.535,
+    "q1q2_order_agree": 0.645,
+    "harmful_rej": 0.7,
+    "harmful_rej_ci": [
+     0.4,
+     0.902
+    ],
+    "top1_regret": 10.35,
+    "prob_sel_worse_than_zero": 0.4,
+    "prob_sel_breaks_contact": 1.0,
+    "boundary_pref": 1.0,
+    "gradQ1_wins": 0.7,
+    "gradQ1_wins_ci": [
+     0.4,
+     1.0
+    ],
+    "grad_n": 10
+   }
+  }
+ },
+ "advantage_development_pass": false,
+ "critic_route": "none",
+ "verdict": "RESIDUAL_CRITIC_ROUTE_BLOCKED"
+}

@@ -1,0 +1,19 @@
+// runstop_humanoid.hymeko — the DEEPEST (embodied) run-stop model: control at the humanoid's actual joints.
+// The abstract L-port has been refined all the way down to ankle/hip + shoulder/elbow torques (L2).
+runstop_humanoid_description {
+    @"port_hamiltonian.hymeko";
+    @"runstop_ports.hymeko";
+}
+
+runstop_humanoid: port_hamiltonian.ph.roles.meta_energy_element
+{
+    body:     port_hamiltonian.ph.roles.energy_storage        { mass 18.0; torso_inertia 1.6; }
+    l_damp:   port_hamiltonian.ph.roles.dissipation           { coefficient 1.5; }
+    // stance ground-reaction moment, resolved into ankle + hip joints:
+    ankle:    runstop_ports.rsp.port_kinds.ankle_port         { torque_max 3.0; range 0.35; }
+    hip:      runstop_ports.rsp.port_kinds.hip_port           { torque_max 6.0; range 1.2; }
+    // flight-capable reaction wheel, resolved into shoulder + elbow joints:
+    shoulder: runstop_ports.rsp.port_kinds.shoulder_port      { torque_max 4.0; range 1.6; inertia 0.25; }
+    elbow:    runstop_ports.rsp.port_kinds.elbow_port         { torque_max 2.0; range 1.4; inertia 0.05; }
+    coupling: port_hamiltonian.ph.roles.interconnection       {}
+}

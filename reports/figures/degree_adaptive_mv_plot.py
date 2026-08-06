@@ -63,7 +63,7 @@ def main() -> None:
     if data is None:
         raise SystemExit(
             "no /tmp/adaptive_mv_sweep_2026_05_10/results.tsv found; "
-            "run signedkan_wip/experiments/run_adaptive_mv_sweep_2026_05_10.sh first"
+            "run hymeko_neuro/experiments/run_adaptive_mv_sweep_2026_05_10.sh first"
         )
 
     c = data["c"]

@@ -106,14 +106,14 @@ New fixtures (5):
 - `data/hsikan/sweep_msg_cortical_combo.hymeko`
 
 New Python modules (3):
-- `signedkan_wip/src/cortical_pgraph_mapping.py`
-- `signedkan_wip/experiments/runs/run_cortical_msg_sweep.py`
-- `signedkan_wip/experiments/runs/run_cortical_exhaustive_sweep.py`
+- `hymeko_neuro/experiments/cortical_pgraph_mapping.py`
+- `hymeko_neuro/experiments/runs/run_cortical_msg_sweep.py`
+- `hymeko_neuro/experiments/runs/run_cortical_exhaustive_sweep.py`
 
 New tests (2 Rust + 2 Python):
 - `hymeko_pgraph/tests/byproduct_filter_phase11.rs`
-- `signedkan_wip/tests/test_byproduct_filter_e2e.py`
-- `signedkan_wip/tests/test_cortical_pgraph_mapping.py`
+- `hymeko_neuro/tests/test_byproduct_filter_e2e.py`
+- `hymeko_neuro/tests/test_cortical_pgraph_mapping.py`
 
 New book recipe:
 - `docs/book/src/recipes/filter-by-friedler-certificate.md`

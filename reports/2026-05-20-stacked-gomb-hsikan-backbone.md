@@ -49,14 +49,14 @@ pressure). Bit-identical output (diff ≤ 4e-7 vs the cat form).
 
 | File | Status | LOC |
 | --- | --- | --- |
-| `signedkan_wip/src/core/cpml.py` | extended | +16 / −2 (`_edge_logits` factored matmul fix) |
-| `signedkan_wip/src/core/signedkan.py` | extended | +9 (`MultiLayerSignedKAN.encode_triads(initial_h_v=...)`) |
-| `signedkan_wip/src/hymeko_gomb/shells.py` | extended | +110 (`StackedMiddleHSiKAN`) |
-| `signedkan_wip/src/hymeko_gomb/cascade.py` | extended | +30 (`GombConfig` middle fields + `HymeKoGomb.__init__` dispatch) |
-| `signedkan_wip/experiments/runs/run_gomb_smoke.py` | extended | +25 (CLI flags for the stacked middle) |
-| `signedkan_wip/tests/test_stacked_gomb_hsikan.py` | new | 187 (8 unit tests) |
-| `signedkan_wip/experiments/run_stacked_gomb_overnight_2026_05_20.sh` | new | 117 |
-| `signedkan_wip/experiments/run_stacked_gomb_overnight_slashdot_only_2026_05_20.sh` | new | 92 |
+| `hymeko_neuro/hyperedge/cpml.py` | extended | +16 / −2 (`_edge_logits` factored matmul fix) |
+| `hymeko_neuro/hyperedge/signedkan.py` | extended | +9 (`MultiLayerSignedKAN.encode_triads(initial_h_v=...)`) |
+| `hymeko_neuro/models/hymeko_gomb/shells.py` | extended | +110 (`StackedMiddleHSiKAN`) |
+| `hymeko_neuro/models/hymeko_gomb/cascade.py` | extended | +30 (`GombConfig` middle fields + `HymeKoGomb.__init__` dispatch) |
+| `hymeko_neuro/experiments/runs/run_gomb_smoke.py` | extended | +25 (CLI flags for the stacked middle) |
+| `hymeko_neuro/tests/test_stacked_gomb_hsikan.py` | new | 187 (8 unit tests) |
+| `hymeko_neuro/experiments/run_stacked_gomb_overnight_2026_05_20.sh` | new | 117 |
+| `hymeko_neuro/experiments/run_stacked_gomb_overnight_slashdot_only_2026_05_20.sh` | new | 92 |
 | `docs/plans/2026-05-20-stacked-gomb-hsikan-backbone/{plan.tex,plan.pdf,plan.tikz,plan_figure.pdf,plan.mmd}` | new | 4-format plan |
 | `reports/2026-05-20-stacked-gomb-hsikan-backbone.md` | new | this file |
 
@@ -130,8 +130,8 @@ the inductive bias.
 
 | Suite | Result |
 | --- | --- |
-| `pytest signedkan_wip/tests/test_stacked_gomb_hsikan.py` | **8 / 8 pass** |
-| `pytest signedkan_wip/tests/test_gomb_signature.py` | **8 / 8 pass** (no regression from _edge_logits fix) |
+| `pytest hymeko_neuro/tests/test_stacked_gomb_hsikan.py` | **8 / 8 pass** |
+| `pytest hymeko_neuro/tests/test_gomb_signature.py` | **8 / 8 pass** (no regression from _edge_logits fix) |
 | All prior interpret/side/arity/fuzzy suites | 47 / 47 (no regression) |
 | Bitcoin Alpha smoke at d∈{1,2,4} | all complete |
 | Slashdot retry d∈{1,2}                | complete; d=4 OOMs at CR spline (genuine memory pressure) |
@@ -189,8 +189,8 @@ Clean.
   lr 5e-3.
 - **GPU:** RTX 2070 SUPER 8 GiB.
 - **JSONL:**
-  `signedkan_wip/experiments/results/stacked_gomb_overnight_2026_05_20.jsonl`,
-  `signedkan_wip/experiments/results/stacked_gomb_overnight_slashdot_2026_05_20.jsonl`.
+  `hymeko_neuro/experiments/results/stacked_gomb_overnight_2026_05_20.jsonl`,
+  `hymeko_neuro/experiments/results/stacked_gomb_overnight_slashdot_2026_05_20.jsonl`.
 
 ## Acceptance check
 

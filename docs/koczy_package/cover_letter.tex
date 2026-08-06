@@ -1,0 +1,113 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{amsmath}\usepackage{amssymb}\usepackage{hyperref}
+\usepackage{microtype}
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+\begin{flushright}
+2026-05-31
+\end{flushright}
+
+\noindent Prof.\ László T.\ Kóczy
+
+\textit{Subject}: A learnable Kóczy fuzzy signature as a
+differentiable hypergraph layer — early results and a request for
+your feedback.
+
+Dear Professor Kóczy,
+
+I have been working on an explicit, learnable realisation of fuzzy
+signatures as a differentiable neural-network layer, and I would
+like to share the early results with you. The motivation is your
+classical construction: a fuzzy signature is a hierarchical tree of
+fuzzy concepts in which internal nodes are aggregation operators
+(t-norms, t-conorms, OWA) and leaves carry elementary memberships.
+Almost everything in the construction is interpretable; only the
+membership functions and the aggregator weights are tuned in the
+classical setting.
+
+The construction I have built keeps the structure but makes
+\emph{every} learnable element a named fuzzy-systems primitive:
+
+\begin{itemize}
+  \item Each per-vertex feature is a learnable Catmull--Rom
+        membership function $\mu_\theta\colon X\to[0,1]$.
+  \item The signed branches of the architecture are an Atanassov
+        intuitionistic-fuzzy pair $(\mu^+, \mu^-)$ with hesitancy
+        $\pi = 1 - \mu^+ - \mu^-$.
+  \item The polarity gate that mixes the pair is a Zadeh sigmoidal
+        hedge with learnable dilation $\tau$ per channel.
+  \item Vertex-to-edge aggregation is a categorical t-norm ($T_G$ /
+        $T_P$ / $T_L$); edge-to-vertex is a categorical t-conorm.
+  \item Multi-arity (multi-scale) fusion across receptive-field
+        sizes is an OWA with $\alpha_k$ softmax weights.
+  \item The output head is a Sugeno weighted-average defuzzification
+        followed by the TSK output rule.
+\end{itemize}
+
+I attach a 20-page mathematical background that lays out this
+correspondence in full, along with the architectural plan and a
+robotic-collaboration application story.
+
+Empirically, the architecture has been validated on MNIST at a small
+parameter budget (test\_acc $0.5354$ at 9{,}642 parameters; the
+$\alpha_k$ multi-scale mixer emergently specialises so that the
+first layer prefers the fine receptive field and the last layer the
+coarse one — exactly the multi-scale story HSiKAN-vision relies on,
+re-emerging in the fuzzy-signature setting). The architecture also
+extends to a pose-detection variant; the validated single-frame
+synthetic-pose model is now the basis for a planned two-robot
+collaborative-behavior test bed.
+
+I emphasise the honest current limits: the MNIST result is
+single-seed; the architecture is not yet at HSiKAN parity ($\sim 0.95$+);
+the pose-detection comparison against simpler baselines is in flight.
+The point of this letter is to ask for your feedback on the
+direction, not to claim a final result. In particular:
+
+\begin{itemize}
+  \item Does the named-primitive correspondence preserve what you
+        consider essential about fuzzy signatures?
+  \item Is the Atanassov-pair reading of the signed-branch
+        construction the right inductive bias for an
+        \emph{intuitionistic} fuzzy signature, or do you see a
+        different formulation that better captures hesitancy?
+  \item For the robotic-collaboration story (two-robot test bed,
+        cooperative-handover / competitive-grasp / independent-parallel
+        interactions), does the framework's hierarchical aggregation
+        align with how you envision fuzzy signatures supporting
+        human-robot collaboration?
+\end{itemize}
+
+I would value any feedback you can offer, and I am happy to share
+the full implementation, the test matrix, or any other technical
+detail you would like to see.
+
+With deep respect for your foundational work,
+
+\bigskip
+
+\noindent\textsc{[Sender]}
+
+\bigskip
+
+\noindent\textbf{Attachments:}
+\begin{enumerate}
+  \item \texttt{background.pdf} — Mathematical Background for the
+        Learnable Kóczy Fuzzy Signature Layer (20 pp). Atanassov
+        IFS, classical t-norms / t-conorms / negations, Kóczy
+        fuzzy signatures, defuzzification methods, Zadeh
+        linguistic hedges, OWA aggregators, the full HSiKAN-Kóczy
+        correspondence table, $[0,1]$-preservation theorem,
+        TSK-output-rule derivation, worked examples.
+  \item \texttt{plan\_fuzzy\_signature.pdf} — Architectural plan
+        for the FuzzySignatureLayer (7 pp).
+  \item \texttt{plan\_robotics.pdf} — Robotics / behavior /
+        collaboration application plan with the two-robot test
+        case (7 pp).
+\end{enumerate}
+
+\end{document}

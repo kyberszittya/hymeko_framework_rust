@@ -1,0 +1,138 @@
+{
+  "kind": "HyMeKo MetaWorld reward fidelity (\u03a3 weight\u00b7term vs unscaled_reward)",
+  "spec": "data/robotics/metaworld_reward.hymeko",
+  "tasks": [
+    "push",
+    "pick-place",
+    "door-open",
+    "button-press",
+    "reach"
+  ],
+  "per_task": {
+    "push": {
+      "task": "push",
+      "terms": [
+        "mw_in_place",
+        "mw_grasp",
+        "mw_near",
+        "mw_dist"
+      ],
+      "declared_weights": [
+        8.0,
+        1.2,
+        1.0,
+        10.0
+      ],
+      "fitted_weights": [
+        6.0235,
+        2.133,
+        2.5903,
+        3.9033
+      ],
+      "r2_declared": 0.7658,
+      "r2_fitted": 0.9715,
+      "relative_error_fitted": 0.0756,
+      "n_steps": 1200
+    },
+    "pick-place": {
+      "task": "pick-place",
+      "terms": [
+        "mw_in_place",
+        "mw_grasp",
+        "mw_near",
+        "mw_dist"
+      ],
+      "declared_weights": [
+        8.0,
+        1.2,
+        1.0,
+        10.0
+      ],
+      "fitted_weights": [
+        6.6167,
+        1.6635,
+        0.1784,
+        4.574
+      ],
+      "r2_declared": 0.7383,
+      "r2_fitted": 0.8509,
+      "relative_error_fitted": 0.2589,
+      "n_steps": 1200
+    },
+    "door-open": {
+      "task": "door-open",
+      "terms": [
+        "mw_in_place",
+        "mw_grasp",
+        "mw_near",
+        "mw_dist"
+      ],
+      "declared_weights": [
+        8.0,
+        1.2,
+        1.0,
+        10.0
+      ],
+      "fitted_weights": [
+        8.3266,
+        0.095,
+        1.7022,
+        0.0
+      ],
+      "r2_declared": 0.9774,
+      "r2_fitted": 0.9928,
+      "relative_error_fitted": 0.0457,
+      "n_steps": 1200
+    },
+    "button-press": {
+      "task": "button-press",
+      "terms": [
+        "mw_in_place",
+        "mw_grasp",
+        "mw_near",
+        "mw_dist"
+      ],
+      "declared_weights": [
+        8.0,
+        1.2,
+        1.0,
+        10.0
+      ],
+      "fitted_weights": [
+        -0.3875,
+        1.8806,
+        0.0,
+        -0.5588
+      ],
+      "r2_declared": -225.3947,
+      "r2_fitted": 0.9565,
+      "relative_error_fitted": 0.0788,
+      "n_steps": 1200
+    },
+    "reach": {
+      "task": "reach",
+      "terms": [
+        "mw_in_place",
+        "mw_grasp",
+        "mw_near",
+        "mw_dist"
+      ],
+      "declared_weights": [
+        8.0,
+        1.2,
+        1.0,
+        10.0
+      ],
+      "fitted_weights": [
+        10.0,
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "r2_declared": 0.133,
+      "r2_fitted": 1.0,
+      "relative_error_fitted": 0.0,
+      "n_steps": 1200
+    }
+  }
+}

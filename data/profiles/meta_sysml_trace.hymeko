@@ -1,0 +1,14 @@
+// SysML requirements-trace vocabulary (editor profile). Requirements and
+// blocks are nodes; satisfies / derives / allocated_to are signed hyperedges.
+meta_sysml_trace {}
+
+sysml_trace {
+    elements {
+        meta_element {}
+        requirement: + <isa> meta_element {}
+        block: + <isa> meta_element {}
+    }
+    @satisfies {}
+    @derives {}
+    @allocated_to {}
+}

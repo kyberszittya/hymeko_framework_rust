@@ -1,0 +1,77 @@
+{
+  "name": "fanuc_pick_td3bc_hsikan",
+  "select": "place",
+  "total_steps": 100000,
+  "place_median": 0.75,
+  "place_per_seed": [
+    0.75
+  ],
+  "seeds": [
+    {
+      "seed": 1,
+      "peak": {
+        "place": 0.75,
+        "step": 0.0,
+        "stage": "bc_step0",
+        "lift": 1.0
+      },
+      "curve": [
+        {
+          "step": 0.0,
+          "stage": "bc_step0",
+          "lift": 1.0,
+          "place": 0.75
+        },
+        {
+          "step": 12500.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 25000.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 37500.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 50000.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 62500.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 75000.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 87500.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "step": 100000.0,
+          "stage": "rl_refined",
+          "lift": 0.0,
+          "place": 0.0
+        }
+      ],
+      "wall_s": 144.1
+    }
+  ]
+}

@@ -1,0 +1,322 @@
+[
+  {
+    "stage": "s1_fixed_reach",
+    "mode": "reach",
+    "fixed": true,
+    "n_seeds_stable": 1,
+    "n_seeds": 3,
+    "LEARNS": false,
+    "per_seed": [
+      {
+        "seed": 0,
+        "success_curve": [
+          0.0,
+          0.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "min_d_curve": [
+          0.0957,
+          0.0906,
+          0.0729,
+          0.0691,
+          0.0603
+        ],
+        "stable_success_final3": 1.0
+      },
+      {
+        "seed": 1,
+        "success_curve": [
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "min_d_curve": [
+          0.0971,
+          0.0879,
+          0.0718,
+          0.0964,
+          0.1055
+        ],
+        "stable_success_final3": 0.333
+      },
+      {
+        "seed": 2,
+        "success_curve": [
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "min_d_curve": [
+          0.0915,
+          0.0734,
+          0.0901,
+          0.0771,
+          0.0779
+        ],
+        "stable_success_final3": 0.0
+      }
+    ]
+  },
+  {
+    "stage": "s2_random_reach",
+    "mode": "reach",
+    "fixed": false,
+    "n_seeds_stable": 0,
+    "n_seeds": 3,
+    "LEARNS": false,
+    "per_seed": [
+      {
+        "seed": 0,
+        "success_curve": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "min_d_curve": [
+          0.0501,
+          0.0896,
+          0.0851,
+          0.09,
+          0.0849
+        ],
+        "stable_success_final3": 0.0
+      },
+      {
+        "seed": 1,
+        "success_curve": [
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "min_d_curve": [
+          0.0901,
+          0.0781,
+          0.0764,
+          0.0685,
+          0.0836
+        ],
+        "stable_success_final3": 0.333
+      },
+      {
+        "seed": 2,
+        "success_curve": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "min_d_curve": [
+          0.0819,
+          0.1409,
+          0.0926,
+          0.0867,
+          0.0608
+        ],
+        "stable_success_final3": 0.333
+      }
+    ]
+  },
+  {
+    "stage": "s3_fixed_contact",
+    "mode": "contact",
+    "fixed": true,
+    "n_seeds_stable": 0,
+    "n_seeds": 3,
+    "LEARNS": false,
+    "per_seed": [
+      {
+        "seed": 0,
+        "success_curve": [
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "min_d_curve": [
+          0.0927,
+          0.0608,
+          0.0808,
+          0.0866,
+          0.0455
+        ],
+        "stable_success_final3": 0.333
+      },
+      {
+        "seed": 1,
+        "success_curve": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "min_d_curve": [
+          0.0971,
+          0.0879,
+          0.0916,
+          0.0894,
+          0.0944
+        ],
+        "stable_success_final3": 0.0
+      },
+      {
+        "seed": 2,
+        "success_curve": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "min_d_curve": [
+          0.0888,
+          0.0771,
+          0.1014,
+          0.0717,
+          0.0921
+        ],
+        "stable_success_final3": 0.0
+      }
+    ]
+  },
+  {
+    "stage": "s4_fixed_push",
+    "mode": "push",
+    "fixed": true,
+    "n_seeds_stable": 0,
+    "n_seeds": 3,
+    "LEARNS": false,
+    "per_seed": [
+      {
+        "seed": 0,
+        "success_curve": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "min_d_curve": [
+          0.1802,
+          0.0902,
+          0.0956,
+          0.1198,
+          0.0864
+        ],
+        "stable_success_final3": 0.0
+      },
+      {
+        "seed": 1,
+        "success_curve": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "min_d_curve": [
+          0.1176,
+          0.0725,
+          0.0442,
+          0.1184,
+          0.1641
+        ],
+        "stable_success_final3": 0.0
+      },
+      {
+        "seed": 2,
+        "success_curve": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "min_d_curve": [
+          0.1526,
+          0.0399,
+          0.1366,
+          0.1808,
+          0.0358
+        ],
+        "stable_success_final3": 0.333
+      }
+    ]
+  },
+  {
+    "stage": "s5_random_push",
+    "mode": "push",
+    "fixed": false,
+    "n_seeds_stable": 0,
+    "n_seeds": 3,
+    "LEARNS": false,
+    "per_seed": [
+      {
+        "seed": 0,
+        "success_curve": [
+          0.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "min_d_curve": [
+          0.1599,
+          0.09,
+          0.0934,
+          0.0593,
+          0.0503
+        ],
+        "stable_success_final3": 0.333
+      },
+      {
+        "seed": 1,
+        "success_curve": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "min_d_curve": [
+          0.1787,
+          0.2043,
+          0.084,
+          0.1176,
+          0.0604
+        ],
+        "stable_success_final3": 0.333
+      },
+      {
+        "seed": 2,
+        "success_curve": [
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "min_d_curve": [
+          0.2045,
+          0.0869,
+          0.0738,
+          0.0665,
+          0.0838
+        ],
+        "stable_success_final3": 0.333
+      }
+    ]
+  }
+]

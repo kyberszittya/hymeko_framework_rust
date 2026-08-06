@@ -1,0 +1,35 @@
+{
+ "BC_INITIALIZATION_HEAVILY_SATURATED": {
+  "raw_preclip_abs_max": 63.12,
+  "raw_preclip_abs_median": 1.984,
+  "executed_abs_max": 4.0,
+  "action_scale": 4.0,
+  "frac_states_any_component_saturated": 0.065,
+  "frac_states_all_components_saturated": 0.038,
+  "n_states": 1440,
+  "saturation_any_by_phase": {
+   "APPROACH": 0.0,
+   "CONTACT_ACQ": 0.156,
+   "BILATERAL": 0.0,
+   "TRANSPORT": 0.017,
+   "TARGET_ENTRY": 0.0,
+   "SETTLING": 0.0
+  },
+  "saturation_any_successful_seeds_by_phase": {
+   "APPROACH": 0.0,
+   "CONTACT_ACQ": 0.0,
+   "BILATERAL": 0.0,
+   "TRANSPORT": 0.039,
+   "TARGET_ENTRY": 0.0,
+   "SETTLING": 0.0
+  }
+ },
+ "runtime_identity": {
+  "executed_equals_clip_raw": true,
+  "replay_action_abs_max": 4.0,
+  "policy_max_exec_abs": 4.0,
+  "no_raw_preclip_in_replay": true,
+  "env_clip_idempotent": true
+ },
+ "verdict": "RL_RUNTIME_IDENTITY_PASS"
+}

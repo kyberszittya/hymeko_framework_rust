@@ -1,0 +1,1805 @@
+{
+ "campaign": "STRICT_COUNTER_MARKOV_REPAIR_ABLATION_V1",
+ "date": "2026-07-23",
+ "smoke": false,
+ "wall_s": 350.0,
+ "update0_manifest": {
+  "max_action_diff": 0.0,
+  "mean_action_diff": 0.0
+ },
+ "pi0_baseline": {
+  "CONTINUATION": {
+   "n": 12,
+   "k6_rate": 0.4167,
+   "k1": 0.4167,
+   "k3": 0.4167,
+   "k5": 0.4167,
+   "mean_max_dwell": 2.5,
+   "entry_vel": 0.0,
+   "exit_ct": 0.0,
+   "canonical_return": -0.3809,
+   "full_contain": 0.4167
+  },
+  "RESET": {
+   "n": 12,
+   "k6_rate": 0.4167,
+   "k1": 0.4167,
+   "k3": 0.4167,
+   "k5": 0.4167,
+   "mean_max_dwell": 2.5,
+   "entry_vel": 0.0,
+   "exit_ct": 0.0,
+   "canonical_return": -0.6852,
+   "full_contain": 0.4167
+  }
+ },
+ "stage_config": {
+  "families": [
+   "target_entry",
+   "braking",
+   "settling_dwell"
+  ],
+  "horizon": 30,
+  "n_step": 4,
+  "total_updates": 8000,
+  "checkpoints": [
+   0,
+   2000,
+   4000,
+   6000,
+   8000
+  ],
+  "policy_delay": 2
+ },
+ "final_k6_continuation": {
+  "A": [
+   0.4167,
+   0.4167,
+   0.4167
+  ],
+  "B": [
+   0.4167,
+   0.4167,
+   0.4167
+  ]
+ },
+ "improvement_vs_pi0": {
+  "A": 0.0,
+  "B": 0.0
+ },
+ "critic_healthy_all": true,
+ "runs": {
+  "A_0": {
+   "arm": "A",
+   "seed": 0,
+   "update0": {
+    "max_action_diff": 0.0,
+    "mean_action_diff": 0.0
+   },
+   "checkpoints": {
+    "0": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 1.439,
+      "twin_ok": false,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": 0.041,
+      "q2_mean": 0.001,
+      "authorized": false
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.3809,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.6852,
+      "full_contain": 0.4167
+     },
+     "accepted": 0,
+     "rejected": 0,
+     "actor_drift": 0.0,
+     "q_mean": -0.0,
+     "q_std": 0.02,
+     "q_max": 0.07,
+     "td_p90": 0.0,
+     "strict_q": [
+      -0.002,
+      -0.021,
+      -0.003,
+      -0.009,
+      -0.01,
+      -0.002,
+      -0.006
+     ]
+    },
+    "2000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.033,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -19.326,
+      "q2_mean": -19.113,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.3809,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.6852,
+      "full_contain": 0.4167
+     },
+     "accepted": 0,
+     "rejected": 0,
+     "actor_drift": 0.0,
+     "q_mean": -19.43,
+     "q_std": 12.85,
+     "q_max": 13.88,
+     "td_p90": 3.643,
+     "strict_q": [
+      -27.662,
+      -18.706,
+      -10.233,
+      -6.764,
+      -3.973,
+      -17.555,
+      -15.216
+     ]
+    },
+    "4000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.029,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -36.992,
+      "q2_mean": -36.847,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": 0.0799,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.225,
+      "full_contain": 0.4167
+     },
+     "accepted": 20,
+     "rejected": 980,
+     "actor_drift": 0.03137,
+     "q_mean": -37.35,
+     "q_std": 23.42,
+     "q_max": 24.54,
+     "td_p90": 6.15,
+     "strict_q": [
+      -46.254,
+      -39.174,
+      -28.695,
+      -25.028,
+      -19.37,
+      -28.811,
+      -31.564
+     ]
+    },
+    "6000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.054,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -55.347,
+      "q2_mean": -54.976,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": 0.0799,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.225,
+      "full_contain": 0.4167
+     },
+     "accepted": 20,
+     "rejected": 1980,
+     "actor_drift": 0.03137,
+     "q_mean": -55.59,
+     "q_std": 31.3,
+     "q_max": 26.26,
+     "td_p90": 8.19,
+     "strict_q": [
+      -67.153,
+      -62.689,
+      -56.084,
+      -52.012,
+      -44.622,
+      -48.917,
+      -50.334
+     ]
+    },
+    "8000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.039,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -70.62,
+      "q2_mean": -70.352,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": 0.0799,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.225,
+      "full_contain": 0.4167
+     },
+     "accepted": 20,
+     "rejected": 2980,
+     "actor_drift": 0.03137,
+     "q_mean": -70.96,
+     "q_std": 36.15,
+     "q_max": 22.56,
+     "td_p90": 9.258,
+     "strict_q": [
+      -89.432,
+      -84.241,
+      -84.648,
+      -79.858,
+      -73.292,
+      -76.004,
+      -69.365
+     ]
+    }
+   },
+   "accepted": 20,
+   "rejected": 2980,
+   "critic_ever_authorized": true
+  },
+  "A_1": {
+   "arm": "A",
+   "seed": 1,
+   "update0": {
+    "max_action_diff": 0.0,
+    "mean_action_diff": 0.0
+   },
+   "checkpoints": {
+    "0": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 2.0,
+      "twin_ok": false,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -0.023,
+      "q2_mean": 0.072,
+      "authorized": false
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.3809,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.6852,
+      "full_contain": 0.4167
+     },
+     "accepted": 0,
+     "rejected": 0,
+     "actor_drift": 0.0,
+     "q_mean": -0.02,
+     "q_std": 0.01,
+     "q_max": -0.01,
+     "td_p90": 0.0,
+     "strict_q": [
+      -0.028,
+      -0.015,
+      -0.002,
+      -0.018,
+      -0.008,
+      -0.017,
+      -0.025
+     ]
+    },
+    "2000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.152,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -12.051,
+      "q2_mean": -11.45,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.3809,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.6852,
+      "full_contain": 0.4167
+     },
+     "accepted": 0,
+     "rejected": 0,
+     "actor_drift": 0.0,
+     "q_mean": -12.1,
+     "q_std": 16.13,
+     "q_max": 15.94,
+     "td_p90": 5.442,
+     "strict_q": [
+      -23.969,
+      -6.925,
+      3.732,
+      12.701,
+      15.449,
+      -10.609,
+      -2.691
+     ]
+    },
+    "4000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.041,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -33.495,
+      "q2_mean": -33.406,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0833,
+      "canonical_return": -0.3089,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0833,
+      "canonical_return": -0.613,
+      "full_contain": 0.4167
+     },
+     "accepted": 18,
+     "rejected": 982,
+     "actor_drift": 0.03119,
+     "q_mean": -33.88,
+     "q_std": 26.19,
+     "q_max": 14.27,
+     "td_p90": 8.674,
+     "strict_q": [
+      -46.754,
+      -23.839,
+      -11.5,
+      -1.023,
+      0.691,
+      -22.625,
+      -13.713
+     ]
+    },
+    "6000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.103,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -54.792,
+      "q2_mean": -54.549,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0833,
+      "canonical_return": -0.3089,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0833,
+      "canonical_return": -0.613,
+      "full_contain": 0.4167
+     },
+     "accepted": 18,
+     "rejected": 1982,
+     "actor_drift": 0.03119,
+     "q_mean": -55.5,
+     "q_std": 36.3,
+     "q_max": 14.79,
+     "td_p90": 11.0,
+     "strict_q": [
+      -69.463,
+      -46.189,
+      -28.466,
+      -16.589,
+      -13.636,
+      -33.917,
+      -25.8
+     ]
+    },
+    "8000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.05,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -80.776,
+      "q2_mean": -80.389,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0833,
+      "canonical_return": -0.303,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0833,
+      "canonical_return": -0.6071,
+      "full_contain": 0.4167
+     },
+     "accepted": 19,
+     "rejected": 2981,
+     "actor_drift": 0.03128,
+     "q_mean": -81.49,
+     "q_std": 43.42,
+     "q_max": 7.6,
+     "td_p90": 12.422,
+     "strict_q": [
+      -103.782,
+      -79.102,
+      -53.538,
+      -37.239,
+      -41.672,
+      -37.486,
+      -47.301
+     ]
+    }
+   },
+   "accepted": 19,
+   "rejected": 2981,
+   "critic_ever_authorized": true
+  },
+  "A_2": {
+   "arm": "A",
+   "seed": 2,
+   "update0": {
+    "max_action_diff": 0.0,
+    "mean_action_diff": 0.0
+   },
+   "checkpoints": {
+    "0": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 1.28,
+      "twin_ok": false,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": 0.01,
+      "q2_mean": 0.045,
+      "authorized": false
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.3809,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.6852,
+      "full_contain": 0.4167
+     },
+     "accepted": 0,
+     "rejected": 0,
+     "actor_drift": 0.0,
+     "q_mean": 0.01,
+     "q_std": 0.01,
+     "q_max": 0.04,
+     "td_p90": 0.0,
+     "strict_q": [
+      -0.01,
+      -0.022,
+      -0.011,
+      -0.021,
+      -0.013,
+      0.005,
+      -0.005
+     ]
+    },
+    "2000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.059,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -15.245,
+      "q2_mean": -15.45,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.3809,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.6852,
+      "full_contain": 0.4167
+     },
+     "accepted": 0,
+     "rejected": 0,
+     "actor_drift": 0.0,
+     "q_mean": -15.55,
+     "q_std": 12.91,
+     "q_max": 11.38,
+     "td_p90": 5.154,
+     "strict_q": [
+      -30.751,
+      -14.563,
+      3.529,
+      8.186,
+      13.127,
+      -17.346,
+      -11.513
+     ]
+    },
+    "4000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.038,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -39.338,
+      "q2_mean": -39.343,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.3911,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.6201,
+      "full_contain": 0.4167
+     },
+     "accepted": 18,
+     "rejected": 982,
+     "actor_drift": 0.03496,
+     "q_mean": -39.9,
+     "q_std": 25.21,
+     "q_max": 15.32,
+     "td_p90": 9.485,
+     "strict_q": [
+      -61.138,
+      -30.698,
+      -8.629,
+      7.136,
+      18.785,
+      -25.742,
+      -23.103
+     ]
+    },
+    "6000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.072,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -71.431,
+      "q2_mean": -71.582,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.3928,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.6218,
+      "full_contain": 0.4167
+     },
+     "accepted": 19,
+     "rejected": 1981,
+     "actor_drift": 0.03508,
+     "q_mean": -72.51,
+     "q_std": 35.69,
+     "q_max": 5.82,
+     "td_p90": 12.022,
+     "strict_q": [
+      -97.356,
+      -51.504,
+      -24.068,
+      -4.481,
+      21.761,
+      -30.401,
+      -44.863
+     ]
+    },
+    "8000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.06,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -90.875,
+      "q2_mean": -91.542,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.3928,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.6218,
+      "full_contain": 0.4167
+     },
+     "accepted": 19,
+     "rejected": 2981,
+     "actor_drift": 0.03508,
+     "q_mean": -92.21,
+     "q_std": 43.37,
+     "q_max": 4.08,
+     "td_p90": 12.665,
+     "strict_q": [
+      -124.478,
+      -56.256,
+      -29.932,
+      -17.383,
+      22.538,
+      -34.439,
+      -62.798
+     ]
+    }
+   },
+   "accepted": 19,
+   "rejected": 2981,
+   "critic_ever_authorized": true
+  },
+  "B_0": {
+   "arm": "B",
+   "seed": 0,
+   "update0": {
+    "max_action_diff": 0.0,
+    "mean_action_diff": 0.0
+   },
+   "checkpoints": {
+    "0": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 1.439,
+      "twin_ok": false,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": 0.041,
+      "q2_mean": 0.001,
+      "authorized": false
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.5002,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.8035,
+      "full_contain": 0.4167
+     },
+     "accepted": 0,
+     "rejected": 0,
+     "actor_drift": 0.0,
+     "q_mean": -0.0,
+     "q_std": 0.02,
+     "q_max": 0.07,
+     "td_p90": 0.0,
+     "strict_q": [
+      -0.002,
+      -0.021,
+      -0.003,
+      -0.009,
+      -0.01,
+      -0.002,
+      -0.006
+     ]
+    },
+    "2000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.051,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -19.249,
+      "q2_mean": -19.107,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.5002,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.8035,
+      "full_contain": 0.4167
+     },
+     "accepted": 0,
+     "rejected": 0,
+     "actor_drift": 0.0,
+     "q_mean": -19.41,
+     "q_std": 12.54,
+     "q_max": 13.55,
+     "td_p90": 3.579,
+     "strict_q": [
+      -27.951,
+      -20.128,
+      -10.911,
+      -5.792,
+      -0.707,
+      6.675,
+      -13.739
+     ]
+    },
+    "4000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.031,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -38.266,
+      "q2_mean": -38.024,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.0058,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.3107,
+      "full_contain": 0.4167
+     },
+     "accepted": 20,
+     "rejected": 980,
+     "actor_drift": 0.03117,
+     "q_mean": -38.53,
+     "q_std": 22.75,
+     "q_max": 21.06,
+     "td_p90": 5.919,
+     "strict_q": [
+      -48.245,
+      -42.057,
+      -32.31,
+      -28.615,
+      -25.913,
+      -12.84,
+      -32.258
+     ]
+    },
+    "6000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.074,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -58.4,
+      "q2_mean": -57.368,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.0058,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.3107,
+      "full_contain": 0.4167
+     },
+     "accepted": 20,
+     "rejected": 1980,
+     "actor_drift": 0.03117,
+     "q_mean": -58.65,
+     "q_std": 31.58,
+     "q_max": 21.75,
+     "td_p90": 8.06,
+     "strict_q": [
+      -67.999,
+      -60.268,
+      -51.164,
+      -46.816,
+      -33.982,
+      -19.264,
+      -45.089
+     ]
+    },
+    "8000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.024,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -70.166,
+      "q2_mean": -69.143,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.0058,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.3107,
+      "full_contain": 0.4167
+     },
+     "accepted": 20,
+     "rejected": 2980,
+     "actor_drift": 0.03117,
+     "q_mean": -70.34,
+     "q_std": 37.79,
+     "q_max": 24.12,
+     "td_p90": 8.61,
+     "strict_q": [
+      -84.501,
+      -75.265,
+      -64.489,
+      -59.744,
+      -44.62,
+      -24.633,
+      -56.781
+     ]
+    }
+   },
+   "accepted": 20,
+   "rejected": 2980,
+   "critic_ever_authorized": true
+  },
+  "B_1": {
+   "arm": "B",
+   "seed": 1,
+   "update0": {
+    "max_action_diff": 0.0,
+    "mean_action_diff": 0.0
+   },
+   "checkpoints": {
+    "0": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 2.0,
+      "twin_ok": false,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -0.023,
+      "q2_mean": 0.072,
+      "authorized": false
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.5002,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.8035,
+      "full_contain": 0.4167
+     },
+     "accepted": 0,
+     "rejected": 0,
+     "actor_drift": 0.0,
+     "q_mean": -0.02,
+     "q_std": 0.01,
+     "q_max": -0.01,
+     "td_p90": 0.0,
+     "strict_q": [
+      -0.028,
+      -0.015,
+      -0.002,
+      -0.018,
+      -0.008,
+      -0.017,
+      -0.025
+     ]
+    },
+    "2000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.109,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -11.205,
+      "q2_mean": -10.919,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.5002,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.8035,
+      "full_contain": 0.4167
+     },
+     "accepted": 0,
+     "rejected": 0,
+     "actor_drift": 0.0,
+     "q_mean": -11.33,
+     "q_std": 16.05,
+     "q_max": 15.86,
+     "td_p90": 5.484,
+     "strict_q": [
+      -23.714,
+      -2.259,
+      6.547,
+      13.81,
+      15.329,
+      20.768,
+      0.926
+     ]
+    },
+    "4000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.082,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -32.516,
+      "q2_mean": -33.294,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0833,
+      "canonical_return": -0.4207,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0833,
+      "canonical_return": -0.7242,
+      "full_contain": 0.4167
+     },
+     "accepted": 17,
+     "rejected": 983,
+     "actor_drift": 0.0312,
+     "q_mean": -33.51,
+     "q_std": 26.75,
+     "q_max": 15.59,
+     "td_p90": 8.829,
+     "strict_q": [
+      -47.455,
+      -20.345,
+      -3.291,
+      5.141,
+      7.868,
+      18.044,
+      -8.668
+     ]
+    },
+    "6000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.059,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -54.141,
+      "q2_mean": -54.49,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0833,
+      "canonical_return": -0.4207,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0833,
+      "canonical_return": -0.7242,
+      "full_contain": 0.4167
+     },
+     "accepted": 17,
+     "rejected": 1983,
+     "actor_drift": 0.0312,
+     "q_mean": -55.03,
+     "q_std": 35.36,
+     "q_max": 14.56,
+     "td_p90": 10.578,
+     "strict_q": [
+      -73.905,
+      -46.114,
+      -29.458,
+      -11.974,
+      -8.509,
+      -0.899,
+      -26.174
+     ]
+    },
+    "8000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.154,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -78.397,
+      "q2_mean": -79.453,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0833,
+      "canonical_return": -0.4207,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0833,
+      "canonical_return": -0.7242,
+      "full_contain": 0.4167
+     },
+     "accepted": 17,
+     "rejected": 2983,
+     "actor_drift": 0.0312,
+     "q_mean": -80.0,
+     "q_std": 39.83,
+     "q_max": 3.34,
+     "td_p90": 11.444,
+     "strict_q": [
+      -109.558,
+      -79.68,
+      -61.501,
+      -38.892,
+      -30.523,
+      -21.64,
+      -49.074
+     ]
+    }
+   },
+   "accepted": 17,
+   "rejected": 2983,
+   "critic_ever_authorized": true
+  },
+  "B_2": {
+   "arm": "B",
+   "seed": 2,
+   "update0": {
+    "max_action_diff": 0.0,
+    "mean_action_diff": 0.0
+   },
+   "checkpoints": {
+    "0": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 1.28,
+      "twin_ok": false,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": 0.01,
+      "q2_mean": 0.045,
+      "authorized": false
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.5002,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.8035,
+      "full_contain": 0.4167
+     },
+     "accepted": 0,
+     "rejected": 0,
+     "actor_drift": 0.0,
+     "q_mean": 0.01,
+     "q_std": 0.01,
+     "q_max": 0.04,
+     "td_p90": 0.0,
+     "strict_q": [
+      -0.01,
+      -0.022,
+      -0.011,
+      -0.021,
+      -0.013,
+      0.005,
+      -0.005
+     ]
+    },
+    "2000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.155,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -15.845,
+      "q2_mean": -15.806,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.5002,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.8035,
+      "full_contain": 0.4167
+     },
+     "accepted": 0,
+     "rejected": 0,
+     "actor_drift": 0.0,
+     "q_mean": -16.13,
+     "q_std": 13.04,
+     "q_max": 10.68,
+     "td_p90": 5.092,
+     "strict_q": [
+      -30.461,
+      -10.463,
+      4.808,
+      9.295,
+      14.259,
+      15.313,
+      -3.643
+     ]
+    },
+    "4000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.115,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -40.024,
+      "q2_mean": -39.854,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.5829,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.8107,
+      "full_contain": 0.4167
+     },
+     "accepted": 17,
+     "rejected": 983,
+     "actor_drift": 0.03557,
+     "q_mean": -40.52,
+     "q_std": 25.15,
+     "q_max": 16.25,
+     "td_p90": 9.257,
+     "strict_q": [
+      -60.759,
+      -24.954,
+      -10.786,
+      3.861,
+      13.208,
+      11.492,
+      -16.357
+     ]
+    },
+    "6000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.134,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -73.617,
+      "q2_mean": -73.718,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.5829,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.8107,
+      "full_contain": 0.4167
+     },
+     "accepted": 17,
+     "rejected": 1983,
+     "actor_drift": 0.03557,
+     "q_mean": -74.74,
+     "q_std": 37.28,
+     "q_max": 10.56,
+     "td_p90": 12.825,
+     "strict_q": [
+      -98.986,
+      -37.97,
+      -23.142,
+      -3.574,
+      20.389,
+      18.771,
+      -35.635
+     ]
+    },
+    "8000": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.06,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -94.799,
+      "q2_mean": -93.764,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.5829,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.8107,
+      "full_contain": 0.4167
+     },
+     "accepted": 17,
+     "rejected": 2983,
+     "actor_drift": 0.03557,
+     "q_mean": -95.42,
+     "q_std": 46.36,
+     "q_max": 11.24,
+     "td_p90": 13.359,
+     "strict_q": [
+      -135.558,
+      -40.012,
+      -20.306,
+      -14.463,
+      20.002,
+      12.942,
+      -53.503
+     ]
+    }
+   },
+   "accepted": 17,
+   "rejected": 2983,
+   "critic_ever_authorized": true
+  }
+ },
+ "reclassification": {
+  "PHASE_SWITCHED_TD3 / TRANSACTIONAL_TD3 / TRANSPORT_DWELL_TD3 / PHASE_GATED_RESIDUAL_CRITIC": "SURVIVE_MARKOV_REPAIR \u2014 no improvement even with the counter observed, healthy critics, finite grads"
+ },
+ "verdict": "REPAIRS_NOT_SUFFICIENT"
+}

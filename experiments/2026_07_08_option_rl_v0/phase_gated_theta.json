@@ -1,0 +1,18 @@
+{
+  "theta": [
+    -0.0010935074940726592,
+    0.609307495776909,
+    0.013786295374584267,
+    0.054612721179955435,
+    0.015075713688127995
+  ],
+  "theta_named": {
+    "contact_offset": -0.0010935074940726592,
+    "push_gain": 0.609307495776909,
+    "direction_correction": 0.013786295374584267,
+    "brake_threshold": 0.054612721179955435,
+    "release_threshold": 0.015075713688127995
+  },
+  "base_mlp_checkpoint": "experiments/2026_07_08_seed_stabilized/E_valselect_v2.pt",
+  "base_mlp_md5": "b822a6608f6a626aedef49f4d1ee379a"
+}

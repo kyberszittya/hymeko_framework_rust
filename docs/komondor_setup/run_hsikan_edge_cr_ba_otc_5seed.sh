@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+#
+# HSiKAN-edge_cr 5-seed audit on Bitcoin Alpha + OTC (real + shuffle).
+# Companion to run_hsikan_edge_cr_5seed_audit.sh (slashdot + epinions).
+# Together they give a uniform 4-dataset edge_cr table.
+#
+# BA + OTC are tiny graphs (24K / 35K edges) so wall is ~30-60 s/seed
+# even with the richer c2,c3,c4,c5,w2,w3 + attention + edge_cr config.
+
+#SBATCH --job-name=hsikan-edge-cr-ba-otc
+#SBATCH --output=slurm_logs/hsikan-edge-cr-ba-otc-%j.out
+#SBATCH --error=slurm_logs/hsikan-edge-cr-ba-otc-%j.err
+#SBATCH --time=01:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=24G
+#SBATCH --partition=gpu
+#SBATCH --gres=gpu:1
+#SBATCH --account=pr_szevis
+
+set -uo pipefail
+mkdir -p slurm_logs hsikan_edge_cr_audit
+REPO="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+SIF="$REPO/hymeko_signedkan.sif"
+cd "$REPO"
+
+module purge
+module load singularity
+
+JSONL=hsikan_edge_cr_audit/results_ba_otc.jsonl
+ORCH=hsikan_edge_cr_audit/chain_ba_otc.log
+> "$JSONL"
+
+ts() { date -Iseconds; }
+log() { echo "[edge-cr-ba-otc] $(ts) $*" | tee -a "$ORCH"; }
+
+log "===== BA + OTC 5-seed audit started (slurm: ${SLURM_JOB_ID:-unknown}) ====="
+
+DATASETS=(bitcoin_alpha bitcoin_otc)
+SEEDS=(0 1 2 3 4)
+HIDDEN=4
+N_EPOCHS=80
+MAX_K=200000
+
+run_one() {
+    local dataset="$1"; local seed="$2"; local mode="$3"
+    local extra="" tag="real"
+    [ "$mode" = "shuffle" ] && { extra="--shuffle-train-signs"; tag="shuffle"; }
+    local cell_log="hsikan_edge_cr_audit/${dataset}_${tag}_seed${seed}.log"
+    log "  RUN $dataset seed=$seed mode=$tag"
+    local t0; t0=$(date +%s)
+    singularity exec --nv --bind "$REPO:/workspace" \
+        --env HSIKAN_MIXED_TUPLES=c2,c3,c4,c5,w2,w3 \
+        --env HSIKAN_ATTENTION_M_E=quaternion \
+        --env HSIKAN_ATTENTION_HIGHWAY=1 \
+        --env HSIKAN_ATTENTION_HIGHWAY_KIND=edge_cr \
+        --env HSIKAN_CYCLE_BATCH=2000 \
+        --env HSIKAN_MAX_K3=$MAX_K \
+        --env HSIKAN_MAX_K2=$MAX_K \
+        --env HYMEKO_CYCLE_CACHE=1 \
+        --env HYMEKO_CYCLE_CACHE_DIR=/workspace/.cache/hymeko_cycles \
+        --env PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+        --env MALLOC_ARENA_MAX=4 \
+        --env OMP_NUM_THREADS=4 \
+        "$SIF" bash -c "cd /workspace && PYTHONPATH=. python -m hymeko_neuro.experiments.runs.run_final_cell \
+            --dataset $dataset --hidden $HIDDEN --seed $seed \
+            --n-epochs $N_EPOCHS --max-k4 $MAX_K $extra" \
+        > "$cell_log" 2>&1
+    local rc=$?
+    local elapsed=$(( $(date +%s) - t0 ))
+    local jline=$(grep -E '^\{"dataset"' "$cell_log" | tail -1)
+    if [ -n "$jline" ]; then
+        echo "$jline" | python3 -c "
+import sys, json
+d = json.loads(sys.stdin.read())
+d['_audit_mode'] = '$tag'; d['_audit_seed'] = $seed; d['_audit_elapsed_s'] = $elapsed
+d['_audit_config'] = 'edge_cr_sota'; d['_audit_stamp'] = '$(date +%Y%m%dT%H%M%SZ)'
+print(json.dumps(d))" >> "$JSONL"
+        local auc=$(echo "$jline" | python3 -c "import sys, json; print(json.loads(sys.stdin.read()).get('auc', 'NA'))")
+        log "    OK rc=$rc elapsed=${elapsed}s auc=$auc"
+    else
+        log "    FAIL rc=$rc elapsed=${elapsed}s"
+        tail -3 "$cell_log" | sed 's/^/      /' >> "$ORCH"
+    fi
+}
+
+for dataset in "${DATASETS[@]}"; do
+    log "DATASET: $dataset"
+    for seed in "${SEEDS[@]}"; do
+        for mode in real shuffle; do
+            run_one "$dataset" "$seed" "$mode"
+        done
+    done
+done
+
+log "===== BA + OTC chain complete ====="
+
+python3 -c "
+import json
+from collections import defaultdict
+r = defaultdict(list)
+with open('$JSONL') as f:
+    for line in f:
+        d = json.loads(line)
+        if isinstance(d.get('auc'), (int, float)):
+            r[(d['dataset'], d['_audit_mode'])].append(d['auc'])
+print()
+for (ds, mode), vals in sorted(r.items()):
+    m = sum(vals)/len(vals)
+    s = (sum((v-m)**2 for v in vals)/max(len(vals)-1,1))**0.5 if len(vals)>=2 else 0.0
+    print(f'HSiKAN-edge_cr  {ds:<14} {mode:<8} n={len(vals)}  auc={m:.4f} ± {s:.4f}')
+" 2>&1 | tee -a "$ORCH"

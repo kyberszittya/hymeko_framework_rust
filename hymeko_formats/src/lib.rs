@@ -19,6 +19,7 @@
     clippy::needless_borrow,
 )]
 
+pub mod binary_graph;
 pub mod codegen;
 pub mod gazebo;
 pub mod sdf;
@@ -27,15 +28,17 @@ pub mod transforms;
 pub mod urdf;
 pub mod xml_util;
 
+pub use binary_graph::{BinaryEdge, BinaryGraph};
 pub use codegen::{generate_description, CodegenError, OutputFormat};
 pub use transforms::{
     DotTransform, GazeboWorldTransform, MermaidTransform, MjcfTransform,
-    SdfTransform, SysmlTransform, TorchDataflowTransform, UrdfTransform,
+    RequirementsDotTransform, RequirementsSysmlTransform, SdfTransform,
+    SysmlTransform, TorchDataflowTransform, UrdfTransform,
 };
 
 use hymeko_query::transforms::TransformRegistry;
 
-/// Register the six built-in transforms into an existing registry.
+/// Register the built-in transforms into an existing registry.
 ///
 /// This is the single point that binds format names to concrete
 /// implementations. `hymeko_query::transforms::TransformRegistry::new()`
@@ -50,9 +53,11 @@ pub fn register_defaults(reg: &mut TransformRegistry) {
     reg.register(Box::new(MermaidTransform));
     reg.register(Box::new(TorchDataflowTransform));
     reg.register(Box::new(SysmlTransform));
+    reg.register(Box::new(RequirementsSysmlTransform));
+    reg.register(Box::new(RequirementsDotTransform));
 }
 
-/// Build a fresh [`TransformRegistry`] with all six built-in transforms
+/// Build a fresh [`TransformRegistry`] with all built-in transforms
 /// registered. Equivalent to the previous
 /// `TransformRegistry::default()` behaviour before the extraction —
 /// kept as a convenience for call sites that want the full default

@@ -1,15 +1,16 @@
 // src/resolve.rs
-use rustc_hash::FxHashMap;
-use serde::{Deserialize, Serialize};
-use parser::ast::{Anno, EdgeDecl, HyperArc, HyperItem, NodeDecl, Ref, SignedRef, UsingStmt, Value};
 use crate::common::ids::{DeclId, SymId};
 use crate::common::pathkey::PathKey;
 use crate::ir::ir::{AnnoR, RefAtomR, SignedRefR, ValueR};
 use crate::resolution::interner::Interner;
 use crate::sym_ast::AstSym;
+use parser::ast::{
+    Anno, EdgeDecl, HyperArc, HyperItem, NodeDecl, Ref, SignedRef, UsingStmt, Value,
+};
+use rustc_hash::FxHashMap;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug,
-    Serialize, Deserialize, Default, Clone)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Index {
     pub by_path: FxHashMap<PathKey, DeclId>,
     /// Alias map from `using path as alias` statements.
@@ -29,11 +30,24 @@ impl Index {
 
 #[derive(Debug)]
 pub enum ResolveError {
-    DuplicateDecl { path: String },
-    UnresolvedRef { from_scope: String, target: String },
-    AmbiguousRef { from_scope: String, target: String, candidates: Vec<String> },
-    MissingDecl { detail: String },
-    UnexpectedTopLevelArc {detail: String}
+    DuplicateDecl {
+        path: String,
+    },
+    UnresolvedRef {
+        from_scope: String,
+        target: String,
+    },
+    AmbiguousRef {
+        from_scope: String,
+        target: String,
+        candidates: Vec<String>,
+    },
+    MissingDecl {
+        detail: String,
+    },
+    UnexpectedTopLevelArc {
+        detail: String,
+    },
 }
 
 pub fn build_index_sym<'a>(d: &AstSym<'a>, it: &Interner) -> Result<Index, ResolveError> {
@@ -81,7 +95,13 @@ pub fn apply_usings(
             } else {
                 return Err(ResolveError::UnresolvedRef {
                     from_scope: "<using>".into(),
-                    target: u.path.path.iter().map(|&s| it.resolve(s)).collect::<Vec<_>>().join("."),
+                    target: u
+                        .path
+                        .path
+                        .iter()
+                        .map(|&s| it.resolve(s))
+                        .collect::<Vec<_>>()
+                        .join("."),
                 });
             }
         }
@@ -133,7 +153,11 @@ fn resolve_value<'a>(
     Ok(match v {
         Value::Str(s) => ValueR::Str(it.intern(s)), // Bridging to owned IR
         Value::Num(x) => ValueR::Num(*x),
-        Value::List(xs) => ValueR::List(xs.iter().map(|x| resolve_value(idx, scope, x, it)).collect::<Result<_,_>>()?),
+        Value::List(xs) => ValueR::List(
+            xs.iter()
+                .map(|x| resolve_value(idx, scope, x, it))
+                .collect::<Result<_, _>>()?,
+        ),
         Value::Ref(r) => {
             let did = resolve_ref_to_declid(idx, scope, r, it)?;
             ValueR::Ref(did)
@@ -169,7 +193,9 @@ fn add_decl(
     it: &Interner,
 ) -> Result<DeclId, ResolveError> {
     if idx.by_path.contains_key(&key) {
-        return Err(ResolveError::DuplicateDecl { path: fmt_path(&key, it) });
+        return Err(ResolveError::DuplicateDecl {
+            path: fmt_path(&key, it),
+        });
     }
     let id = DeclId::new(*next);
     *next += 1;
@@ -241,8 +267,12 @@ pub fn resolve_ref_to_declid(
             p.extend_from_slice(&target.path[1..]);
             expanded = Ref { path: p };
             &expanded
-        } else { target }
-    } else { target };
+        } else {
+            target
+        }
+    } else {
+        target
+    };
     // ─────────────────────────────────────────────────────────
 
     let mut hit: Option<(PathKey, DeclId)> = None;
@@ -281,8 +311,6 @@ pub fn resolve_ref_to_declid(
     }
 }
 
-
-
 pub fn resolve_signed_refs<'a>(
     idx: &Index,
     scope: &[SymId],
@@ -295,7 +323,6 @@ pub fn resolve_signed_refs<'a>(
         let atom = match sref {
             SignedRef::Plus(x) | SignedRef::Minus(x) | SignedRef::Neutral(x) => x,
         };
-
 
         let did = resolve_ref_to_declid(idx, scope, &atom.target, it)?;
 
@@ -352,7 +379,11 @@ pub fn resolve_arc_refs<'a>(
     resolve_signed_refs(idx, scope, &arc.inner.refs, it)
 }
 
-pub fn validate_all_refs_sym<'a>(d: &AstSym<'a>, idx: &Index, it: &mut Interner) -> Result<(), ResolveError> {
+pub fn validate_all_refs_sym<'a>(
+    d: &AstSym<'a>,
+    idx: &Index,
+    it: &mut Interner,
+) -> Result<(), ResolveError> {
     let mut path = Vec::new();
     validate_items(&mut path, &d.items, idx, it)
 }
@@ -409,8 +440,14 @@ fn validate_value<'a>(
     it: &Interner,
 ) -> Result<(), ResolveError> {
     match v {
-        Value::Ref(r) => { let _ = resolve_ref_to_declid(idx, scope, r, it)?; }
-        Value::List(xs) => for x in xs { validate_value(scope, x, idx, it)?; }
+        Value::Ref(r) => {
+            let _ = resolve_ref_to_declid(idx, scope, r, it)?;
+        }
+        Value::List(xs) => {
+            for x in xs {
+                validate_value(scope, x, idx, it)?;
+            }
+        }
         Value::Str(_) | Value::Num(_) => {}
         // Tier B: see resolve_value above.
         Value::Expr(_) => unreachable!(
@@ -421,10 +458,20 @@ fn validate_value<'a>(
 }
 
 fn fmt_scope(scope: &[SymId], it: &Interner) -> String {
-    if scope.is_empty() { "<root>".into() }
-    else { scope.iter().map(|&s| it.resolve(s)).collect::<Vec<_>>().join(".") }
+    if scope.is_empty() {
+        "<root>".into()
+    } else {
+        scope
+            .iter()
+            .map(|&s| it.resolve(s))
+            .collect::<Vec<_>>()
+            .join(".")
+    }
 }
 
 fn fmt_path(p: &PathKey, it: &Interner) -> String {
-    p.0.iter().map(|&s| it.resolve(s)).collect::<Vec<_>>().join(".")
+    p.0.iter()
+        .map(|&s| it.resolve(s))
+        .collect::<Vec<_>>()
+        .join(".")
 }

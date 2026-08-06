@@ -1,0 +1,78 @@
+{
+ "contract": "ACTOR_PATH_FIDELITY_CLEAN_2x2_V1",
+ "date": "2026-07-23",
+ "no_new_campaign": true,
+ "graded_panel": {
+  "n": 31,
+  "pi0_ladder": {
+   "K1": 0.2258,
+   "K3": 0.2258,
+   "K5": 0.2258,
+   "K6": 0.1613
+  },
+  "is_graded": true
+ },
+ "q0": -40.28,
+ "counter_use_trained": 0.0005,
+ "cells": {
+  "Qonly_notrust": {
+   "accepts": 0,
+   "delta_Q": 29.002,
+   "counter_use": 0.0243,
+   "K6": 0.0968,
+   "K5": 0.0968,
+   "K3": 0.0968,
+   "K1": 0.2581,
+   "mean_dwell": 0.7419,
+   "exit_ct": 0.3548,
+   "entry_vel": 0.8444,
+   "canonical_return": -45.2543
+  },
+  "QBC_notrust": {
+   "accepts": 0,
+   "delta_Q": 29.988,
+   "counter_use": 0.0441,
+   "K6": 0.0323,
+   "K5": 0.0323,
+   "K3": 0.0323,
+   "K1": 0.1935,
+   "mean_dwell": 0.3548,
+   "exit_ct": 0.3548,
+   "entry_vel": 0.8346,
+   "canonical_return": -53.044
+  },
+  "Qonly_trust": {
+   "accepts": 0,
+   "delta_Q": 0.0,
+   "counter_use": 0.0005,
+   "K6": 0.0968,
+   "K5": 0.129,
+   "K3": 0.129,
+   "K1": 0.1935,
+   "mean_dwell": 0.8387,
+   "exit_ct": 0.0323,
+   "entry_vel": 0.0406,
+   "canonical_return": -17.0378
+  },
+  "QBC_trust": {
+   "accepts": 0,
+   "delta_Q": 0.0,
+   "counter_use": 0.0005,
+   "K6": 0.0968,
+   "K5": 0.129,
+   "K3": 0.129,
+   "K1": 0.1935,
+   "mean_dwell": 0.8387,
+   "exit_ct": 0.0323,
+   "entry_vel": 0.0406,
+   "canonical_return": -17.0378
+  }
+ },
+ "physical_conversion": false,
+ "bc_breaks_conversion": false,
+ "trust_breaks_conversion": false,
+ "verdict": [
+  "MARKOV_CRITIC_REPAIR_CONFIRMED",
+  "PHYSICAL_POLICY_CONVERSION_NOT_ACHIEVED_ON_THIS_PANEL"
+ ]
+}

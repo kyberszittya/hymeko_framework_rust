@@ -1,0 +1,172 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue,
+  citecolor=black,
+  pdftitle={Scenario Investigations -- k-arm coin-toss, pick-and-place, quadruped},
+  pdfauthor={Aiko (Claude Code) for Dr. Cs. Hajdu}
+}
+
+\newcommand{\built}{\textcolor{green!55!black}{\textbf{BUILT}}}
+\newcommand{\partialst}{\textcolor{orange!80!black}{\textbf{PARTIAL}}}
+\newcommand{\done}{\textcolor{green!55!black}{\textbf{DONE}}}
+\newcommand{\planonly}{\textcolor{orange!80!black}{\textbf{PLAN ONLY}}}
+\newcommand{\notstarted}{\textcolor{red!75!black}{\textbf{NOT STARTED}}}
+\newcommand{\failed}{\textcolor{red!75!black}{\textbf{FAILED}}}
+\newcommand{\passing}{\textcolor{green!55!black}{\textbf{PASSING}}}
+
+\title{Scenario Investigations --- k-arm coin-toss, pick-and-place, quadruped}
+\author{Aiko (Claude Code) for Dr. Cs. Hajdu}
+\date{2026-06-28}
+
+\begin{document}
+\maketitle
+
+\section*{Executive summary}
+
+Three reinforcement-learning scenarios in the HyMeKo codebase were audited for the
+gap between what is implemented and what the designed-control thesis still needs.
+The two-arm Galambos coin-toss and the seven-phase pick-and-place pipeline both
+work as scripted demonstrators, but learned policies stall on each --- and in
+both cases the stall is a \emph{reward decoupling} (a shortcut term the policy
+exploits) rather than a controller limitation. The quadruped is a genuine MuJoCo
+robot that already jumps and partially walks; its missing piece for the thesis is
+a standing/balance task, and its nearest watchable artifact is the planar-walker
+checkpoint.
+
+%======================================================================
+\section{$k$-arm finger coin-toss}
+
+The two-arm ``Galambos'' coin-toss is built and functional: a top-down,
+two-finger planar grasp with a CTDE (centralised-training, decentralised-execution)
+wrapper and a passing test suite. The collaborative extension to $k>2$ arms is,
+by contrast, almost entirely on paper. The wrapper that exists is hardcoded for
+$k=2$: it partitions agents by actuator name suffixes (\texttt{\_left} /
+\texttt{\_right}), so it does not generalise as written.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Component} & \textbf{State} \\
+\midrule
+\texttt{PlanarGraspEnv} (\texttt{env/planar\_grasp\_env.py}), 2-arm top-down two-finger grasp & \built \\
+\texttt{collaborative.py}: \texttt{CollaborativeGalambos}, \texttt{CTDEActorCritic} & \built\ (\textbf{hardcoded $k=2$}) \\
+\quad partitions on actuator names \texttt{\_left} / \texttt{\_right} & \\
+\texttt{exp\_collaborative.py} + \texttt{test\_collaborative.py} (5 tests) & \passing \\
+Dual-discriminator + $k$-arm scaling (plan \texttt{2026-06-24-kato-collab-dual-discriminator}) & \planonly \\
+Arm template \texttt{planar\_finger.hymeko} & \notstarted \\
+$k$-agent CTDE off-policy trainer (\texttt{marl.py}) & \notstarted \\
+Hybrid HSiKAN + MLP + CliffordFIR backbone & \notstarted \\
+Weighted-incidence reader & \notstarted \\
+\bottomrule
+\end{tabular}
+\caption{$k$-arm coin-toss component status.}
+\end{table}
+
+\paragraph{Key finding.} The load-bearing blocker is that \texttt{PlanarGraspEnv}
+does \emph{not} parametrize the arm count. Everything above it ---
+dual-discriminator, MARL trainer, weighted-incidence reader --- sits on top of a
+working $k$-arm environment that does not yet exist.
+
+\paragraph{Next action.} Create
+\texttt{data/robotics/planar\_finger.hymeko} (a single two-link finger template)
+$\rightarrow$ instantiate $k$ copies in \texttt{galambos\_planar.hymeko}
+$\rightarrow$ add an \texttt{n\_arms} parameter to \texttt{PlanarGraspEnv} and
+generalize the left/right partition $\rightarrow$ add a $k=3$ rollout test.
+Estimated $\approx$\,3 hours.
+
+%======================================================================
+\section{Pick-and-place}
+
+A seven-phase, state-gated scripted pipeline works end-to-end; learned policies
+stall at the same wall. The cause is a reward decoupling, not a controller limit.
+The phases (\texttt{env/pick\_place\_env.py}) are:
+\[
+\text{reach} \rightarrow \text{descend} \rightarrow \text{grasp}
+\rightarrow \text{settle (12-step dwell)} \rightarrow \text{lift}
+\rightarrow \text{transport} \rightarrow \text{place}.
+\]
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}llp{7.2cm}@{}}
+\toprule
+\textbf{Term} & \textbf{Weight} & \textbf{Role} \\
+\midrule
+approach & 1.0 & dense descend, saturates \\
+contact & 0.5 & binary finger touch \\
+lift & 5.0 & \textbf{CAPPED} at \texttt{lift\_thresh} $0.035$\,m \\
+place & 1.0 & xy distance, \textbf{GATED} on $\text{lifted}>0.02$ \\
+placed & 20.0 & sparse success \\
+noground & $-2.0$ & approach-collision safety \\
+nonudge & $-3.0$ & pre-grasp; latches off after grasp \\
+\bottomrule
+\end{tabular}
+\caption{Pick-and-place reward terms.}
+\end{table}
+
+\paragraph{Measured.} Scripted expert: $10/10$ grasp, $9/10$ lift, $9/10$ place
+(FANUC). BC: $0\%$ place (covariate shift over a 620-step horizon). PPO
+warm-start: $7/8$ contact, $\approx$\,$1.2$\,cm lift, $0\%$ place. Curriculum PPO:
+$0\%$ place at all difficulties.
+
+\paragraph{Key finding (the bottleneck).} The \texttt{lift} term is CAPPED at
+$0.035$\,m, so a learned policy hits the cap and \emph{hovers} --- exploiting
+$+0.175$/step --- and never explores the full lift$\rightarrow$place. Meanwhile
+\texttt{place} is under-shaped: only xy distance, gated, with the final descent
+unrewarded except for the sparse $+20$. This is the same ``exploit a shortcut''
+pattern as the coin-toss knock-not-grasp, and the recent finding that \emph{low
+reward-conflict drives better behaviour} applies directly: the seven terms have
+decoupling gaps in which \texttt{lift} masks \texttt{place}.
+
+\paragraph{Next action.} UNCAP the \texttt{lift} term (reward full height) $+$
+raise \texttt{place} weight $1.0 \rightarrow 3$--$5$ $+$ add an intermediate
+place-proximity shaping term gated during descent; then re-test
+BC$\rightarrow$PPO$\rightarrow$TD3. Reward edits go in
+\texttt{data/robotics/pick\_place\_task.hymeko} per the project rule.
+
+%======================================================================
+\section{Quadruped}
+
+A real MuJoCo quadruped exists and jumps. Planar walking is a partial win;
+standing/balance --- the task the designed-control thesis needs --- is not yet
+built.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}llp{6.0cm}@{}}
+\toprule
+\textbf{Component} & \textbf{State} & \textbf{Evidence} \\
+\midrule
+\texttt{quadruped.hymeko} descriptor & \built & torso + 4 two-link legs, 8 DOF, 9 vertices \\
+\texttt{QuadrupedGoalEnv} (\texttt{env/quadruped\_env.py}) & \built & 3 base modes (free/planar/fixed); 12 tests pass; 200 steps $<$ 2\,s \\
+Jumping (free base) & \done & $+0.69$\,m above $0.42$\,m rest; PPO 80 iters \\
+Planar walking & \partialst & $+0.47$\,m forward; ckpt \texttt{checkpoints/walker\_planar\_hsikan.pt}; just under $x>0.6$ success threshold \\
+Free-base 3D walking & \failed & flails; $0\%$ goal \\
+Standing/balance task & \notstarted & needed for \texttt{exp\_designed\_control} rung 2 (registered \texttt{\_PLANTS["quadruped"]} but unused) \\
+3D-walker constraint curriculum & \planonly & plan \texttt{2026-06-22-3d-walker-constraints} \\
+\bottomrule
+\end{tabular}
+\caption{Quadruped component status.}
+\end{table}
+
+\paragraph{Key finding.} The quadruped is genuinely a real MuJoCo robot --- not an
+abstract linear plant. The ``quadruped'' in \texttt{structural\_control\_loop.py}
+is only a \emph{planned} future ladder rung. The nearest watchable artifact today
+is the planar-walker checkpoint.
+
+\paragraph{Next action (quickest visual, $\approx$\,5 min).} Load
+\texttt{checkpoints/walker\_planar\_hsikan.pt} into an HSiKAN policy on
+\texttt{QuadrupedGoalEnv(base='planar')} and render a GIF of the $\approx$\,$0.47$\,m
+walk. For the designed-control thesis: build a standing/balance reward (stay
+upright, minimize base drift) so the kinematic-vs-designed-hypergraph comparison
+has a balancing task.
+
+\end{document}

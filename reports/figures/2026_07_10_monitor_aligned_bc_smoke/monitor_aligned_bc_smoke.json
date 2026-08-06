@@ -1,0 +1,31 @@
+{
+  "task": "pick-place",
+  "budget": 8000,
+  "n_eval": 16,
+  "bc": {
+    "demo_steps": 4320,
+    "demo_success_episodes": 24,
+    "bc_final_loss": 0.00342,
+    "bc_success_rate": 0.75
+  },
+  "results": {
+    "original": {
+      "success": 0.625,
+      "grasp": 0.41,
+      "near": 0.557,
+      "delivery": 0.147,
+      "progress": 0.571,
+      "reward_monitor_disagreement": 0.0,
+      "final_return": 1266.17
+    },
+    "monitor_aligned": {
+      "success": 0.5,
+      "grasp": 0.253,
+      "near": 0.446,
+      "delivery": 0.115,
+      "progress": 0.48,
+      "reward_monitor_disagreement": 0.0,
+      "final_return": 3643.6
+    }
+  }
+}

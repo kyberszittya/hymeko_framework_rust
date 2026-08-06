@@ -1,20 +1,22 @@
 #[cfg(test)]
 mod bench_coo_builder_random {
-    use hymeko::module_store::module_store::{CompiledProgram, HymekoParser, ModuleLoadError, ModuleStore};
+    use env_logger::Env;
+    use hymeko::module_store::module_store::{
+        CompiledProgram, HymekoParser, ModuleLoadError, ModuleStore,
+    };
     use hymeko::module_store::source_provider::StdFsProvider;
     use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
-    use hymeko_hre::expansion::star_expansion_coo;
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
+    use hymeko_hre::expansion::star_expansion_coo;
+    use log::info;
     use parser::ast::AstStr;
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::sync::Arc;
-    use std::sync::OnceLock;
     use std::sync::Mutex;
+    use std::sync::OnceLock;
     use std::time::Instant;
-    use env_logger::Env;
-    use log::info;
 
     const DEFAULT_AGG_CFG: AggCfg = AggCfg {
         weight: WeightAgg::Sum,
@@ -63,7 +65,15 @@ mod bench_coo_builder_random {
         }
     }
 
-    fn load_and_lower(path: impl AsRef<Path>) -> Result<(ModuleStore<StdFsProvider, TimedLalrpopParser>, Arc<CompiledProgram>), ModuleLoadError> {
+    fn load_and_lower(
+        path: impl AsRef<Path>,
+    ) -> Result<
+        (
+            ModuleStore<StdFsProvider, TimedLalrpopParser>,
+            Arc<CompiledProgram>,
+        ),
+        ModuleLoadError,
+    > {
         let fs = StdFsProvider::new();
         let parser = TimedLalrpopParser;
         let mut store = ModuleStore::new(fs, parser);
@@ -182,7 +192,13 @@ mod bench_coo_builder_random {
         out
     }
 
-    fn write_case_source(nodes: usize, edges: usize, density: f64, run_idx: usize, seed: u64) -> PathBuf {
+    fn write_case_source(
+        nodes: usize,
+        edges: usize,
+        density: f64,
+        run_idx: usize,
+        seed: u64,
+    ) -> PathBuf {
         let mut path = input_root();
         let _ = fs::create_dir_all(&path);
         path.push(format!(
@@ -232,10 +248,7 @@ mod bench_coo_builder_random {
         );
         info!(
             "[bench] case start: nodes={}, edges={}, density={:.4}, repeats={}",
-            case.nodes,
-            case.edges,
-            case.density,
-            case.repeats
+            case.nodes, case.edges, case.density, case.repeats
         );
 
         for run_idx in 0..case.repeats {
@@ -244,17 +257,23 @@ mod bench_coo_builder_random {
                 ^ ((case.edges as u64) << 16)
                 ^ (run_idx as u64);
 
-            let input_path = write_case_source(case.nodes, case.edges, case.density, run_idx + 1, seed);
+            let input_path =
+                write_case_source(case.nodes, case.edges, case.density, run_idx + 1, seed);
             info!(
                 "[bench] run {}/{} source generated: {}",
                 run_idx + 1,
                 case.repeats,
                 input_path.display()
             );
-            info!("[bench] run {}/{} compiling module...", run_idx + 1, case.repeats);
+            info!(
+                "[bench] run {}/{} compiling module...",
+                run_idx + 1,
+                case.repeats
+            );
             reset_parse_timing();
             let t_compile = Instant::now();
-            let (_store, compiled) = load_and_lower(&input_path).expect("module pipeline compile failed");
+            let (_store, compiled) =
+                load_and_lower(&input_path).expect("module pipeline compile failed");
             let compile_ms = t_compile.elapsed().as_secs_f64() * 1_000.0;
             let parse_timing = snapshot_parse_timing();
             let parse_ms = parse_timing.total_ms;
@@ -271,10 +290,18 @@ mod bench_coo_builder_random {
                 compile_ms
             );
 
-            info!("[bench] run {}/{} building HyperGraphView...", run_idx + 1, case.repeats);
+            info!(
+                "[bench] run {}/{} building HyperGraphView...",
+                run_idx + 1,
+                case.repeats
+            );
             let t_view = Instant::now();
             let ex = ScalarWeightExtractor::default();
-            let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &DEFAULT_AGG_CFG, &ex);
+            let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
+                &compiled.ir,
+                &DEFAULT_AGG_CFG,
+                &ex,
+            );
             let view_ms = t_view.elapsed().as_secs_f64() * 1_000.0;
             info!(
                 "[bench] run {}/{} HyperGraphView ready: nodes={}, edges={}, flat_node_edges={}, flat_edge_nodes={}, view_ms={:.3}",
@@ -287,7 +314,11 @@ mod bench_coo_builder_random {
                 view_ms
             );
 
-            info!("[bench] run {}/{} building star COO + SOA...", run_idx + 1, case.repeats);
+            info!(
+                "[bench] run {}/{} building star COO + SOA...",
+                run_idx + 1,
+                case.repeats
+            );
             let t_coo = Instant::now();
             let coo = star_expansion_coo(&hg);
             let nnz = coo.len();
@@ -308,7 +339,11 @@ mod bench_coo_builder_random {
             );
 
             let total_ms = compile_ms + view_ms + coo_ms;
-            let ns_per_entry = if nnz == 0 { 0.0 } else { (total_ms * 1_000_000.0) / (nnz as f64) };
+            let ns_per_entry = if nnz == 0 {
+                0.0
+            } else {
+                (total_ms * 1_000_000.0) / (nnz as f64)
+            };
 
             info!(
                 "[bench] run {}/{} done: decls={}, nodes={}, edges={}, arcs={}, nnz={}, parse_ms={:.3}, compile_ms={:.3}, view_ms={:.3}, coo_ms={:.3}, total_ms={:.3}, ns_per_entry={:.3}",
@@ -390,7 +425,11 @@ mod bench_coo_builder_random {
 
         info!("[bench] writing CSV payload to {}", path.display());
         fs::write(&path, payload).expect("failed to write COO random benchmark CSV");
-        info!("[bench] wrote CSV: {} (rows={})", path.display(), rows.len());
+        info!(
+            "[bench] wrote CSV: {} (rows={})",
+            path.display(),
+            rows.len()
+        );
     }
 
     #[test]
@@ -420,21 +459,72 @@ mod bench_coo_builder_random {
             parser_backend_hint()
         );
         let cases = [
-            HypergraphCase { nodes: 64, edges: 32, density: 0.01, repeats: 3 },
-            HypergraphCase { nodes: 64, edges: 32, density: 0.05, repeats: 3 },
-            HypergraphCase { nodes: 64, edges: 32, density: 0.20, repeats: 3 },
-
-            HypergraphCase { nodes: 256, edges: 128, density: 0.01, repeats: 3 },
-            HypergraphCase { nodes: 256, edges: 128, density: 0.05, repeats: 3 },
-            HypergraphCase { nodes: 256, edges: 128, density: 0.20, repeats: 3 },
-
-            HypergraphCase { nodes: 1024, edges: 512, density: 0.01, repeats: 2 },
-            HypergraphCase { nodes: 1024, edges: 512, density: 0.05, repeats: 2 },
-            HypergraphCase { nodes: 1024, edges: 512, density: 0.20, repeats: 2 },
-
-            HypergraphCase { nodes: 2048, edges: 1024, density: 0.01, repeats: 2 },
-            HypergraphCase { nodes: 2048, edges: 1024, density: 0.05, repeats: 2 },
-
+            HypergraphCase {
+                nodes: 64,
+                edges: 32,
+                density: 0.01,
+                repeats: 3,
+            },
+            HypergraphCase {
+                nodes: 64,
+                edges: 32,
+                density: 0.05,
+                repeats: 3,
+            },
+            HypergraphCase {
+                nodes: 64,
+                edges: 32,
+                density: 0.20,
+                repeats: 3,
+            },
+            HypergraphCase {
+                nodes: 256,
+                edges: 128,
+                density: 0.01,
+                repeats: 3,
+            },
+            HypergraphCase {
+                nodes: 256,
+                edges: 128,
+                density: 0.05,
+                repeats: 3,
+            },
+            HypergraphCase {
+                nodes: 256,
+                edges: 128,
+                density: 0.20,
+                repeats: 3,
+            },
+            HypergraphCase {
+                nodes: 1024,
+                edges: 512,
+                density: 0.01,
+                repeats: 2,
+            },
+            HypergraphCase {
+                nodes: 1024,
+                edges: 512,
+                density: 0.05,
+                repeats: 2,
+            },
+            HypergraphCase {
+                nodes: 1024,
+                edges: 512,
+                density: 0.20,
+                repeats: 2,
+            },
+            HypergraphCase {
+                nodes: 2048,
+                edges: 1024,
+                density: 0.01,
+                repeats: 2,
+            },
+            HypergraphCase {
+                nodes: 2048,
+                edges: 1024,
+                density: 0.05,
+                repeats: 2,
+            },
             /*
             HypergraphCase { nodes: 4096, edges: 2048, density: 0.01, repeats: 2 },
             HypergraphCase { nodes: 4096, edges: 2048, density: 0.05, repeats: 2 },
@@ -487,6 +577,9 @@ mod bench_coo_builder_random {
         );
 
         assert!(!all_rows.is_empty(), "benchmark produced no rows");
-        assert!(all_rows.iter().all(|r| r.nnz > 0), "at least one case produced zero nnz");
+        assert!(
+            all_rows.iter().all(|r| r.nnz > 0),
+            "at least one case produced zero nnz"
+        );
     }
 }

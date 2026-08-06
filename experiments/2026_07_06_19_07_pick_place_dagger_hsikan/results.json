@@ -1,0 +1,146 @@
+{
+  "name": "pick_place_dagger_hsikan",
+  "algorithm": "dagger",
+  "select": "place",
+  "profile": "data/robotics/pick_place_dagger.hymeko",
+  "label_sanity": {
+    "finite": true,
+    "in_bounds": true,
+    "deterministic": true,
+    "latch_coherent": true,
+    "max_over_box_ranges": 0.4,
+    "n_steps": 1118,
+    "committed_steps": 456,
+    "ok": true
+  },
+  "place_median": 0.8125,
+  "place_per_seed": [
+    0.75,
+    0.875
+  ],
+  "final_place_median": 0.6875,
+  "budget": {
+    "seeds": [
+      0,
+      2
+    ],
+    "n_demos": 18,
+    "bc_epochs": 80,
+    "dagger_iters": 4,
+    "rollouts_per_iter": 12,
+    "beta": 0.5,
+    "beta_decay": 0.5,
+    "expert_replay_ratio": 1.0,
+    "n_eval": 8
+  },
+  "seeds": [
+    {
+      "seed": 0,
+      "peak": {
+        "place": 0.75,
+        "round": 3,
+        "stage": "d3",
+        "agg_size": 26717,
+        "lift": 0.75
+      },
+      "final": {
+        "round": 4,
+        "stage": "d4",
+        "agg_size": 33377,
+        "lift": 0.75,
+        "place": 0.625
+      },
+      "curve": [
+        {
+          "round": 0,
+          "stage": "bc0",
+          "agg_size": 8386,
+          "lift": 0.875,
+          "place": 0.625
+        },
+        {
+          "round": 1,
+          "stage": "d1",
+          "agg_size": 14561,
+          "lift": 0.0,
+          "place": 0.0
+        },
+        {
+          "round": 2,
+          "stage": "d2",
+          "agg_size": 20427,
+          "lift": 0.625,
+          "place": 0.625
+        },
+        {
+          "round": 3,
+          "stage": "d3",
+          "agg_size": 26717,
+          "lift": 0.75,
+          "place": 0.75
+        },
+        {
+          "round": 4,
+          "stage": "d4",
+          "agg_size": 33377,
+          "lift": 0.75,
+          "place": 0.625
+        }
+      ]
+    },
+    {
+      "seed": 2,
+      "peak": {
+        "place": 0.875,
+        "round": 2,
+        "stage": "d2",
+        "agg_size": 21168,
+        "lift": 0.875
+      },
+      "final": {
+        "round": 4,
+        "stage": "d4",
+        "agg_size": 34085,
+        "lift": 0.75,
+        "place": 0.75
+      },
+      "curve": [
+        {
+          "round": 0,
+          "stage": "bc0",
+          "agg_size": 8938,
+          "lift": 0.75,
+          "place": 0.5
+        },
+        {
+          "round": 1,
+          "stage": "d1",
+          "agg_size": 14871,
+          "lift": 0.125,
+          "place": 0.125
+        },
+        {
+          "round": 2,
+          "stage": "d2",
+          "agg_size": 21168,
+          "lift": 0.875,
+          "place": 0.875
+        },
+        {
+          "round": 3,
+          "stage": "d3",
+          "agg_size": 27179,
+          "lift": 0.5,
+          "place": 0.5
+        },
+        {
+          "round": 4,
+          "stage": "d4",
+          "agg_size": 34085,
+          "lift": 0.75,
+          "place": 0.75
+        }
+      ]
+    }
+  ]
+}

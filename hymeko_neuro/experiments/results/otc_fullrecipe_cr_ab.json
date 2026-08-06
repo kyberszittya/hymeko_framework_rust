@@ -1,0 +1,80 @@
+[
+  {
+    "spline_kind": "bspline",
+    "dataset": "bitcoin_otc",
+    "seed": 0,
+    "test_auc": 0.8786239822865974,
+    "test_f1m": 0.7830808205126549,
+    "test_loss": 0.33316609263420105,
+    "n_params": 190369,
+    "train_seconds": 64.55782103538513,
+    "inference_ms": 97.39715003524907,
+    "best_epoch": 35,
+    "cfg": "HSiKAN-BS"
+  },
+  {
+    "spline_kind": "bspline",
+    "dataset": "bitcoin_otc",
+    "seed": 1,
+    "test_auc": 0.8463082109462836,
+    "test_f1m": 0.7670799325840345,
+    "test_loss": 0.4623022973537445,
+    "n_params": 190369,
+    "train_seconds": 68.38007998466492,
+    "inference_ms": 101.46785000688396,
+    "best_epoch": 200,
+    "cfg": "HSiKAN-BS"
+  },
+  {
+    "spline_kind": "bspline",
+    "dataset": "bitcoin_otc",
+    "seed": 2,
+    "test_auc": 0.8668354397834415,
+    "test_f1m": 0.7476689840612052,
+    "test_loss": 0.3481711745262146,
+    "n_params": 190369,
+    "train_seconds": 69.55783772468567,
+    "inference_ms": 102.0841499848757,
+    "best_epoch": 25,
+    "cfg": "HSiKAN-BS"
+  },
+  {
+    "spline_kind": "catmull_rom",
+    "dataset": "bitcoin_otc",
+    "seed": 0,
+    "test_auc": 0.8811680598618116,
+    "test_f1m": 0.7812192723697149,
+    "test_loss": 0.3411065638065338,
+    "n_params": 190113,
+    "train_seconds": 30.271610260009766,
+    "inference_ms": 43.64025001996197,
+    "best_epoch": 35,
+    "cfg": "HSiKAN-CR"
+  },
+  {
+    "spline_kind": "catmull_rom",
+    "dataset": "bitcoin_otc",
+    "seed": 1,
+    "test_auc": 0.8589623622374714,
+    "test_f1m": 0.7575716304329321,
+    "test_loss": 0.3779335916042328,
+    "n_params": 190113,
+    "train_seconds": 62.123069047927856,
+    "inference_ms": 113.4201499808114,
+    "best_epoch": 25,
+    "cfg": "HSiKAN-CR"
+  },
+  {
+    "spline_kind": "catmull_rom",
+    "dataset": "bitcoin_otc",
+    "seed": 2,
+    "test_auc": 0.8666825522755905,
+    "test_f1m": 0.7630375028481069,
+    "test_loss": 0.36031022667884827,
+    "n_params": 190113,
+    "train_seconds": 61.56008839607239,
+    "inference_ms": 106.7586499848403,
+    "best_epoch": 35,
+    "cfg": "HSiKAN-CR"
+  }
+]

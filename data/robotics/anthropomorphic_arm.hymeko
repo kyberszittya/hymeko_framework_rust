@@ -128,17 +128,17 @@ robot: meta_kinematics.kinematics.elements, meta_kinematics.kinematics.geometry,
     }
     @j2: meta_kinematics.kinematics.rev_joint {
         (+ link_1 [[0.0, 0.0, 0.3], [0.0, 0.0, 0.0]], - link_2,
-         - meta_kinematics.kinematics.axes.AXIS_Z);
+         - meta_kinematics.kinematics.axes.AXIS_X);
         @control: arm_joint_control {}
     }
     @j3: meta_kinematics.kinematics.rev_joint {
         (+ link_2 [[-0.15, 0.0, 0.15], [0.0, 0.0, 0.0]], - link_3,
-         - meta_kinematics.kinematics.axes.AXIS_X);
+         - meta_kinematics.kinematics.axes.AXIS_Z);
         @control: arm_joint_control {}
     }
     @j4: meta_kinematics.kinematics.rev_joint {
         (+ link_3 [[0.0, 0.15, 0.25], [0.0, 0.0, 0.0]], - link_4,
-         - meta_kinematics.kinematics.axes.AXIS_Y);
+         - meta_kinematics.kinematics.axes.AXIS_X);
         @control: arm_joint_control {}
     }
     @jtool: meta_kinematics.kinematics.rev_joint {

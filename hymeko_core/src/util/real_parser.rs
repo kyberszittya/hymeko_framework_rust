@@ -1,6 +1,6 @@
+use crate::module_store::module_store::HymekoParser;
 use parser::ast::AstStr;
 use parser::parse_description;
-use crate::module_store::module_store::HymekoParser;
 
 // ----------------------
 // Parser adapter (LALRPOP + Lexer)

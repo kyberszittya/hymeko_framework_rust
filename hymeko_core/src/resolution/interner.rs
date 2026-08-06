@@ -1,5 +1,5 @@
-use rustc_hash::FxHashMap;
 use crate::common::ids::SymId;
+use rustc_hash::FxHashMap;
 
 #[derive(Default)]
 pub struct Interner {
@@ -8,11 +8,15 @@ pub struct Interner {
 }
 
 impl Interner {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn intern(&mut self, s: &str) -> SymId {
         // Fast path: String already exists
-        if let Some(&id) = self.map.get(s) { return id; }
+        if let Some(&id) = self.map.get(s) {
+            return id;
+        }
 
         // Slow path: One-time allocation
         let id = SymId::new(self.vec.len());
@@ -38,7 +42,6 @@ impl Interner {
             (SymId::new(i), s.as_ref())
         })
     }
-    
 }
 
 impl Interner {

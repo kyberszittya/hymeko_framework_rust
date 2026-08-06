@@ -88,8 +88,8 @@ The 5-point smoke sweep was designed to distinguish these.
 | `hymeko_graph/tests/hybrid_topk.rs` | New: 10 integration tests — boundary collapse (α=0/1), UB linearity, admissibility at 5 α values, end-to-end at every α. | +220 |
 | `hymeko_py/src/cycles.rs` | New PyO3 binding `enumerate_top_k_cycles_signed_hybrid_rs` taking `signal_kind × heuristic_kind × alpha × pruner_kind` matrix. Macro-expanded dispatch — every concrete combination monomorphised. | +110 |
 | `hymeko_py/src/lib.rs` | Registered new symbol. | +1 |
-| `signedkan_wip/src/n_tuples.py::construct_k` | `HSIKAN_TOPK_HYBRID_ALPHA` + `HSIKAN_TOPK_SIGNAL` env-vars; if α > 0 routes through hybrid binding, else falls through to existing entropy binding (saves the signal computation when α = 0). | +18 |
-| `signedkan_wip/experiments/run_hybrid_alpha_sweep_2026_05_10.sh` | Orchestration: 5-point α-sweep at the abbreviated Epinions config, results to TSV. | +43 |
+| `hymeko_neuro/n_tuples.py::construct_k` | `HSIKAN_TOPK_HYBRID_ALPHA` + `HSIKAN_TOPK_SIGNAL` env-vars; if α > 0 routes through hybrid binding, else falls through to existing entropy binding (saves the signal computation when α = 0). | +18 |
+| `hymeko_neuro/experiments/run_hybrid_alpha_sweep_2026_05_10.sh` | Orchestration: 5-point α-sweep at the abbreviated Epinions config, results to TSV. | +43 |
 
 **Total new lib code: ~103 LoC. Total new test code: ~220 LoC. Test:code ratio ~2:1.**
 
@@ -241,7 +241,7 @@ This report is **single-seed** and does not promote any α to production. The sm
 | `hymeko_graph/src/topk_cycles.rs::HybridScorer` | Implementation |
 | `hymeko_graph/tests/hybrid_topk.rs` | 10 integration tests |
 | `hymeko_py/src/cycles.rs::enumerate_top_k_cycles_signed_hybrid_rs` | PyO3 binding |
-| `signedkan_wip/experiments/run_hybrid_alpha_sweep_2026_05_10.sh` | Sweep orchestration |
+| `hymeko_neuro/experiments/run_hybrid_alpha_sweep_2026_05_10.sh` | Sweep orchestration |
 | `/tmp/hybrid_alpha_sweep_2026_05_10/` | Sweep logs + `results.tsv` |
 
 ---
@@ -258,7 +258,7 @@ This report is **single-seed** and does not promote any α to production. The sm
 | Rust | 1.92.0 |
 | Python | 3.13 (miniconda3) |
 | Random seed | 0 (single-seed smoke per plan's smoke gate) |
-| Dataset | `signedkan_wip/data/epinions.txt` — sha256 `8120d06a0bb4e65d4b821eba1072647ef3429e4e0a3c02e72bf0c534664f6fee` |
+| Dataset | `hymeko_neuro/assets/data/epinions.txt` — sha256 `8120d06a0bb4e65d4b821eba1072647ef3429e4e0a3c02e72bf0c534664f6fee` |
 | Workload | abbreviated config: c3+c4, h=4, 20 epochs, K=10 000, balance pruner, fraction_negative signal |
 | Suppressions | None |
 

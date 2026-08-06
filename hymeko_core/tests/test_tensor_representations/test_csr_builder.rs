@@ -1,12 +1,14 @@
 #[cfg(test)]
 mod test_csr_builder {
-    use hymeko::tensor::representations::tensor_csr::TensorCsrBuilder;
-    use hymeko_hnn::tensor::representations::tensor_csr_representations::star_expansion_csr;
-    use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
-    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
-    use crate::test_tensor_representations::constants::{DEFAULT_AGG_CFG, MINIMAL_TENSOR_VALUES_PATH};
-    use crate::test_helpers::{log_test_footer, log_test_header};
     use crate::test_helpers::load_and_lower;
+    use crate::test_helpers::{log_test_footer, log_test_header};
+    use crate::test_tensor_representations::constants::{
+        DEFAULT_AGG_CFG, MINIMAL_TENSOR_VALUES_PATH,
+    };
+    use hymeko::tensor::representations::tensor_csr::TensorCsrBuilder;
+    use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
+    use hymeko_hnn::tensor::representations::tensor_csr_representations::star_expansion_csr;
+    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
     use log::info;
     use std::time::Instant;
 
@@ -113,16 +115,35 @@ mod test_csr_builder {
 
         let (_store, compiled) = load_and_lower(MINIMAL_TENSOR_VALUES_PATH).unwrap();
         let ex = ScalarWeightExtractor::default();
-        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &DEFAULT_AGG_CFG, &ex);
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
+            &compiled.ir,
+            &DEFAULT_AGG_CFG,
+            &ex,
+        );
         let csr = star_expansion_csr(&hg);
 
         let expected_dim = hg.num_nodes() + hg.num_edges();
         assert_eq!(csr.num_rows, expected_dim, "IR->CSR row dimension mismatch");
         assert_eq!(csr.num_cols, expected_dim, "IR->CSR col dimension mismatch");
-        assert_eq!(csr.row_ptr.len(), expected_dim + 1, "row_ptr length must be dim + 1");
-        assert_eq!(csr.row_ptr.first().copied(), Some(0), "row_ptr must start at 0");
-        assert_eq!(csr.row_ptr.last().copied(), Some(csr.val.len()), "row_ptr end must equal nnz");
-        assert!(!csr.val.is_empty(), "IR->CSR transformation produced empty star expansion");
+        assert_eq!(
+            csr.row_ptr.len(),
+            expected_dim + 1,
+            "row_ptr length must be dim + 1"
+        );
+        assert_eq!(
+            csr.row_ptr.first().copied(),
+            Some(0),
+            "row_ptr must start at 0"
+        );
+        assert_eq!(
+            csr.row_ptr.last().copied(),
+            Some(csr.val.len()),
+            "row_ptr end must equal nnz"
+        );
+        assert!(
+            !csr.val.is_empty(),
+            "IR->CSR transformation produced empty star expansion"
+        );
 
         info!(
             "IR->CSR star case validated (dim {}x{}, nnz={})",
@@ -147,16 +168,40 @@ mod test_csr_builder {
         };
         let csr = builder.finalize_coalesced();
 
-        assert_eq!(csr.num_rows, case.dim_i, "Expected {} rows, got {}", case.dim_i, csr.num_rows);
-        assert_eq!(csr.num_cols, case.dim_j, "Expected {} columns, got {}", case.dim_j, csr.num_cols);
-        assert_eq!(csr.row_ptr, case.expected_row_ptr, "Unexpected row_ptr: {:?}", csr.row_ptr);
-        assert_eq!(csr.col_ind, case.expected_col_ind, "Unexpected col_ind: {:?}", csr.col_ind);
+        assert_eq!(
+            csr.num_rows, case.dim_i,
+            "Expected {} rows, got {}",
+            case.dim_i, csr.num_rows
+        );
+        assert_eq!(
+            csr.num_cols, case.dim_j,
+            "Expected {} columns, got {}",
+            case.dim_j, csr.num_cols
+        );
+        assert_eq!(
+            csr.row_ptr, case.expected_row_ptr,
+            "Unexpected row_ptr: {:?}",
+            csr.row_ptr
+        );
+        assert_eq!(
+            csr.col_ind, case.expected_col_ind,
+            "Unexpected col_ind: {:?}",
+            csr.col_ind
+        );
         assert_eq!(csr.val, case.expected_vals, "Unexpected val: {:?}", csr.val);
 
         // Structural safety checks shared by all fixtures.
         assert_eq!(csr.row_ptr.len(), case.dim_i + 1, "row_ptr length mismatch");
-        assert_eq!(csr.row_ptr.first().copied(), Some(0), "row_ptr must start at 0");
-        assert_eq!(csr.row_ptr.last().copied(), Some(csr.val.len()), "row_ptr end must equal nnz");
+        assert_eq!(
+            csr.row_ptr.first().copied(),
+            Some(0),
+            "row_ptr must start at 0"
+        );
+        assert_eq!(
+            csr.row_ptr.last().copied(),
+            Some(csr.val.len()),
+            "row_ptr end must equal nnz"
+        );
 
         info!(
             "CSR case {} validated (dim {}x{}, nnz={})",

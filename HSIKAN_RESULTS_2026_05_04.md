@@ -22,10 +22,10 @@ on Epinions because it's the late addition.
 | Epinions      | $0.606$ (h=16, k={3,4}, 1 seed) | $0.931 \pm .003$ | —     | $\bf{0.941 \pm .003}$ | $-0.335$ |
 
 **Source files:**
-- `signedkan_wip/experiments/results/overnight_camera_ready.jsonl` (75 cells, Bitcoin/SBM/Slashdot HSiKAN+SGCN)
-- `signedkan_wip/experiments/results/sgt_sweep.jsonl` (Bitcoin/SBM SGT)
-- `signedkan_wip/experiments/results/sgt_slashdot.jsonl` (Slashdot SGT)
-- `signedkan_wip/experiments/results/sgt_epinions.jsonl` (Epinions SGT)
+- `hymeko_neuro/experiments/results/overnight_camera_ready.jsonl` (75 cells, Bitcoin/SBM/Slashdot HSiKAN+SGCN)
+- `hymeko_neuro/experiments/results/sgt_sweep.jsonl` (Bitcoin/SBM SGT)
+- `hymeko_neuro/experiments/results/sgt_slashdot.jsonl` (Slashdot SGT)
+- `hymeko_neuro/experiments/results/sgt_epinions.jsonl` (Epinions SGT)
 - `/tmp/hsikan_epinions_v8.log` (HSiKAN Epinions, h=16, max_k4=50K)
 
 **Two-regime takeaway (from these numbers):**
@@ -44,7 +44,7 @@ on Epinions because it's the late addition.
 
 **Pruned $h{=}4$ outperforms $h{=}16$ counterpart by $+0.012 \pm .003$ AUC across 5 seeds** — strongest realisation of regularisation-as-pruning observed.
 
-Source: `signedkan_wip/experiments/results/overnight_camera_ready.jsonl`.
+Source: `hymeko_neuro/experiments/results/overnight_camera_ready.jsonl`.
 
 ---
 
@@ -63,7 +63,7 @@ Trained $+32$ to $+40$\,pp above all three nulls.  All three nulls
 hover near $0.50$ (the natural sine/cubic split for smooth $[-1,1]$
 curves) — rules out spline-basis bias and grid-sampling artefacts.
 
-Source: `signedkan_wip/experiments/results/sinusoid_controls.json`.
+Source: `hymeko_neuro/experiments/results/sinusoid_controls.json`.
 
 ---
 
@@ -139,7 +139,7 @@ Permanent test: `scripts/verify_hsikan_emit.py` (passes).
 **AUC parity with hand-coded HSiKAN is NOT claimed.**  The Tier-3
 stubs in `ehk_torch_stub` are placeholder linear+tanh; real
 architectural fidelity requires plugging the real
-`signedkan_wip.src.signedkan.SignedKAN` into the round-trip path
+`hymeko_neuro.signedkan.SignedKAN` into the round-trip path
 (week-long Item #4-final on the roadmap).
 
 Source: `/tmp/hsikan_emitted.py` + verify script.
@@ -217,7 +217,7 @@ ground-truth events): AUC $0.722 \pm .118$, F1m $0.603 \pm .041$
 — enough for the model to recover $1$–$2$ of $3$ aggressors in
 top-5, harder when the signed graph has only $13$–$26$ edges.
 
-Source: `signedkan_wip/src/chicken/aggressor.py` CLI.
+Source: `hymeko_neuro/experiments/chicken/aggressor.py` CLI.
 
 ---
 
@@ -252,7 +252,7 @@ That's Heider 1946 / Cartwright-Harary 1956 reproducing themselves
 on synthetic chicken data.  Direction confirmed: balanced-fraction
 correlates positively with aggressor identity.
 
-Source: `signedkan_wip/src/chicken/unsupervised.py` CLI.
+Source: `hymeko_neuro/experiments/chicken/unsupervised.py` CLI.
 
 ---
 

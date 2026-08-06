@@ -11,13 +11,13 @@
 //! each call starts with a fresh arena so repeated emission is
 //! deterministic.
 
+use hymeko::resolution::interner::Interner;
 use hymeko_emitter::bridge::to_compiler_ir;
 use hymeko_emitter::editor_ir::{
     Attribute, EdgeKey, HyMeKoEditorIR, HyperEdge, IRDelta, IRError, Position, Sign, Vertex,
     VertexKey,
 };
 use hymeko_emitter::{emit_hymeko, emit_lean4, emit_rust_stubs, emit_sysml};
-use hymeko::resolution::interner::Interner;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 

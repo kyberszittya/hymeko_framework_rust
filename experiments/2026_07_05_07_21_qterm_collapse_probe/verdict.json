@@ -1,0 +1,13 @@
+{
+  "clone_delivery": 0.52,
+  "critic_final_loss": 6.28675,
+  "rank_spearman": 0.3744,
+  "q_pred_rise": 4.09381,
+  "true_return_delta": -153.1292,
+  "delivery_delta": -0.52,
+  "ood_q_inflation": 0.0462,
+  "diagnosis": "the critic ranks on-distribution states well (rho=0.37) but ascending Q (predicted +4.09) DROVE the true return DOWN (-153.13); off-manifold Q inflation=+0.0462. The deterministic policy gradient climbs a phantom: OOD overestimation. Bound OOD Q (in-support gradient / CQL / stronger BC constraint) or accept model-free RL cannot add here.",
+  "hypothesis": "H_ood",
+  "clone_path": "experiments/2026_07_05_03_29_galambos_coord_ab_deliver/policies/galambos_coord_ab_deliver_s0.pt",
+  "wall_s": 638.6
+}

@@ -1,0 +1,1348 @@
+{
+ "_schema": "canonical_findings v1 (assimilation-lifecycle-protocol 2026-07-15). Future experiments must state which findings constrain them. classification in the protocol's fixed set.",
+ "findings": [
+  {
+   "id": "F-SAC-1",
+   "claim": "The flat-action SAC critic divergence (crit loss 0.66->72.7) was an IMPLEMENTATION confound, not fundamental: it came from the hardcoded initial entropy coefficient (alpha0=1.0) and learning rate (1e-3). With alpha0=0.1 + LR 3e-4 the critic stays bounded (0.18-4.61).",
+   "classification": "BUG_FIX_WITH_ARCHITECTURAL_IMPACT",
+   "source_experiment": "flat-sac integrity audit (2026-07-15)",
+   "raw_evidence": [
+    "reports/canonical_integration/sac_rehab/implementation_difference_table.md",
+    "reports/canonical_integration/sac_rehab/arm_d_result.json"
+   ],
+   "confidence": "measured (single-seed diagnostic, mechanism verified)",
+   "scope": "flat-action SAC on PlanarGrasp; the stable hyperparameters generalize to BC-anchored SAC refinement",
+   "limitations": "alpha0=0.1/LR3e-4 is task-tuned; NOT promoted to the global SACConfig default (would change classic-SAC behavior on other envs).",
+   "framework_consequence": "Coin-toss/flat SAC refinement drivers must set init_alpha=0.1, LR 3e-4 (recorded discipline). SACConfig now exposes init_alpha; entropy schedule via AlphaMode.",
+   "code_changes": [
+    "hymeko_rl/train/sac.py: SACConfig.init_alpha (configurable alpha0)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_sac.py::test_bc_anchor_pulls_action_mean_toward_demos"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-SAC-2",
+   "claim": "There is NO SAC integration bug in the actor mechanics: BC gradient is live and in the same action space as behaviour_clone (anchor MSE 5e-4 post-BC), sign correct, tanh log-prob sane, freeze-actor holds delivery (eval path consistent), overfit+reload exact.",
+   "classification": "NO_FRAMEWORK_CHANGE_REQUIRED",
+   "source_experiment": "flat-sac integrity audit (2026-07-15)",
+   "raw_evidence": [
+    "reports/canonical_integration/sac_rehab/integrity_tests.py",
+    "reports/canonical_integration/sac_rehab/integrity_result.json"
+   ],
+   "confidence": "measured (7 fixed-batch tests)",
+   "scope": "SquashedGaussianActor + train_sac actor update",
+   "limitations": "mechanics-only; says nothing about closed-loop delivery",
+   "framework_consequence": "The integrity suite is a reusable diagnostic pattern (fixed-batch gradient/space/sign/freeze/overfit) for any actor-loss contradiction.",
+   "code_changes": [
+    "reports/canonical_integration/sac_rehab/integrity_tests.py (diagnostic)"
+   ],
+   "regression_tests": [
+    "the suite itself"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-SAC-3",
+   "claim": "The 'BC penalty ~70 should dominate but the actor drifts' contradiction is explained by GRADIENT MAGNITUDE, not loss magnitude: |g_BC|=0.040 is 15% of the full actor gradient, dwarfed ~5x by entropy (|g_entropy|=0.205) and ~3x by -Q (0.116); cos(g_BC,g_entropy)=-0.20 (entropy OPPOSES the anchor).",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "flat-sac integrity audit (2026-07-15)",
+   "raw_evidence": [
+    "reports/canonical_integration/sac_rehab/integrity_result.json (#4/#4b)"
+   ],
+   "confidence": "measured",
+   "scope": "flat-action SAC actor loss (entropy + -Q + demo anchor)",
+   "limitations": "measured on PlanarGrasp; the ranking (entropy>Q>anchor) is env/reward-scale dependent",
+   "framework_consequence": "Explains why TD3+BC (no entropy) holds while classic SAC drifts; motivates entropy-schedule component + rollout-anchor.",
+   "code_changes": [
+    "hymeko_rl/train/sac.py: AlphaMode (entropy control)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_sac.py entropy-mode tests"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-SAC-4",
+   "claim": "Entropy control (alpha fixed-low / annealed / ~0) does NOT rescue flat-action delivery: all ladder arms collapse the 0.417 BC floor online (S3 alpha~0 -> 0.000). Entropy explained the gradient magnitude but is not the delivery cause.",
+   "classification": "NEGATIVE_RESULT_REQUIRING_A_GUARD",
+   "source_experiment": "flat-sac-entropy-correction ladder (2026-07-15)",
+   "raw_evidence": [
+    "reports/canonical_integration/sac_rehab/entropy_ladder/ladder_results.json",
+    "reports/2026-07-15-flat-sac-entropy-correction.md"
+   ],
+   "confidence": "measured, 5 arms x 3 seeds x 25k",
+   "scope": "flat per-step action abstraction on the floorless PlanarGrasp env",
+   "limitations": "does NOT close the flat path entirely \u2014 the rollout-state anchor (F-SAC-5) is a separate untested lever",
+   "framework_consequence": "Flat per-step SAC pipeline QUARANTINED (registry); entropy schedule is a speed lever, not a delivery fix. Guard: do not deploy a flat per-step SAC actor as a coin-toss default.",
+   "code_changes": [
+    "reports/framework/canonical_components.json: pipeline.flat_per_step_bc_offpolicy = QUARANTINED"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_canonical_coin_toss.py::test_entry_point_does_not_import_the_flat_trainer"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Does rollout-state DAgger anchoring rescue it? (flat_sac_rollout_state_dagger_anchor, running)"
+  },
+  {
+   "id": "F-SAC-5",
+   "claim": "The demo-state anchor holds action_mean AT BC on demo states (dist_from_bc ~0.002 across all 15 cells) yet closed-loop delivery collapses to ~0 \u21d2 the destructive change is on ROLLOUT states the demo-state anchor never covers (covariate shift), not action drift on demo states.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "flat-sac-entropy-correction ladder (2026-07-15)",
+   "raw_evidence": [
+    "reports/canonical_integration/sac_rehab/entropy_ladder/ladder_results.json (dist_from_bc column)"
+   ],
+   "confidence": "measured (15 cells, consistent)",
+   "scope": "any BC-anchored refinement of a reactive policy on a floorless env",
+   "limitations": "mechanism inferred from the dist/delivery double-signal; the fix (rollout anchor) is being tested",
+   "framework_consequence": "Motivates sac.rollout_state_dagger_anchor (EXPERIMENTAL). A demo-state-only anchor is INSUFFICIENT against covariate shift \u2014 future BC-anchor refinement should consider rollout-state supervision.",
+   "code_changes": [
+    "hymeko_rl/train/sac.py: rollout_anchor_coef + dagger_teacher"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_sac.py::test_rollout_anchor_pulls_action_mean_toward_teacher_on_visited_states"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Confirmed positive pending flat_sac_rollout_state_dagger_anchor full run."
+  },
+  {
+   "id": "F-SAC-6",
+   "claim": "Delivery must be graded at the env's success_steps DWELL and the demonstrator ceiling measured FIRST: a hardcoded dwell>=20 (vs success_steps=5) read the 0.9-delivery demonstrator as 0.000, nearly mis-attributing a harness bug as a covariate collapse.",
+   "classification": "NEW_EVALUATION_REQUIREMENT",
+   "source_experiment": "flat-sac integrity audit (2026-07-15, metric-integrity catch)",
+   "raw_evidence": [
+    "reports/2026-07-15-flat-sac-entropy-correction.md (Part 1 metric catch)"
+   ],
+   "confidence": "measured (demonstrator 0.000 -> 0.9 after fix)",
+   "scope": "all coin-toss / flat delivery evaluation",
+   "limitations": "specific to dwell-graded delivery tasks",
+   "framework_consequence": "Canonical delivery metric (eval_delivery / flat_metrics) reads success_steps, never a literal. Measure the demonstrator ceiling before ranking a policy (CLAUDE.md eval-integrity rule, now with a concrete on-record catch). NOW DECLARABLE: meta_evaluation.hymeko carries grade_dwell + ceiling_first + disjoint cohorts; enforcement (validate grade_dwell==env.success.steps) is the follow-up.",
+   "code_changes": [
+    "reports/canonical_integration/sac_rehab/integrity_tests.py: dwell = int(getattr(env,'success_steps',1))"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_rollout_dagger.py (verdict uses measured ceiling)"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-PP-001",
+   "claim": "The deployed FANUC pick-place policy is a Markov-mode hybrid-DAgger clone of the v3 clean expert on the require_settle task: 0.875 stable-place / 4.69 cm. The v3 expert resolves the clean-vs-yield conflict by a BASIN CONSTRAINT (route v2's clean transit into v1's unflipped grasp basin), reaching 0.906 / 2.16 cm.",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "2026-07-13/14 hybrid DAgger",
+   "raw_evidence": [
+    "experiments/hybrid_dagger_gif/policies/hybrid_dagger_hsikan_s0_best.pt (sha 65e66535)",
+    "reports/2026-07-14-pick-place-residual-rl-levers.md",
+    "reports/2026-07-12-pick-place-v2-clearance-gate.md"
+   ],
+   "confidence": "measured (multi-seed DAgger + clearance test)",
+   "scope": "fanuc pick-place v3+settle, fixed target",
+   "limitations": "raw state_dict (no metadata); target-blind; precision imitation-bounded.",
+   "framework_consequence": "controller.pick_place_hybrid_dagger_base registered DEPLOYABLE; loaded via load_pick_policy.",
+   "code_changes": [
+    "already integrated (this assimilation added the compat-validated loader route)"
+   ],
+   "regression_tests": [
+    "test_pick_place_scene.py::test_load_pick_policy_loads_canonical_deployed_base",
+    "test_dagger.py",
+    "test_hybrid_automaton.py"
+   ],
+   "superseded_findings": "v1 dirty-transit DAgger 0.875 (legacy delivered metric)",
+   "open_questions": null
+  },
+  {
+   "id": "F-PP-002",
+   "claim": "Offline actor-critic (TD3+BC) COLLAPSES on FANUC pick-place: crit/act blow up, rl_refined (0.0-0.4375) <= bc_step0. BC/DAgger is the working imitation path; from-scratch/warm-start PPO also collapses to ~0.",
+   "classification": "NEGATIVE_RESULT_REQUIRING_A_GUARD",
+   "source_experiment": "2026-07-06 fanuc-pick-td3bc + 2026-07-13 stable-campaign",
+   "raw_evidence": [
+    "reports/2026-07-06-fanuc-pick-td3bc.md",
+    "experiments/pick_place_stable_campaign/results.json",
+    "experiments/2026_07_13_02_55_fanuc_pick_td3bc_hsikan/run.log"
+   ],
+   "confidence": "measured (multiple runs, value-drift signature)",
+   "scope": "fanuc pick-place env/reward",
+   "limitations": "scoped to this env; not a universal TD3+BC impossibility.",
+   "framework_consequence": "pick_place_td3bc + pick_place_ppo + pick_place_rl_sidebyside labeled NEGATIVE_DIAGNOSTIC/SUPERSEDED in the registry (kept runnable for repro, must not become default).",
+   "code_changes": [
+    "reports/framework/canonical_components.json: quarantined_or_superseded entries"
+   ],
+   "regression_tests": [
+    "test_pick_place_td3bc.py (collapse still reproduced/understood)"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-PP-003",
+   "claim": "Structured residual RL HOLDS the frozen base 0.875 exactly (anchor + settle reward + PPO + mode-gate) but CANNOT improve it: a bounded action-residual cannot move a feedback controller's setpoint. Precision floor stays ~4.6 cm; SAC entropy drifts it.",
+   "classification": "NEGATIVE_RESULT_CLOSING_A_DIRECTION",
+   "source_experiment": "2026-07-14 residual RL levers",
+   "raw_evidence": [
+    "experiments/residual_rl/*.json (9 files)",
+    "reports/2026-07-14-pick-place-residual-rl-levers.md"
+   ],
+   "confidence": "measured (delta x reward x mode-set grid, 3 seeds)",
+   "scope": "residual RL as a PRECISION lever over the frozen base; from-scratch RL NOT closed",
+   "limitations": "closure scoped to bounded residual over a frozen setpoint.",
+   "framework_consequence": "ResidualPickEnv registered RESEARCH_ONLY (not deployed); the closure is recorded so a later branch does not re-adopt residual-as-precision-lever silently.",
+   "code_changes": [
+    "registry status RESEARCH_ONLY"
+   ],
+   "regression_tests": [
+    "test_residual_pick_env.py"
+   ],
+   "superseded_findings": null,
+   "open_questions": "From-scratch asymmetric actor-critic (not setpoint-bound) for precision \u2014 untested."
+  },
+  {
+   "id": "F-PP-004",
+   "claim": "Pick-place precision is IMITATION-BOUNDED (~4.7 cm): no clone reaches the expert's 2.16 cm across feedforward, centered-target, and every recurrent cell (GRU/LSTM/peephole/LN/CIFG) \u2014 the centering is execution-hard, drowned in the BC loss. LSTM WINS reliability (0.917). Cloning a MORE-precise (centered Markov) target BACKFIRES (0.667/5.31, more-precise=harder-to-clone).",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "2026-07-14 precision + recurrent-variant odyssey",
+   "raw_evidence": [
+    "reports/figures/2026-07-14-pick-place-precision/{placement_precision,recurrent_variant_odyssey}.png",
+    "reports/2026-07-14-pick-place-residual-rl-levers.md"
+   ],
+   "confidence": "measured (confound-controlled on common-settled episodes)",
+   "scope": "precision by IMITATION; a stateful RL-from-scratch or an obs exposing the PI integral are NOT closed",
+   "limitations": "the 2.16cm is a stateful-PI mechanism not observable to a feedforward clone.",
+   "framework_consequence": "Guard: a more-precise scripted target is not automatically a better clone target \u2014 do not re-run centered-target cloning expecting a precision gain. LSTM is the reliability-canonical recurrent cell.",
+   "code_changes": [
+    "control/pick_place_laws.py centered laws REVERTED to tool-at-target (this backfire recorded)"
+   ],
+   "regression_tests": [
+    "test_recurrent_clone.py (variant coverage)",
+    "test_dagger.py"
+   ],
+   "superseded_findings": null,
+   "open_questions": "DAgger'd target-aware/LSTM past the 7.5cm tolerance \u2014 untested."
+  },
+  {
+   "id": "F-PP-005",
+   "claim": "Clones are TARGET-BLIND (the target is not in the base observation; the hypergraph is arm-only) so they MEMORISE the fixed training target \u2014 a moved target misses by 17.5 cm. Adding target feedback (observe_target: object->target displacement in node_features) + varied-target training makes a clone place at an ARBITRARY target (moved-target 1.45 cm).",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "2026-07-14 target-feedback",
+   "raw_evidence": [
+    "experiments/pick_place_gui/lstm_target_aware.pt (obs 108, observe_target)",
+    "reports/framework/canonical_components.json#env.observe_target_feedback"
+   ],
+   "confidence": "measured (moved-target end-to-end)",
+   "scope": "fanuc pick-place arbitrary-target placement",
+   "limitations": "target-aware reliability borderline (0.71-0.79) at the 7.5cm tolerance.",
+   "framework_consequence": "env.observe_target_feedback registered CANONICAL (default off, byte-identical); load_pick_policy validates observe_target so a target-aware clone cannot be loaded into a target-blind env (or vice versa).",
+   "code_changes": [
+    "env/pick_place_env.py observe_target",
+    "gui build_scene builds env obs to match ckpt",
+    "load_pick_policy observe_target compat guard"
+   ],
+   "regression_tests": [
+    "test_recurrent_clone.py::test_observe_target_widens_the_demo_observation",
+    "test_pick_place_scene.py::test_load_pick_policy_rejects_recurrent_observe_target_mismatch"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-PP-006",
+   "claim": "Pick-place checkpoint provenance was UNSAFE: every FF/HSiKAN/TD3 checkpoint is a raw state_dict with NO metadata; the June checkpoints use an obs-72 schema incompatible with the current obs-90; and 4 uncentralized loaders (only the GUI's validated). A wrong-schema checkpoint could mis-load or fall back silently.",
+   "classification": "NEW_PROVENANCE_REQUIREMENT",
+   "source_experiment": "2026-07-15-fanuc-pick-place-canonical (this assimilation)",
+   "raw_evidence": [
+    "reports/canonical_integration/fanuc-pick-place/{artifact_inventory.json,source_integration_map.md}"
+   ],
+   "confidence": "measured (discovery over ~200 checkpoints; obs-72 vs obs-90 confirmed by tensor shapes)",
+   "scope": "all pick-place checkpoint loading",
+   "limitations": "provenance sidecar for the metadata-blind FF base still recommended (deferred).",
+   "framework_consequence": "loader.load_pick_policy (+ load_pick_actor + PickPolicyIncompatible) is now THE loader used by build_scene / render_trained / residual_rl._load_base; it FAILS LOUD on obs/action/observe_target mismatch (never a silent mis-load). Also: reports/models/campaign/* are galambos, NOT pick-place -> excluded from the manifest. NOW DECLARABLE: meta_provenance.hymeko carries the load recipe (kind/algo/arch_signature) + reward_hash/seed/eval_cohort; loader-reads-provenance (vs the GUI filename guess) is the follow-up.",
+   "code_changes": [
+    "gripper_pick_bc.py: load_pick_policy, load_pick_actor, PickPolicyIncompatible",
+    "gui/pick_place_scene.py, viz/render_pick_place.py, pick_place_residual_rl.py routed through it",
+    "RecurrentActionFn moved to pick_place_recurrent_clone.py"
+   ],
+   "regression_tests": [
+    "test_pick_place_scene.py::test_load_pick_actor_rejects_obs_schema_mismatch",
+    "::test_load_pick_policy_rejects_recurrent_observe_target_mismatch",
+    "::test_load_pick_policy_loads_canonical_deployed_base"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Re-defaulting PickPlaceEnv bare constructor (still builds the anthropomorphic/v1/no-settle config) \u2014 deferred to a fail-loud guard, separate authorization."
+  },
+  {
+   "id": "F-PP-007",
+   "claim": "The legacy success predicate (delivered = held-above-target) inflated 'place' rates until require_settle (genuine set-down: object at rest, released, within radius) was introduced. All pre-settle place rates are on the LEGACY metric and must not be compared across the boundary. The two '0.875's (v1-dirty-legacy vs v3-clean-settle) are different cohorts.",
+   "classification": "NEW_EVALUATION_REQUIREMENT",
+   "source_experiment": "2026-07-13 stable-place",
+   "raw_evidence": [
+    "reports/2026-07-13-pick-place-clean-stable-place-JOINT.md",
+    "reports/canonical_integration/fanuc-pick-place/canonical_manifest.md"
+   ],
+   "confidence": "measured",
+   "scope": "all pick-place evaluation",
+   "limitations": "require_settle default off (byte-identical legacy); canonical spec sets it on.",
+   "framework_consequence": "Canonical env spec is expert_version=3 + require_settle=True; PlacementPrecisionMetric/LiftPlaceMetric carry the divergence guard (a blow-up must not count as a lift/settle). Do not merge pre/post-settle place rates.",
+   "code_changes": [
+    "already integrated (require_settle in the canonical spec)"
+   ],
+   "regression_tests": [
+    "test_pick_place_env.py (settle predicate)",
+    "test_eval_metric.py (divergence guard)"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-PHYS-1",
+   "claim": "A structure-aware elimination ordering cuts direct-solve fill-in on structured constraint graphs: min-degree gives 4.3x less fill than natural order on a cloth grid and 14.5x less on a pile, while every ordering blows up on a truly dense pile. Fill-in is the exact proxy for direct sparse-solve (Cholesky/LDL) cost.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "sbsh-physics-probe (2026-07-11)",
+   "raw_evidence": [
+    "reports/2026-07-11-sbsh-physics-probe.md",
+    "reports/figures/2026-07-10-sbsh-scene-demo/physics_probe.json"
+   ],
+   "confidence": "measured (fill/width/flops under 4 orderings x 3 system classes x 7 sizes, deterministic seeds)",
+   "scope": "constraint graphs of physics scenes (bodies=nodes, joints '+'/contacts '-' = signed edges)",
+   "limitations": "fill is a proxy for the factor cost, not wall-clock (that is F-PHYS-2); Sigma-deg^2 flops is the classic dense-Cholesky proxy.",
+   "framework_consequence": "The ordering + elimination-cost primitives are canonical (physics.structural_cost_predictors); solve cost is predictable from the graph BEFORE solving.",
+   "code_changes": [
+    "hymeko_rl/sbsh_scene/physics_probe.py (elimination_cost, order_* \u2014 registered CANONICAL)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/sbsh_scene/tests/test_physics_probe.py::test_nested_dissection_reduces_grid_fill_vs_natural",
+    "::test_grid_induced_width_at_least_treewidth"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-PHYS-2",
+   "claim": "The direct-vs-iterative wall-clock crossover IS a treewidth threshold: structured/articulated systems (tw <= sqrt(N): chain, cloth<=N576, the real arm) solve fastest EXACTLY by sparse-direct (residual ~1e-16), dense piles solve fastest ITERATIVELY by CG (e.g. pile N=1024: CG 1.50 ms vs direct 7.82 ms, 5.2x). The fill proxy becomes seconds and accuracy.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "sbsh-physics-solve (2026-07-11)",
+   "raw_evidence": [
+    "reports/2026-07-11-sbsh-physics-solve.md",
+    "reports/figures/2026-07-10-sbsh-scene-demo/physics_solve.json"
+   ],
+   "confidence": "measured (SuperLU MMD_AT_PLUS_A direct + CG, median of 5 reps, seeded)",
+   "scope": "SPD/bilateral constraint solve (A = L + lambda*I over the constraint graph)",
+   "limitations": "A = L + lambda*I is the constraint-graph sparsity proxy, not the exact Delassus/KKT operator; CG is the bilateral-block analog of PGS; wall-clock constants are Python/scipy-prototype (F-PHYS-6).",
+   "framework_consequence": "Motivates the certificate-routed solver (F-PHYS-3): the crossover is predictable from the width, so it can be automated.",
+   "code_changes": [
+    "hymeko_rl/sbsh_scene/physics_solve.py (system_matrix, direct_time_residual, cg_time_residual \u2014 registered CANONICAL)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/sbsh_scene/tests/test_physics_solve.py"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Grounding on the exact MuJoCo efc_* / KKT operator (box-pile) remains."
+  },
+  {
+   "id": "F-PHYS-3",
+   "claim": "A single cheap structural number \u2014 the SBSH width certificate (a treewidth upper bound the scene already carries) \u2014 routes the constraint solve to the best of {exact-direct, iterative-CG} across the whole structure spectrum, with measured worst-case regret 1.13 vs an oracle that always picks the faster method (~1.0 almost everywhere). It recovers exactness where cheap (residual ~1e-16, where always-CG settles for ~1e-8) AND dodges the direct-factor blow-up where not.",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "sbsh-physics-adaptive (2026-07-11)",
+   "raw_evidence": [
+    "reports/2026-07-11-sbsh-physics-adaptive.md",
+    "reports/figures/2026-07-10-sbsh-scene-demo/physics_adaptive.json"
+   ],
+   "confidence": "measured (regret over chain/cloth/pile x 7 sizes + the real MuJoCo arm; residuals exact)",
+   "scope": "any bilateral/SPD constraint solve exposing a (positions, signed-edges) graph",
+   "limitations": "W*=40 is one calibrated threshold (production: a fill-vs-iters cost model); the certificate's own cost is assumed amortised via incremental width maintenance (L5, conditional on edit locality; L6: adversarial global edits force Omega(sqrt N)); constants are Python-prototype (F-PHYS-6).",
+   "framework_consequence": "EXTRACTED to the canonical framework: AdaptiveWidthSolver + certificate_width in hymeko_rl/sbsh_scene/solver.py, exposed from the package __init__, imported by the physics_adaptive driver (no longer defined there). Future SBSH physics work imports it (anti-bloat).",
+   "code_changes": [
+    "hymeko_rl/sbsh_scene/solver.py (AdaptiveWidthSolver, certificate_width, adaptive_solve, DEFAULT_WIDTH_THRESHOLD)",
+    "hymeko_rl/sbsh_scene/physics_adaptive.py (now imports the canonical solver)",
+    "hymeko_rl/sbsh_scene/__init__.py (exports)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/sbsh_scene/tests/test_solver.py::test_adaptive_solver_picks_direct_and_is_exact_for_low_width",
+    "::test_adaptive_solver_picks_iterative_for_high_width",
+    "::test_adaptive_solver_w_star_config_is_honoured",
+    "::test_adaptive_solver_width_matches_certificate"
+   ],
+   "superseded_findings": null,
+   "open_questions": "A production cost model (fill vs iters*N) instead of a width cutoff; incremental certificate maintenance under adversarial edits."
+  },
+  {
+   "id": "F-PHYS-4",
+   "claim": "The REAL frictional-contact solve obeys the same law: an LCP with Coulomb friction solved by Projected Gauss-Seidel over the Delassus-structured coupling has PGS iterations and #colours (parallel phases) CONSTANT in N on structured contact graphs (chain 19->19, cloth 40->43, arm 20; colours 3/6/3 constant) and GROWING on dense piles (iters 28->207, colours 4->32, accuracy 1e-5->9e-4, wall-clock to 2.2 s). So the width certificate predicts the real contact solver's cost and parallelism, not just the linear proxy.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "sbsh-physics-lcp (2026-07-13)",
+   "raw_evidence": [
+    "reports/2026-07-13-sbsh-physics-lcp.md",
+    "reports/figures/2026-07-10-sbsh-scene-demo/physics_lcp.json"
+   ],
+   "confidence": "measured (PGS to 1e-6, median of 3 reps, seeded; the real MuJoCo arm graph included)",
+   "scope": "frictional rigid-body contact LCP over the contact line graph",
+   "limitations": "coupling is Delassus-STRUCTURED (line-graph Laplacian + I), not the exact J M^-1 J^T from an engine (topology faithful incl. the arm; entries a well-conditioned model); friction is a Coulomb box on one tangential; PGS accuracy is the honest ~1e-5, degrading with density; Python inner loop sets the wall-clock constants (F-PHYS-6, iteration/colour counts are implementation-free).",
+   "framework_consequence": "EXTRACTED to the canonical framework: ContactLcpSolver + contact_coupling/greedy_colors/pgs in solver.py, imported by the physics_lcp driver (no longer defined there). physics.contact_lcp_solver is CANONICAL.",
+   "code_changes": [
+    "hymeko_rl/sbsh_scene/solver.py (ContactLcpSolver, contact_coupling, greedy_colors, pgs)",
+    "hymeko_rl/sbsh_scene/physics_lcp.py (now imports the canonical solver)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/sbsh_scene/tests/test_solver.py::test_contact_solver_solution_is_nonnegative_and_complementary",
+    "::test_contact_solver_iterations_are_size_independent_on_a_chain",
+    "::test_contact_solver_colors_bounded_on_chain_grow_on_pile",
+    "hymeko_rl/sbsh_scene/tests/test_physics_lcp.py"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Extract MuJoCo's true efc_* on a box-pile scene (the exact-Delassus grounding step)."
+  },
+  {
+   "id": "F-PHYS-5",
+   "claim": "The octree/spatial nested-dissection ordering is a WEAKER heuristic than min-degree on degenerate graphs: on a 1-D chain (true treewidth 1) it over-separates to induced width 2, while min-degree recovers the exact optimum (width 1, fill 0). It is a valid ordering (a permutation, and it does reduce grid fill vs natural), but it is NOT the clean structure-aware order.",
+   "classification": "NEGATIVE_RESULT_REQUIRING_A_GUARD",
+   "source_experiment": "sbsh-physics-probe (2026-07-11, honest test failure kept as a finding)",
+   "raw_evidence": [
+    "reports/2026-07-11-sbsh-physics-probe.md",
+    "hymeko_rl/sbsh_scene/tests/test_physics_probe.py::test_chain_optimal_orders_recover_treewidth_one"
+   ],
+   "confidence": "measured (elimination width under all three orderings on chain/cloth)",
+   "scope": "elimination orderings for the width certificate",
+   "limitations": "a production nested-dissection (METIS) would not over-separate; this is the octree-separator heuristic specifically.",
+   "framework_consequence": "GUARD: certificate_width uses MIN-DEGREE, not octree-ND. A regression test pins certificate_width(chain)==1 so a refactor cannot silently swap in the weaker heuristic. order_nested_dissection is retained as a measured heuristic, flagged in physics.structural_cost_predictors.known_limitations.",
+   "code_changes": [
+    "hymeko_rl/sbsh_scene/solver.py:certificate_width (min-degree by construction)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/sbsh_scene/tests/test_solver.py::test_certificate_width_chain_is_treewidth_one",
+    "hymeko_rl/sbsh_scene/tests/test_physics_probe.py::test_chain_optimal_orders_recover_treewidth_one"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-PHYS-6",
+   "claim": "The SBSH physics numbers are a Python/scipy PROTOTYPE. The STRUCTURAL conclusions \u2014 scaling exponents, PGS iteration counts, #colours, the regret 1.13 \u2014 are implementation-free and citable. The wall-clock CONSTANTS are not: a Rust/C inner loop would cut them ~1-2 orders (exponents unchanged). No real-time (games/physics) claim may rest on the prototype constants.",
+   "classification": "NEW_PROVENANCE_REQUIREMENT",
+   "source_experiment": "sbsh-physics-thread (all four, 2026-07-11..13)",
+   "raw_evidence": [
+    "reports/2026-07-11-sbsh-handoff.md#7-gotchas",
+    "reports/2026-07-13-sbsh-physics-lcp.md#honest-caveats"
+   ],
+   "confidence": "measured caveat (host: Apple M5 Pro, Python 3.11.15, scipy 1.17.1) + standard prototype-vs-native reasoning",
+   "scope": "every wall-clock number produced by the sbsh_scene physics modules",
+   "limitations": "n/a \u2014 this IS the limitation record.",
+   "framework_consequence": "Any future experiment that cites sbsh physics timings must state 'Python-prototype constants' and re-measure against a Rust/C core before a real-time claim. Registered in both physics solver components' known_limitations.",
+   "code_changes": [
+    "reports/framework/canonical_components.json (physics.* known_limitations)"
+   ],
+   "regression_tests": [
+    "n/a (documentation/provenance guard)"
+   ],
+   "superseded_findings": null,
+   "open_questions": "A Rust-core graduation (SpatialRegime + Yannakakis + the solvers behind hymeko_pgraph) would fix the constants \u2014 may touch CORE.YAML, escalate."
+  },
+  {
+   "id": "F-HTL-1",
+   "claim": "HTL existed as THREE non-interoperating evaluators: Rust hymeko_monitor (STL+Until, combinator-only, no text parser), Python hymeko_neuro/eval/htl (G/F only, scalar-smuggled structure, has a parser), and per-scenario `condition \"...\"` strings in .hymeko parsed by ad-hoc policy evaluators. They are unifiable because the coupling to RL is at the edges (signal sources + reward consumer), not the core.",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "htl-engine-unification v1 (2026-07-10)",
+   "raw_evidence": [
+    "reports/2026-07-10-htl-engine-unification.md"
+   ],
+   "confidence": "measured (code map + one-engine parity)",
+   "scope": "the HTL/temporal-monitoring subsystem",
+   "limitations": "unification delivered on the Rust engine; Python consumers reconciled opt-in in v2, not retired.",
+   "framework_consequence": "One engine (htl.engine): a single parser + robustness algebra. New consumers import it; do not add a 4th evaluator.",
+   "code_changes": [
+    "hymeko_monitor: formula/parse.rs, signal.rs, builders.rs; hymeko_monitor_ir crate; data/meta/meta_monitor.hymeko"
+   ],
+   "regression_tests": [
+    "hymeko_monitor lib+integration suites",
+    "hymeko_monitor_ir suites"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-HTL-2",
+   "claim": "The Rust engine reproduces the incumbent Python evaluator's robustness to 1e-9 on the real galambos spec (single-event robustness_at) AND on streaming HtlMonitor traces. This parity gate is the REQUIRED evidence before backing/retiring the Python RL path.",
+   "classification": "NEW_EVALUATION_REQUIREMENT",
+   "source_experiment": "htl-engine-unification v1/v2 (2026-07-10/11)",
+   "raw_evidence": [
+    "hymeko_monitor/tests/htl_python_parity.rs",
+    "hymeko_neuro/tests/test_htl_rust_parity.py",
+    "reports/figures/2026-07-10-htl-engine-unification/gen_goldens.py"
+   ],
+   "confidence": "measured (1e-9 across corpus + galambos + streaming)",
+   "scope": "scalar-signal HTL (the whole production consumer surface)",
+   "limitations": "parity proven on the tested corpus, not every possible formula/signal; custom Python registry predicates are not backed.",
+   "framework_consequence": "Any move to make Rust the Python HTL backend (or retire pure-Python) is GATED on this parity staying green. Default backend stays 'python'.",
+   "code_changes": [
+    "hymeko_py/src/htl.rs",
+    "hymeko_neuro/eval/htl/rust_backend.py"
+   ],
+   "regression_tests": [
+    "test_htl_rust_parity.py (20)",
+    "hymeko_rl/tests/test_htl_reward.py::test_rust_backend_reward_equals_python"
+   ],
+   "superseded_findings": null,
+   "open_questions": "retire pure-Python / flip HtlRewardSpec default \u2014 deferred until RL runs finish + explicit user OK."
+  },
+  {
+   "id": "F-HTL-3",
+   "claim": "Python's anytime/PAST-window `robustness` and the Rust forward settled-edge `StlMonitor` are DIFFERENT monitoring semantics (backward window vs bounded-future settling); they do NOT agree for streaming. Matching Python's streaming monitor requires a faithful port of the past-window semantics (eval_at::robustness_history), not the forward monitor.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "htl-engine-unification-v2 (2026-07-11)",
+   "raw_evidence": [
+    "reports/2026-07-11-htl-engine-unification-v2.md (risk-resolution section)",
+    "hymeko_monitor/src/eval_at.rs"
+   ],
+   "confidence": "measured (streaming parity to 1e-9 after the port)",
+   "scope": "streaming HTL monitors (episode verdicts, training-metric monitors)",
+   "limitations": "the two modes coexist deliberately; a formula picks the mode by which monitor/evaluator it uses.",
+   "framework_consequence": "The Python-facing PyHtlMonitor uses robustness_history (past-window). The forward StlMonitor is for bounded-future framework-side monitoring. Do not swap one for the other expecting equal streaming numbers.",
+   "code_changes": [
+    "hymeko_monitor/src/eval_at.rs::robustness_history",
+    "hymeko_py/src/htl.rs::PyHtlMonitor"
+   ],
+   "regression_tests": [
+    "test_htl_rust_parity.py::test_streaming_monitor_matches_python",
+    "::test_horizon_eviction_matches_python"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-HTL-4",
+   "claim": "Past-time operators (Historically/Once/Since) belong to the ANYTIME evaluator; the forward bounded-future StlMonitor cannot settle them and MUST reject them at construction rather than mis-evaluate.",
+   "classification": "NEW_SAFETY_REQUIREMENT",
+   "source_experiment": "htl-v4-past-time-operators (2026-07-11)",
+   "raw_evidence": [
+    "reports/2026-07-11-htl-v4-past-time-operators.md"
+   ],
+   "confidence": "measured (rejection test + anytime goldens)",
+   "scope": "any StlMonitor construction",
+   "limitations": "past-time IS supported by robustness_history / PyHtlMonitor; the guard only blocks the forward monitor.",
+   "framework_consequence": "GUARD: StlMonitor::new returns MonitorError::PastTimeUnsupported on H/O/S; flatten arms are unreachable!() guarded by that check. Future forward-monitor callers get a loud error, not a wrong verdict.",
+   "code_changes": [
+    "hymeko_monitor/src/monitor/stl.rs (new() rejection)",
+    "src/lib.rs (MonitorError::PastTimeUnsupported)",
+    "src/formula/stl.rs (has_past_time)"
+   ],
+   "regression_tests": [
+    "hymeko_monitor/src/monitor/stl.rs::tests::rejects_past_time_operators"
+   ],
+   "superseded_findings": null,
+   "open_questions": "past-time in the forward monitor (backward window sizing) \u2014 deferred v-next."
+  },
+  {
+   "id": "F-HTL-5",
+   "claim": "Multi-file .hymeko contexts (with @\"...\" imports + `using`) FAIL the naive single-file pipeline with UnresolvedRef; they require the canonical ModuleStore::compile (recursive import load into a shared interner + namespaced index + apply_usings + lower_program_to_ir). Import paths are relative to the importing file.",
+   "classification": "NEGATIVE_RESULT_REQUIRING_A_GUARD",
+   "source_experiment": "htl-v3-import-resolving-load (2026-07-11)",
+   "raw_evidence": [
+    "reports/2026-07-11-htl-v3-import-resolving-load.md"
+   ],
+   "confidence": "measured (real triad_hri.hymeko now loads; was UnresolvedRef)",
+   "scope": "loading any imported .hymeko context",
+   "limitations": "a bare string has no base dir -> load_ir(str) stays single-file/import-free by design.",
+   "framework_consequence": "load_ir_file now routes through ModuleStore::compile; missing/broken imports surface as LoadError::Module (loud). Reuse this loader, do not re-run the single-file pipeline on imported files.",
+   "code_changes": [
+    "hymeko_monitor_ir/src/lib.rs (load_ir_file via ModuleStore; LoadedIr enum; LoadError::Module)"
+   ],
+   "regression_tests": [
+    "hymeko_monitor_ir::tests::missing_file_is_a_module_error",
+    "tests/real_coalition_import.rs",
+    "tests/coalition_monitor.rs (hermetic no-import still loads)"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-HTL-6",
+   "claim": "HTL structural atoms can delegate to hymeko_query's pattern engine, gaining transitive-isa and signed-incidence pattern matching the trait builders cannot express. BUT the engine's compile/resolve require H:'static, so a borrowing Signal<IrState> cannot feed compile: dynamic-structure per-observe monitoring is precluded. For static contexts the structural facts are constant and computed once.",
+   "classification": "NEW_REUSABLE_COMPONENT",
+   "source_experiment": "htl-v5-query-structural-atoms (2026-07-13)",
+   "raw_evidence": [
+    "reports/2026-07-13-htl-v5-query-structural-atoms.md"
+   ],
+   "confidence": "measured (quadruped: 9 links via isa, monitored)",
+   "scope": "structural properties of a loaded (static) .hymeko context",
+   "limitations": "static-structure only (the 'static bound); node queries must filter Kind(Node); arity is post-filtered.",
+   "framework_consequence": "htl.query_atoms registered as the canonical structural-quantification path (reuse hymeko_query; builders.rs kept for cheap attrs). Dynamic-structure monitoring is an open lever (relax the monitor's 'static bound to a lifetime-parameterised trait object).",
+   "code_changes": [
+    "hymeko_monitor_ir/src/query_signal.rs",
+    "Cargo.toml (hymeko_query dep, approved)"
+   ],
+   "regression_tests": [
+    "query_signal.rs tests (isa count, signed-ref pattern, arity, margin)",
+    "tests/query_structural.rs (real quadruped)"
+   ],
+   "superseded_findings": null,
+   "open_questions": "relax StlMonitor/resolve H:'static for Signal<IrState> (dynamic structure)."
+  },
+  {
+   "id": "F-HTL-7",
+   "claim": "hymeko_query does NOT build with default-features=false: its always-compiled `transforms` module references the `interpret`-feature-gated `rewrite` module (an internal feature-coupling bug in that CORE crate). Consumers must keep default features.",
+   "classification": "NEGATIVE_RESULT_REQUIRING_A_GUARD",
+   "source_experiment": "htl-v5-query-structural-atoms (2026-07-13)",
+   "raw_evidence": [
+    "hymeko_query/src/transforms/mod.rs:233 (use crate::rewrite::...); hymeko_query/src/lib.rs:35-36 (#[cfg(feature=interpret)] pub mod rewrite)",
+    "reports/2026-07-13-htl-v5-query-structural-atoms.md"
+   ],
+   "confidence": "measured (E0433 on default-features=false)",
+   "scope": "any crate depending on hymeko_query",
+   "limitations": "hymeko_query is CORE lockdown:implementation; the fix (feature-gate transforms too, or move rewrite) is a core edit, NOT done here.",
+   "framework_consequence": "GUARD (recorded): depend on hymeko_query with DEFAULT features. hymeko_monitor_ir/Cargo.toml carries the note. parser is already a transitive dep so the footprint is unchanged. A future core fix should gate transforms behind interpret or move the rewrite ref.",
+   "code_changes": [
+    "hymeko_monitor_ir/Cargo.toml (comment documenting the constraint)"
+   ],
+   "regression_tests": [
+    "the crate building at all (default features)"
+   ],
+   "superseded_findings": null,
+   "open_questions": "core fix in hymeko_query to allow a lean default-features=false consume (needs a CORE approval)."
+  },
+  {
+   "id": "F-PP-008",
+   "claim": "[SUPERSEDED 2026-07-15 by F-PP-009 \u2014 the rollout-anchor did NOT close the gap (x1=0.458); true cause is off-policy critic value-overestimation, abstraction is sound] The pick-place residual-SAC collapse (0.875 base \u2192 0.458) is ISOLATED to F-SAC-5 (rollout-state covariate shift), NOT the critic/entropy confound. Applying the F-SAC-1/3/4 fix alone (--sac-rehab: init_alpha 0.1, lr 3e-4, ANNEAL entropy) left the critic BOUNDED (0.427 vs the AUTO run's 11-21) and \u03b1 annealing, yet it STILL collapsed to 0.458 (identical \u0394 -0.417). So critic/entropy stabilization is NECESSARY but NOT SUFFICIENT; with a stable critic + no entropy pressure the off-policy SAC still drifts on its own rollout states. This is exactly why on-policy PPO held (trains on its own states) and off-policy SAC does not.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "2026-07-15 pick-place RL pitfall audit (sac-rehab decisive test)",
+   "raw_evidence": [
+    "/tmp/sac_rehab_test.log (crit 0.427, alpha anneal, FINAL 0.458)",
+    "experiments/residual_rl/residual_hsikan_d0.25_settle.json (archived AUTO 0.458)",
+    "reports/canonical_integration/fanuc-pick-place/rl_pitfall_audit.md"
+   ],
+   "confidence": "measured (1 seed, 40k; identical final to the AUTO baseline with a bounded critic)",
+   "scope": "off-policy SAC over the residual pick-place env; confirms the coin-toss F-SAC-5 generalizes to pick-place",
+   "limitations": "1 seed; the rollout-anchor fix (F-SAC-5) is being tested now to confirm it closes the gap. REFUTED by F-PP-009: rollout-anchor x1/x5/x20 and DAgger all failed; the collapse is critic overestimation, not covariate shift.",
+   "framework_consequence": "The rollout-state DAgger anchor (F-SAC-5) is the evidence-backed lever for pick-place off-policy RL, not just a hypothesis. Added PickResidualExpertTeacher + --sac-rehab/--rollout-anchor to pick_place_residual_rl. The kato15 vetted spec is the rollout-anchor config, not vanilla SAC.",
+   "code_changes": [
+    "hymeko_rl/experiments/pick_place_residual_rl.py: PickResidualExpertTeacher, _sac_residual(sac_rehab/rollout_anchor), --sac-rehab/--rollout-anchor/--save-policy",
+    "gripper_pick_bc.load_pick_policy: residual_clone branch (GUI-loadable RL policies)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_pick_place_scene.py::test_residual_policy_checkpoint_loads_as_base_plus_residual"
+   ],
+   "superseded_findings": "corrects the flat 'pick-place RL is a negative' reading (F-PP-002/003) \u2014 the collapse was under-diagnosed confounds, not fundamental",
+   "open_questions": "Does the rollout-anchor (running) stop the 0.458 collapse / beat 0.875? Verdict pending; then the kato15 multi-seed run.",
+   "superseded_by": "F-PP-009"
+  },
+  {
+   "id": "F-PP-009",
+   "claim": "SUPERSEDES F-PP-008. The pick-place residual-SAC collapse (0.875 base -> 0.458) is OFF-POLICY CRITIC VALUE-OVERESTIMATION, NOT an abstraction/interface bug and NOT F-SAC-5 covariate shift. A 7-check abstraction audit PASSES: executed = clip(base + delta*tanh(mu), lo, hi); zero-residual reproduces base exactly (0.875, HARD GATE); teacher/base/actor read identical raw obs; the teacher residual is a FUNCTION of obs (near-obs residual gap 0.001 vs norm 0.197); the anchor lives in the same [-1,1] residual space the env receives; the target is excellent (reactive-teacher-residual closed-loop = 1.000, v3 expert = 0.958, both > base); residuals are well-calibrated. A high-capacity FEEDFORWARD BC of the reactive teacher reaches 0.792. SAC still collapses to 0.458 because the learned critic ranks the actor's own OOD near-saturated residual (|r|=0.707) at Q=-0.687 ABOVE the teacher/base/random residuals (all Q ~ -1.16..-1.22); the -Q actor loss then drives the policy off the imitation basin. Anchor-strength x5/x20 and 7-round DAgger (-> 0.58) do NOT rehabilitate it.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "2026-07-15 SAC-residual abstraction audit (checks 1-8, user-directed reframe)",
+   "raw_evidence": [
+    "reports/2026-07-15-sac-residual-abstraction-audit.md",
+    "scratchpad/audit_sac_residual{,2,3,4,5}.py (seeded; N=24 eval @ seed0=20000)",
+    "check5 zero-residual=base 0.875; C reactive-teacher closed-loop 1.000; part4 FF-BC 0.792; check8 Q(actor)=-0.687 > Q(teacher)=-1.164"
+   ],
+   "confidence": "measured (deterministic probes; SAC single-seed but reproduces the archived 0.458 across AUTO/rehab/anchor x1/x5-not-run/DAgger)",
+   "scope": "off-policy SAC over the residual pick-place env; the mechanism (critic overestimation of OOD residuals) is general to actor-critic-over-a-frozen-base",
+   "limitations": "SAC runs are single-seed (RL carve-out: rest ranking claims on multi-seed); the FF-BC 0.792 uses the reactive-teacher distribution; the 0.79->1.0 clone gap (recurrence?) is an open question, not resolved here.",
+   "framework_consequence": "Before attributing an RL collapse over a frozen base to 'RL fails' / the scenario, run the ABSTRACTION AUDIT GATE: (1) zero-residual reproduces base; (2) reactive-oracle closed-loop ceiling; (3) FF-BC of the oracle; (4) critic Q-ranking teacher vs actor vs random. Only a critic that ranks the teacher >= the actor's own action clears the RL implementation. The vetted pick-place path is IMITATION (reactive-teacher BC = 0.792, -> recurrent) + a BC-dominant/conservative-critic refiner (TD3+BC via bc_coef, or CQL/IQL/AWAC), NOT vanilla SAC + rollout anchor. kato15 is justified only once a local config beats 0.875.",
+   "code_changes": [
+    "hymeko_rl/experiments/pick_place_residual_rl.py: --anchor-coef knob (proved anchor-strength inert; kept for the record)",
+    "hymeko_rl/tests/test_residual_abstraction.py: HARD-GATE regression (zero-residual==base; reactive-teacher>=base)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_residual_abstraction.py"
+   ],
+   "superseded_findings": [
+    "F-PP-008 (attributed the collapse to F-SAC-5 covariate shift; refuted: rollout-anchor x1 = 0.458, DAgger = 0.58, cause is critic overestimation)"
+   ],
+   "open_questions": [
+    "Does a recurrent residual actor close the 0.792->1.0 FF clone gap?",
+    "Does TD3+BC (bc_coef high) warm-started from the 0.792 BC clone hold >= 0.875 and refine past it?"
+   ]
+  },
+  {
+   "id": "F-PP-010",
+   "claim": "The 0.792 feedforward residual-clone gap (vs reactive-teacher oracle 1.000) is EXECUTION-HARD at the contact discontinuity, NOT a temporal/history-information deficit. Multi-seed (3 seeds x 24 eval) over FF, history-stack K in {2,4,8}, and LSTM residual clones: ALL cluster at 0.75-0.83 median with overlapping ranges, NONE reaches base 0.875 (best Hist4 median 0.833), none reaches 0.95. More memory is not monotonically better; MSE is decoupled from closed-loop score. Mechanism (failure-mode inspection): the teacher residual is small on average (|r|~0.06-0.09) but has near-full-range discontinuities at contact-mode switches (grasp step-jump max 0.733); a smooth NN clone cannot reproduce the spike, so its executed-action error is largest at grasp (0.060 rad) and the dominant failure is grasp-then-DROP (irreversible). Side signal (weak, single-seed): LSTM reached 2.39cm precision (base 4.69, expert 2.16) -> recurrence may recover the expert's precision integral even where it does not lift the success rate.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "2026-07-15 recurrent/history residual-clone gap test (Step 1 after F-PP-009)",
+   "raw_evidence": [
+    "reports/2026-07-15-recurrent-residual-clone-gap.md",
+    "scratchpad/residual_clone_gap.py (multi-seed FF/Hist{2,4,8}/LSTM) + scratchpad/clone_failure_inspect.py",
+    "multi-seed medians FF .750 Hist2 .792 Hist4 .833 Hist8 .792 LSTM .792 (all < base .875); grasp max-jump 0.733"
+   ],
+   "confidence": "measured (3 seeds x 24 eval, fixed eval tasks; ranges overlap -> architectures indistinguishable)",
+   "scope": "residual imitation clone of a contact-rich (grasp) task; the contact-discontinuity execution-hardness is general to residual clones over frozen bases on hypersensitive contact tasks",
+   "limitations": "3 seeds; GRU dropped from multi-seed after worst single-seed; the precision (2.39cm) signal is single-seed and not confirmed",
+   "framework_consequence": "GATE for warm-starting RL from an imitation clone on a contact task: the clone must reach base BEFORE adding a critic. Here no history/recurrent clone reaches base -> TD3+BC is NOT justified (would warm-start below base, hit the same contact-spike wall, and F-PP-009 critic over-estimation would drag it off). Recurrence helps PRECISION (place-err) not SUCCESS RATE on contact tasks -> pick the metric with headroom. Candidate levers not yet run: mode-gated residual (zero residual during grasp/lift via active_modes), or a precision track. Do NOT close the residual line; do change the target.",
+   "code_changes": [
+    "scratchpad only (residual-clone comparison harness reuses pick_place_recurrent_clone._make_rnn/FlexLSTM + residual infra); no repo code changed"
+   ],
+   "regression_tests": [
+    "(covered by test_residual_abstraction: zero-residual==base; reactive-target>=base)"
+   ],
+   "superseded_findings": [],
+   "open_questions": [
+    "Does a mode-gated residual (RL only in smooth approach/place-align phases) preserve base while removing the grasp-spike failure?",
+    "Does the LSTM 2.39cm precision replicate across seeds (precision track vs success track)?"
+   ]
+  },
+  {
+   "id": "F-PP-011",
+   "claim": "Mode-gating the pick-place residual is separable at GRASP but not at LIFT. Gated-oracle sweep (reactive teacher): ALL=1.000; all_but(grasp)=0.875 (=base, residual separable at grasp -> base handles grasp); all_but(grasp,lift)=0.708 (<base -> the lift residual, |r|~0.095 + discontinuous, is LOAD-BEARING and un-gate-able). A grasp-gated FF clone (3 seeds) rises to median 0.792 [0.75,0.833] from non-gated 0.708 (gating removes the grasp-then-drop failure) but STILL < base 0.875 (the now-active lift discontinuity becomes the bottleneck). Lever-1 ceiling = base; it can preserve/protect but NOT beat base.",
+   "classification": "NEGATIVE_RESULT_REQUIRING_A_GUARD",
+   "source_experiment": "2026-07-15 mode-gated residual (lever 1) sweep + grasp-gated clone",
+   "raw_evidence": [
+    "reports/2026-07-15-recurrent-residual-clone-gap.md (Lever 1 section)",
+    "scratchpad/mode_gated_sweep.py (oracle by mode-set) + scratchpad/mode_gated_clone.py (3-seed grasp-gated clone)",
+    "all_but(grasp)=0.875, all_but(grasp,lift)=0.708; grasp-gated clone median 0.792 vs non-gated 0.708"
+   ],
+   "confidence": "measured (oracle sweep deterministic-ish n=24; clone 3 seeds)",
+   "scope": "residual over the frozen pick-place base; the grasp-separable/lift-load-bearing split is task-structural (contact coupling)",
+   "limitations": "grasp-gated SAC (RL, not clone) not run -- its ceiling is already base, so it cannot beat base regardless; single mode-set family tested",
+   "framework_consequence": "Improving stable-place RATE via a residual over this frozen base is EXHAUSTED -- three independent angles converge: off-policy critic over-estimation (F-PP-009), execution-hard clone gap at contact discontinuities (F-PP-010), and the un-gate-able load-bearing lift residual (this finding). Mode-gating (the coin-toss 'structured residual' regime) preserves/protects base but CANNOT beat it here because pick-place phases are contact-coupled (unlike coin-toss). Do NOT close the residual line; CHANGE THE TARGET to precision (place-error), the only metric with headroom (LSTM 2.39cm vs base 4.69, expert 2.16) -- lever 2.",
+   "code_changes": [
+    "scratchpad only; reused ResidualPickEnv.active_modes + HybridAutomaton (no repo code changed)"
+   ],
+   "regression_tests": [
+    "(covered by test_residual_abstraction)"
+   ],
+   "superseded_findings": [],
+   "open_questions": [
+    "Does grasp-gated SAC HOLD base (neutralize the F-PP-009 collapse) even though it cannot beat base? (structural, not improvement)",
+    "Precision track (lever 2): does the LSTM 2.39cm precision replicate multi-seed?"
+   ]
+  },
+  {
+   "id": "F-PP-012",
+   "claim": "From-scratch (non-residual) RL on 7-DOF pick-place hits an OPTIMIZER-AGNOSTIC exploration wall. Cached from-scratch PPO (2026-07-09/10) never grasps ('reward can't bootstrap pre-grasp'). New: from-scratch SAC (off-policy replay + AUTO-entropy exploration + dense pick_place_aligned reward, symmetric critic, 80k steps) ALSO never grasps AND never even reaches (reach=grasp=lift=0.00 from untrained through 80k). The place=0.375 is a metric-inflation artifact (boxes spawn near target; idle arm trips placed_stable; grasp=0 disproves real placing). An asymmetric critic cannot fix this -- exploration, not value-learning, is the blocker (symmetric SAC never reached). Random exploration cannot discover a grasp on 7-DOF contact; replay cannot learn a grasp never in the buffer.",
+   "classification": "NEGATIVE_RESULT_REQUIRING_A_GUARD",
+   "source_experiment": "2026-07-15 from-scratch SAC exploration-wall test (capstone of the pick-place RL arc)",
+   "raw_evidence": [
+    "reports/2026-07-15-from-scratch-rl-exploration-wall.md",
+    "scratchpad/from_scratch_sac.py (NormActionEnv, build_sac symmetric AUTO-alpha, pick_place_aligned reward)",
+    "reports/2026-07-09-pick-place-from-scratch-sanity-diagnostics.md + 2026-07-10-pick-place-ppo-optimizer-repair.md (cached PPO wall)"
+   ],
+   "confidence": "measured (single 80k SAC run, converges with cached multi-run PPO failure + theory)",
+   "scope": "from-scratch RL on 7-DOF contact manipulation; the exploration wall is general to sparse-discovery contact tasks",
+   "limitations": "single SAC run at 80k (smoke budget); a vastly larger budget is not justified given cached PPO failure + dominating scripted expert",
+   "framework_consequence": "The pick-place RL space is FULLY MAPPED and bounded by two structural walls: (1) SETPOINT wall -- residual RL holds base 0.875 but cannot beat it (F-PP-009/010/011); (2) EXPLORATION wall -- from-scratch RL never discovers a grasp, optimizer-agnostic (PPO+SAC). Imitation->RL (BC warm-start) is the ONLY viable learned path and IS the deployed base. No RL lever with real headroom remains. Deploy the scripted v3 expert (0.958/2.16cm, dominates) for best performance, or the FF-DAgger base / LSTM-BC clone for a learned policy; residual RL only to HOLD base safely (structured+mode-gated+conservative critic), never to beat it. GUARD: do not re-propose from-scratch RL for this task class without a demonstration/curriculum that seeds the grasp.",
+   "code_changes": [
+    "scratchpad only (NormActionEnv + from-scratch SAC harness); no repo code changed"
+   ],
+   "regression_tests": [
+    "(none -- negative result; the guard is this finding)"
+   ],
+   "superseded_findings": [],
+   "open_questions": [
+    "Would a curriculum / demonstration-seeded exploration (e.g. RRT-seeded replay, grasp-primitive bootstrap) break the exploration wall? (out of scope; the scripted expert already dominates)"
+   ]
+  },
+  {
+   "id": "F-PP-013",
+   "claim": "[REFINED 2026-07-16] The ~0.458 'floor' on placed_stable is BENCHMARK TRIVIALITY, not inflation of a failing policy: ~42% of episodes spawn the box already within place_radius of the target (no pick-place needed; a good policy correctly leaves them -- grasp 0.00 there is RIGHT). The pick-place stable-place success metric (placed_stable/reached, used arc-wide via LiftPlaceMetric) has a ~0.458 IDLE-inflation floor: a zero-action policy scores reached=0.458 while ever-grasped=0.000 (verified 2026-07-16). Cause: placed_stable requires only the box within place_radius (6cm) at rest for settle_dwell -- NOT grasping or lifting -- and the object spawns within place_radius of the target ~46% of episodes. The FF-DAgger base scores reached=0.875 but the clean lift-requiring 'delivered' (legacy, held-above-target) =0.000 and its ever-grasped=0.50. A SKILL-ISOLATING metric = placed_stable AND ever-grasped zeroes the floor (idle -> 0).",
+   "classification": "NEW_EVALUATION_REQUIREMENT",
+   "source_experiment": "2026-07-16 SignedHypergraphLiNGAM role-1 diagnostic (surfaced the confound) + idle/base verification",
+   "raw_evidence": [
+    "reports/2026-07-16-signed-hypergraph-lingam-diagnosis.md",
+    "verified: FF base reached=0.875/grasp=0.50/delivered=0.00; IDLE reached=0.458/grasp=0.00 (N=24, seed0=20000)",
+    "env pick_place_env.py:716-727 (placed_stable = box in place_radius at rest, no lift/grasp required)"
+   ],
+   "confidence": "measured (idle + base, N=24; converges with from-scratch untrained place=0.375)",
+   "scope": "the FANUC pick-place stable-place metric; object spawn sector overlaps the target",
+   "limitations": "a single benchmark's spawn geometry; the floor value (~0.4-0.46) varies with seed set",
+   "framework_consequence": "GUIDELINE (advisory): measure pick-place skill on the FAR-SPAWN subset (box > place_radius from target) or via grasp\u2227place, NOT the raw placed_stable metric. On far-spawn the scripted expert = 1.00 grasp / 0.89 place and the FF-DAgger base = 0.96 / 0.75 -- both genuinely pick-and-place. The raw metric mixes ~42% trivial + real episodes; do not read the trivial floor as policy failure NOR as inflation of skill. Not a hard gate.",
+   "code_changes": [
+    "none (diagnostic + verification only)"
+   ],
+   "regression_tests": [
+    "(advisory guideline; no hard gate per user)"
+   ],
+   "superseded_findings": [],
+   "open_questions": [
+    "Re-express the arc's key numbers (base/clones/oracle) on the skill-isolating metric for a clean ladder?"
+   ]
+  },
+  {
+   "id": "F-PP-014",
+   "claim": "SignedHypergraphLiNGAM role-1 diagnosis: on the skill-isolating metric (placed_stable AND ever-grasped), ONLY the DAgger'd base has real skill (0.42, grasp 0.56). The LSTM BC-only clone = 0.00 (NEVER grasps -- BC covariate shift; its cached 'reliability 0.917' was pure metric inflation) and the collapsed residual SAC = 0.00 (grasps 0.12, never completes; its '0.458' ~ the idle floor). The per-policy signed causal hypergraph (DirectLiNGAM -> A+/A-) formally confirms ONLY the base has a real grasp->success chain (grasp->target +1.49); the LSTM and SAC have DEGENERATE DAGs (grasp/success constant-0 -> dropped). The pooled deviation->grasp F-PP-009 probe is CONFOUNDED by policy heterogeneity (edge +0.000; reverse grasp->deviation -0.59) -- a clean causal test needs within-policy deviation variation, not cross-policy aggregates.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "2026-07-16 SignedHypergraphLiNGAM role-1 diagnostic (skill-isolating metric)",
+   "raw_evidence": [
+    "reports/2026-07-16-signed-hypergraph-lingam-diagnosis.md",
+    "scratchpad/signed_hypergraph_lingam_diag.py (reuses hymeko_rl.eval.causal + lingam_to_signed_adjacency; N=48/policy)",
+    "FF skill 0.42 grasp 0.56; LSTM/SAC skill 0.00; per-policy DAGs; pooled deviation->grasp +0.000"
+   ],
+   "confidence": "measured (N=48/policy, single seed set; DAG edges are PROPOSALS per CIP doctrine)",
+   "scope": "pick-place FF-DAgger/LSTM/SAC; the causal machinery over rollout aggregates",
+   "limitations": "single seed set; DirectLiNGAM proposes (ablations decide); the F-PP-009 probe is confounded (unanswered here)",
+   "framework_consequence": "(1) The framework's signed causal hypergraph WORKS as a control diagnostic -- it surfaced the metric confound (F-PP-013) and formally shows only the DAgger'd base has a real skill chain. (2) A causal GATE/ENSEMBLE over {FF,LSTM,SAC} (the user's roles 2/3) is UNDERCUT: only FF has real skill (0.42), LSTM/SAC ~0, so a gate would just pick FF -- mixing buys nothing until a SECOND policy has real complementary skill. (3) BC clones roll out to ~0 real grasp (covariate shift, the known BC failure) and the inflated metric MASKED this (re-examine clone claims on the skill metric). (4) To causally test F-PP-009, use within-policy deviation variation; the direct Q-ranking evidence for F-PP-009 stands independently.",
+   "code_changes": [
+    "scratchpad only (reuses hymeko_rl.eval.causal; no repo code changed)"
+   ],
+   "regression_tests": [
+    "(diagnostic; no gate)"
+   ],
+   "superseded_findings": [],
+   "open_questions": [
+    "Within-SAC deviation-variation causal test of F-PP-009 (deviation -> grasp loss)?",
+    "Does a DAgger'd LSTM (fix the BC covariate shift) reach real grasp skill, unlike the BC-only LSTM?"
+   ]
+  },
+  {
+   "id": "F-PP-015",
+   "claim": "Two follow-ups to F-PP-014. (a) DAgger does NOT rescue the LSTM into a real policy: 5 rounds relabeling the expert on the LSTM's OWN rollout states induce only TRANSIENT grasping (0->0.208@r2, degrading to 0.042@r4) and skill (grasp AND place) stays 0.00 throughout -- the recurrent clone never completes the grasp->lift->place chain (execution-hard, F-PP-010) and aggregating its failing states destabilizes it. So there is STILL no second real policy; the causal gate/ensemble stays undercut. (b) F-PP-009 is now CAUSALLY CONFIRMED within-SAC: as training collapses the actor, deviation rises (0->0.056 over 5k steps) and grasp collapses (0.50->0.00) in lockstep, corr(deviation,grasp)=-0.48. 2-variable DirectLiNGAM mis-oriented the edge (grasp->deviation, a 2-var identifiability artifact); the TRAINING-PROGRESSION INTERVENTION resolves the direction (training->deviation->grasp-loss). LiNGAM proposed, the intervention decided.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "2026-07-16 follow-ups (a) DAgger'd LSTM + (b) within-SAC deviation causal test",
+   "raw_evidence": [
+    "reports/2026-07-16-signed-hypergraph-lingam-diagnosis.md (Follow-ups section)",
+    "scratchpad/dagger_lstm.py (skill 0.00, grasp transient) + scratchpad/sac_deviation_sweep.py (dev->grasp trend, corr -0.48)"
+   ],
+   "confidence": "measured (a: 5 DAgger rounds, eval N=24; b: 13 checkpoints x 8 episodes, deviation-vs-grasp trend + corr)",
+   "scope": "pick-place recurrent clone (a) + residual SAC collapse (b)",
+   "limitations": "a: single DAgger config; b: 2-var LiNGAM under-identified (the intervention, not LiNGAM, gives the direction)",
+   "framework_consequence": "(a) Fixing BC covariate shift (DAgger) is NOT enough for the recurrent clone -- the execution-hard contact chain (F-PP-010) blocks it; the ensemble/gate needs a genuinely different SECOND policy, not a better clone. (b) F-PP-009 upgraded from a critic Q-ranking to a CONFIRMED CAUSAL statement: the SAC critic drives deviation from the base, and that deviation CAUSES grasp loss. Methodological: cross-policy or 2-variable LiNGAM is under-identified for direction; use an INTERVENTION (training progression / ablation) to orient the arrow -- exactly the 'propose, then ablate' doctrine.",
+   "code_changes": [
+    "scratchpad only; no repo code changed"
+   ],
+   "regression_tests": [
+    "(diagnostic follow-ups)"
+   ],
+   "superseded_findings": [],
+   "open_questions": [
+    "Is there a genuinely different second policy with real, complementary skill (e.g. a model-based/planning controller) to make a causal gate worthwhile?"
+   ]
+  },
+  {
+   "id": "F-PP-016",
+   "claim": "CAPSTONE: pick-place WORKS on the task that requires it. Split by spawn distance (N=48): on FAR-spawn episodes (58%, box > place_radius from target) the scripted v3 expert grasps 1.00 / places 0.89 and the learned FF-DAgger base grasps 0.96 / places 0.75 -- both are genuine pick-and-place controllers. Clones (LSTM) and collapsed SAC fail (0.00 grasp on far-spawn). The scripted expert is the deployable best; the DAgger'd base is a real 75% learned policy.",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "2026-07-16 pick-place capstone (far-spawn split + arc synthesis)",
+   "raw_evidence": [
+    "reports/2026-07-16-pick-place-capstone.md",
+    "far-spawn: expert grasp 1.00/reached 0.89; base grasp 0.96/reached 0.75; near-spawn both grasp 0.00/reached 1.00 (trivial)"
+   ],
+   "confidence": "measured (N=48 @ seed0=20000; far-spawn n=28)",
+   "scope": "FANUC pick-place; the capability + the 5 generalized lessons of the RL/causal arc",
+   "limitations": "single seed set; near/far split at place_radius=0.07m",
+   "framework_consequence": "DEPLOYABLE PICK-PLACE: scripted v3 expert (fanuc_pick_env(expert_version=3, require_settle=True) + expert_action_fn, 0.89 on the real task) is the best controller; the FF-DAgger base checkpoint (load_pick_policy, 0.75) is the learned option. GENERALIZED LESSONS: (1) split benchmarks by task difficulty (do-nothing floor != skill); (2) two walls bound learned control over a good demonstrator (setpoint + exploration) -> imitation->RL is the only viable learned path; (3) a scripted/model-based controller beats learned on contact manipulation; (4) causal attribution needs an intervention (LiNGAM proposes, ablation decides); (5) an ensemble needs a genuinely different second policy, not another clone.",
+   "code_changes": [
+    "none (capability already in tree: fanuc_pick_env/expert_action_fn, load_pick_policy, the GUI)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_residual_abstraction.py"
+   ],
+   "superseded_findings": [],
+   "open_questions": [
+    "A second complementary controller (model-based/planning) to make a causal gate worthwhile?",
+    "Widen the spawn-target separation in a benchmark revision to remove the trivial floor at source?"
+   ]
+  },
+  {
+   "id": "F-PP-017",
+   "claim": "ASSIMILATION of the SAC correction (was copied 3x: coin-toss configs, pick_place_residual_rl --sac-rehab, a scratchpad). Now a SINGLE source: SACConfig.stable() in hymeko_rl/train/sac.py bundles the coin-toss-validated F-SAC-1 'v26 stable stack' (init_alpha 0.1, ANNEAL, alpha_final 0.005, actor_lr=critic_lr=3e-4; reward_norm + grad-clip already default). The raw SACConfig defaults stay AUTO so the F-SAC-9 collapse discriminators still reproduce the collapse. CRITICAL: consulting the coin-toss findings shows the SAC DELIVERY collapse is NOT SAC-correctable -- F-SAC-4 (entropy control doesn't rescue), F-SAC-7 (rollout-state DAgger DOES: 0.417->0.75), F-SAC-8/9/10 (DAgger-ANCHORED SAC drifts 25x on its own rollout states even with a DOMINANT anchor; greedy doesn't rescue) -> 'accept closure'. So the pick-place SAC collapse (F-PP-009) is the SAME uncorrectable within-SAC rollout covariate shift; my attempted 'corrected SAC' (strong anchor coef 20/50) was re-deriving this known coin-toss negative and was killed (cached-facts violation).",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "2026-07-16 assimilation of the coin-toss F-SAC correction into SACConfig.stable()",
+   "raw_evidence": [
+    "hymeko_rl/train/sac.py SACConfig.stable() + hymeko_rl/tests/test_sac.py (13 pass)",
+    "coin-toss findings F-SAC-1/4/7/8/9/10 (already validated); pick_place_residual_rl refactored to use .stable()"
+   ],
+   "confidence": "assimilated (preset + regression test; the closure is the coin-toss arc's validated conclusion)",
+   "scope": "the shared SAC trainer; the correction + its scope apply to every SAC caller",
+   "limitations": "stable() encodes the F-SAC-1 critic fix; it deliberately does NOT claim to hold the collapse (that is closed)",
+   "framework_consequence": "USE SACConfig.stable() for a bounded critic -- never re-type the stack (\u00a76.1). Do NOT expect SAC to HOLD an off-policy collapse: that is a CLOSED direction (coin-toss F-SAC-4/8/9/10, pick-place F-PP-009). The working fix for the covariate collapse is ROLLOUT-STATE DAgger (imitation, F-SAC-7) -- which IS the deployed pick-place base (DAgger'd, 0.75 far-spawn). Before proposing any new SAC 'correction', read the F-SAC findings first (this was a cached-facts violation: a dominant-anchor SAC was launched that F-SAC-8 already refuted).",
+   "code_changes": [
+    "hymeko_rl/train/sac.py: +SACConfig.stable() factory",
+    "hymeko_rl/experiments/pick_place_residual_rl.py: use .stable() (removed inline copy + AlphaMode import)",
+    "hymeko_rl/tests/test_sac.py: +test_stable_config_is_the_single_source_of_the_correction",
+    "deleted scratchpad sac_corrected.py / sac_train_save.py (the 3rd copies)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_sac.py::test_stable_config_is_the_single_source_of_the_correction"
+   ],
+   "superseded_findings": [],
+   "open_questions": [
+    "Refactor the coin-toss SAC callers to .stable() too (complete the consolidation)?"
+   ]
+  },
+  {
+   "id": "F-PP-018",
+   "claim": "RECONCILIATION of the 0.875-vs-0.167 pick-place discrepancy = OUTCOME B (different protocols) + C (integration gap, now fixed). 0.875 = FF-DAgger base placed_stable on the FULL distribution (idle floor ~0.458; and it is the SEED-0 value of a median-0.833 3-seed run). 0.167 = TD3+BC far-spawn grasp\u2227place. Under ONE canonical evaluator (hymeko_rl/experiments/canonical_pick_place.py, N=48 seed0=20000): scripted expert 0.938 full / 0.917 far; FF-DAgger base 0.854 / 0.500; TD3+BC s0 0.667 / 0.167; residual-PPO=base (holds, setpoint-bound); plain SAC=documented negative (F-PP-009, collapses to idle floor). Ranking CONSISTENT on every metric -> 0.167 does NOT supersede 0.875; my earlier narrative inverted the evidence by headlining the strictest metric against the loosest. TD3+BC's cached '0.75' was a BC warm-start step-0 floor that RL DEGRADED to 0.0; LSTM-BC '0.917' is single-seed (multi-seed 0.792). No scripted-expert fallback exists (routing-verified).",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "2026-07-16 pick-place lineage recovery + source integration (canonical_integration/pick_place)",
+   "raw_evidence": [
+    "reports/canonical_integration/pick_place/result_discrepancy_matrix.md + missing_assimilation.md",
+    "reports/canonical_integration/pick_place/canonical_manifest.json + canonical_results.json",
+    "canonical eval: expert 0.938/0.917, base 0.854/0.500, td3bc 0.667/0.167, residual=base"
+   ],
+   "confidence": "measured (one canonical evaluator, N=48; reproduced under a clean loader with no fallback)",
+   "scope": "the whole pick-place benchmark; the evaluator + loader + registry are shared code",
+   "limitations": "single 48-seed cohort; plain-SAC negative is documented (no checkpoint, no new training)",
+   "framework_consequence": "USE hymeko_rl.experiments.canonical_pick_place as the ONE pick-place benchmark: a REGISTRY of every artifact with provenance + a canonical evaluator that reports reached/grasped/placed on FULL and FAR-SPAWN separately -- NEVER one ambiguous 'success'. G1 CLOSED: load_pick_policy now loads a TD3+BC DeterministicActor (fail-loud, no fallback). G2 CLOSED: far/near split in shared code. G6: test_canonical_pick_place guards the loader + split so the pipeline cannot silently revert. Deployable ladder: scripted expert (0.917 far, reference) > FF-DAgger base (0.500 far, strongest LEARNED) > TD3+BC (0.167 far, learned RL, fragile) >> plain SAC (idle floor). Follow-up: GUI list_checkpoints should read the REGISTRY (loader already handles it).",
+   "code_changes": [
+    "hymeko_rl/experiments/gripper_pick_bc.py: load_pick_policy handles TD3+BC DeterministicActor (G1)",
+    "hymeko_rl/experiments/canonical_pick_place.py: registry + canonical evaluator + entry point (NEW, G2/G4/G5)",
+    "hymeko_rl/tests/test_canonical_pick_place.py: loader + split regression guards (NEW, G6)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_canonical_pick_place.py"
+   ],
+   "superseded_findings": [
+    "(corrects this session's over-claim that TD3+BC 0.167 was 'the final learned result' \u2014 it is one protocol; 0.875 stands on its own)"
+   ],
+   "open_questions": [
+    "Wire GUI list_checkpoints to the REGISTRY; persist the residual-PPO-hold as a residual_clone .pt (G3)."
+   ]
+  },
+  {
+   "id": "F-SAC-7",
+   "claim": "Rollout-state DAgger (query the reactive teacher on the policy's OWN visited states, aggregate, re-clone) CLOSES the flat-action covariate collapse: BC 0.417 -> DAgger 0.75 median (0.625-0.792), 3 seeds, zero harmful, on the floorless PlanarGrasp coin-delivery (Gate 0 teacher-recovery 0.917).",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "flat_sac_rollout_state_dagger_anchor (2026-07-15)",
+   "raw_evidence": [
+    "reports/canonical_integration/sac_rehab/rollout_dagger/rollout_dagger_results.json",
+    "reports/framework/assimilations/rollout-state-dagger.md"
+   ],
+   "confidence": "measured, 3 seeds, all positive",
+   "scope": "flat-action reactive-teacher coin-delivery; the covariate mechanism (F-SAC-5) is general",
+   "limitations": "imitation recovers the teacher ceiling (~0.75 at beta=0), does not surpass it; the general loop is train.dagger.Dagger, not the experiment's private copy",
+   "framework_consequence": "On-policy imitation on visited states is the flat-action rescue. Canonical component = hymeko_rl/train/dagger.py::Dagger (imitation.rollout_state_dagger). ASSIMILATED: arm_a refactored onto train.dagger.Dagger (duplicate removed; expert_reset+BC-error+teacher_recovery+provenance added); refactor reproduces DAgger 0.708. reports/framework/assimilations/coin_toss_rollout_dagger_final.md",
+   "code_changes": [
+    "hymeko_rl/experiments/exp_flat_sac_rollout_dagger.py::arm_a_dagger (overlaps train/dagger.py \u2014 consolidation flagged)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_rollout_dagger.py"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Does beta-mixing / more iters reach the ~0.9 demonstrator ceiling?"
+  },
+  {
+   "id": "F-SAC-8",
+   "claim": "DAgger-anchored SAC does NOT refine past the DAgger flat policy: 0/3 seeds' online actor beats DAgger (online 0.17-0.46 vs DAgger 0.625-0.792); rollback always recovers the DAgger checkpoint. The rollout-anchor gradient is live and DOMINANT (norm 3.9-7.3 vs Q 1.7-2.6), yet the SAC objective still pulls the online policy off the greedy DAgger optimum.",
+   "classification": "NEGATIVE_RESULT_CLOSING_A_DIRECTION",
+   "source_experiment": "flat_sac_rollout_state_dagger_anchor (2026-07-15)",
+   "raw_evidence": [
+    "reports/canonical_integration/sac_rehab/rollout_dagger/rollout_dagger_results.json (arm_b + controls)"
+   ],
+   "confidence": "measured, 3 seeds, 0/3 positive",
+   "scope": "SAC refinement on top of a DAgger-recovered flat policy",
+   "limitations": "AWAC/IQL and stronger refiners were de-authorized (out of scope by the hard stop)",
+   "framework_consequence": "Closes 'RL refinement of a DAgger flat policy expands the frontier'. The rollout anchor STABILIZES (prevents the ~0 collapse) but does not expand -> sac.rollout_state_dagger_anchor = RESEARCH_ONLY. Guard: no RL frontier-expansion claim on the flat coin-toss abstraction.",
+   "code_changes": [
+    "reports/framework/canonical_components.json: sac.rollout_state_dagger_anchor -> RESEARCH_ONLY"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_rollout_dagger.py"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-SAC-9",
+   "claim": "Dwelling into F-SAC-8: the DAgger-anchored-SAC failure is a WITHIN-SAC covariate shift, not mistuning. action_mean stays == teacher on DEMO states (demo_bc_loss 0.004) but DRIFTS 25x on the policy's own ROLLOUT states (rollout_teacher_bc_loss 0.10); the rollout anchor DOMINATES the update direction (cos_vs_full 0.965) yet LOSES, and val decays from the DAgger start (0.5-0.75) to ~0.375. Mechanism: SAC's exploration (sigma>0) breaks the self-consistency that makes DAgger work (label on GREEDY-visited states == eval states) \u2014 the anchor is computed on STOCHASTIC-rollout states while delivery is graded on the GREEDY trajectory. Exploration re-opens the covariate gap imitation removed.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "dwelling into F-SAC-8 (analysis of rollout_dagger_results.json, NO new run)",
+   "raw_evidence": [
+    "reports/canonical_integration/sac_rehab/rollout_dagger/rollout_dagger_results.json (arm_b controls: demo_bc_loss/rollout_teacher_bc_loss/cos_vs_full)",
+    "reports/canonical_integration/sac_rehab/rollout_dagger/fsac8_val_decay.png"
+   ],
+   "confidence": "MEASURED discriminants (demo 0.004 vs rollout 0.10 bc-loss, cos 0.965, val decay, 3 seeds); INFERRED exploration-covariate mechanism (not directly isolated) \u2014 EXPLORATION HYPOTHESIS REFUTED by Arm C (F-SAC-10).",
+   "scope": "RL refinement of an imitation-optimal policy on a floorless task",
+   "limitations": "REFUTED by the Arm C greedy-rollout discriminator (F-SAC-10): greedy rollouts do NOT rescue the policy (median 0.21 vs DAgger 0.75), so exploration/self-consistency was NOT the cause. The exploration hypothesis here is retained as the motivated-but-wrong inference; the confirmed mechanism is F-SAC-10.",
+   "framework_consequence": "Generalizes: exploration-based RL is self-defeating on an imitation-optimal floorless policy \u2014 exploration re-introduces the covariate shift imitation removed, and an anchor on the stochastic-rollout distribution cannot close a gap defined on the greedy-eval distribution. Guard: do not expect on-policy RL to refine a DAgger-optimal flat policy; the self-consistent greedy-DAgger loop (imitation.rollout_state_dagger) is the lever. Deepens/subsumes F-SAC-8's 'anchor dominant yet loses' into a covariate explanation.",
+   "code_changes": [
+    "reports/framework/assimilations/rollout-state-dagger.md (deepened); fsac8_val_decay.png"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_rollout_dagger.py"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Answered by F-SAC-10 (the -Q/critic term, not exploration)."
+  },
+  {
+   "id": "F-CSB-1",
+   "claim": "The mechanical constraint schema is DERIVABLE per-step from the MuJoCo contact solver (not hand labels): active contacts -> constraint Jacobian J_m via mj_jac -> SVD rank/nullspace -> motion projector P_m=V0 V0^T, stick/slip, pivot axis, guards. On a passive tip the admissible-motion dimension walks d_perp = 6 -> 3 -> 1 -> 0 (FREE -> sticking-vertex -> EDGE_PIVOT 1-DOF hinge -> FACE_REST 0-DOF); projector idempotency ||P-P^2|| <= 3.3e-16 every frame (3 seeds); derived guard-crossings agree with the simulator's own contact events within debounce; labels bit-reproducible.",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "constraint-schema-benchmark-c0 (2026-07-14)",
+   "raw_evidence": [
+    "reports/2026-07-14-constraint-schema-benchmark-c0.md",
+    "reports/figures/2026-07-14-constraint-schema-c0-seed0.json"
+   ],
+   "confidence": "measured (3 seeds, deterministic; 23 tests)",
+   "scope": "single rigid freejoint body on a plane in MuJoCo",
+   "limitations": "AMBIGUOUS rank-transition path unit-tested only (0/200 on the fast drop); TWO_SUPPORT/JAMMED reserved not emitted on a single surface.",
+   "framework_consequence": "schema.constraint_extractor registered CANONICAL; the benchmark's ground truth is physics-derived, not annotated. Future C-gates import extract_schema for the privileged schema/projector.",
+   "code_changes": [
+    "hymeko_rl/env/constraint_schema.py"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_schema.py"
+   ],
+   "superseded_findings": null,
+   "open_questions": "AMBIGUOUS in situ needs a slow controlled pivot (a later gate)."
+  },
+  {
+   "id": "F-CSB-2",
+   "claim": "Counterfactual identifiability of a hidden physical schema is achievable on the cuboid substrate: the sliding friction mu is invisible in BOTH the raw kinematics AND the instantaneous derived mode (a resting box is FACE_REST for any mu; mu is latent below the mode). Measured (N=24 matched pairs): R0 flat AUC 0.500 CI(0.5,0.5) with obs-match 0.0 (matched pairs byte-identical), privileged AUC 1.0; R1 a bounded reversible probe recovers it (mu_lo slides ~8.7mm vs mu_hi ~0.30mm, ~29x, probe AUC perfect, 100% reversible/no tip); R2 passive-wait |d|max 6.84e-9mm below sensing resolution -> the probe is NECESSARY. The anti-'flat-reveals-everything' guard for the benchmark.",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "constraint-schema-benchmark-c1 (2026-07-14)",
+   "raw_evidence": [
+    "reports/2026-07-14-constraint-schema-benchmark-c1.md",
+    "reports/figures/2026-07-14-constraint-schema-c1.json"
+   ],
+   "confidence": "measured (N=24 matched pairs, bootstrap CIs; 10 tests)",
+   "scope": "hidden sliding-friction schema on a cuboid on a plane; the matched-counterfactual+probe pattern generalizes to other hidden physical parameters",
+   "limitations": "identifiability only; recognition from PARTIAL/NOISY observation (a learned estimator) is C2, not shown here.",
+   "framework_consequence": "probe.constraint_counterfactual registered CANONICAL; C2 (schema recognition from partial obs) is authorized and constrained by this finding (a flat instantaneous observer is at chance -> a learned recogniser must beat it).",
+   "code_changes": [
+    "hymeko_rl/env/constraint_probe.py",
+    "hymeko_rl/experiments/exp_constraint_schema_c1.py"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_probe.py"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Is mu recognisable from ProbeResponse.com_traj under partial+noisy sensing (C2)?"
+  },
+  {
+   "id": "F-CSB-3",
+   "claim": "A tip must be measured as an ORIENTATION change (up-axis tilt > threshold), NOT a schema-mode transition. A sliding flat box transiently shows FREE/EDGE derived modes from contact-point sampling flicker WITHOUT rotating; a mode-based tip detector would falsely flag it tipped and mis-score reversibility.",
+   "classification": "NEW_EVALUATION_REQUIREMENT",
+   "source_experiment": "constraint-schema-benchmark-c1 (2026-07-14, measured fix)",
+   "raw_evidence": [
+    "hymeko_rl/env/constraint_probe.py::_uptilt_deg (comment: measured 2026-07-14)",
+    "hymeko_rl/tests/test_constraint_probe.py::test_high_mu_sticks_low_mu_slips_reversibly"
+   ],
+   "confidence": "measured (independently rediscovered by a de-risk pass in a second session)",
+   "scope": "any tip/topple detection over a contact-mode signal",
+   "limitations": "orientation threshold (15 deg) is a calibrated cutoff.",
+   "framework_consequence": "GUARD: tip detection uses _uptilt_deg / ProbeResponse.tipped (orientation), never a mode-label transition. Regression pins that the sliding low-mu box is NOT tipped.",
+   "code_changes": [
+    "hymeko_rl/env/constraint_probe.py::_uptilt_deg, ProbeResponse.tipped, ProbeSpec.tip_tilt_deg"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_probe.py::test_high_mu_sticks_low_mu_slips_reversibly (not tipped)"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-CSB-4",
+   "claim": "A 'signal below the noise floor' claim must be a MAGNITUDE test, not a scale-blind rank statistic. Rank-AUC (Mann-Whitney) is scale-invariant, so on the numerically-zero passive-wait displacement (~1e-9 of the probe signal) it reports a spurious ~0.30 separation; the physically meaningful statement is that a passive observer sees nothing resolvable (passive |d|max < sensing resolution AND << probe median).",
+   "classification": "NEW_EVALUATION_REQUIREMENT",
+   "source_experiment": "constraint-schema-benchmark-c1 (2026-07-14, measured fix)",
+   "raw_evidence": [
+    "hymeko_rl/experiments/exp_constraint_schema_c1.py::_verdict (R2 magnitude gate, comment measured 2026-07-14)",
+    "reports/figures/2026-07-14-constraint-schema-c1.json (passive |d|max 6.84e-9mm)"
+   ],
+   "confidence": "measured",
+   "scope": "any 'necessity / signal-vs-noise-floor' evaluation; general to scale-invariant rank metrics on near-zero signals",
+   "limitations": "resolution threshold (0.1mm) is a stated sensing bound.",
+   "framework_consequence": "GUARD: the R2 'probe necessary' verdict gates on magnitude (passive_max < resolution_m AND < 0.05*probe_median); passive AUC is reported but explicitly NOT gated on. Reusable rule: do not use rank-AUC to argue a signal is absent.",
+   "code_changes": [
+    "hymeko_rl/experiments/exp_constraint_schema_c1.py::_verdict"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_probe.py::test_c1_gate_passes_on_small_n (R2)",
+    "::test_auc_identical_is_chance_separated_is_one"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-CSB-5",
+   "claim": "MuJoCo combines contact friction as the MAX of the two geoms' friction, so setting a hidden mu on the object alone is overridden by the floor's friction (the effective friction stays pinned by the load-path contact). The variable hidden-friction schema must be set on the LOAD-PATH contact (floor + object).",
+   "classification": "NEGATIVE_RESULT_REQUIRING_A_GUARD",
+   "source_experiment": "constraint-schema-benchmark-c1 (2026-07-14, de-risk catch)",
+   "raw_evidence": [
+    "hymeko_rl/env/constraint_probe.py::contact_geoms (returns object + floor)",
+    "de-risk: object-only mu -> no slide separation; floor+object mu -> Coulomb separation"
+   ],
+   "confidence": "measured (de-risk sweep: effective friction pinned at 1.0 until floor mu lowered)",
+   "scope": "any MuJoCo env with a hidden per-body friction schema",
+   "limitations": "MuJoCo-specific (friction-combination = elementwise max unless geom priority is set).",
+   "framework_consequence": "GUARD: set_sliding_mu is applied to contact_geoms = object + floor; a friction-schema env must vary the load-path contact, not one geom. Reusable MuJoCo gotcha.",
+   "code_changes": [
+    "hymeko_rl/env/constraint_probe.py::contact_geoms, set_sliding_mu"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_probe.py::test_set_sliding_mu_touches_only_column0",
+    "::test_high_mu_sticks_low_mu_slips_reversibly (separation proves both geoms set)"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-CSB-6",
+   "claim": "Tip-vs-slide under a SUSTAINED push is NOT cleanly friction-separable in MuJoCo: dynamics/momentum dominate and the box tips across a wide mu range (measured: identical tip outcome for mu 0.12-0.9 at F=2.5N). The friction-separable constraint-schema transition is SLIDE-vs-STAY (FACE_REST d_perp=0 <-> FACE_SLIDE d_perp=3) under a bounded sub-tipping COM push, matching Coulomb theory (boundary mu~0.46 at F=0.9N, predicted 0.459).",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "constraint-schema-benchmark-c1 de-risk (2026-07-14)",
+   "raw_evidence": [
+    "de-risk sweep (scratchpad): sustained top-push tips for all mu; bounded COM push separates slide/stay at mu~0.46"
+   ],
+   "confidence": "measured (de-risk sweep over mu x force)",
+   "scope": "friction counterfactual design for the constraint-schema benchmark; general to sustained-push vs quasi-static contact",
+   "limitations": "scoped to the sustained-wrench probe; a quasi-static controller could make tip-vs-slide separable.",
+   "framework_consequence": "DESIGN CONSTRAINT: a friction counterfactual must use slide-vs-stay, not tip-vs-slide; tip/pivot-feasibility counterfactuals require a quasi-static controller (a later gate). Constrains future C-gate probe design.",
+   "code_changes": [
+    "informs constraint_probe design (safe_probe_force sub-tipping window); no separate code artifact"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_probe.py::test_high_mu_sticks_low_mu_slips_reversibly (slide-vs-stay, not tip)"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Is tip/pivot feasibility separable under a quasi-static controller (a later gate)?"
+  },
+  {
+   "id": "F-CSB-7",
+   "claim": "A learned estimator recovers the constraint schema (stick/slip verdict under a standard probe, boundary mu*=F/N=0.70) from a PARTIAL, NOISY observation of the probe response (COM trajectory + Gaussian position noise), beating the flat baseline and approaching the privileged ceiling. First benchmark gate closed by a FITTED model. Measured (N=60, mu~U(0.20,1.20) continuous, 5-fold held-out): probe 0.906 balanced-acc at sigma->0 vs flat 0.500 (chance), approaching privileged ceiling 0.891 (R1); probe-flat CI(0.182,0.517) excludes 0 at 2mm noise (R0); graceful degradation 0.906->0.888(2mm)->0.808(5)->0.688(10)->0.647(20), above flat throughout (R2). The 5-trajectory-feature learned estimator slightly EXCEEDS the 1-feature (exact-disp) privileged at low noise (shape carries boundary info); the sub-1.0 ceiling is boundary-blending near mu*, the honest signature of a non-trivial task.",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "constraint-schema-benchmark-c2 (2026-07-14)",
+   "raw_evidence": [
+    "reports/2026-07-14-constraint-schema-benchmark-c2.md",
+    "reports/figures/2026-07-14-constraint-schema-c2.json",
+    "reports/framework/assimilations/constraint-schema-benchmark-c2.md"
+   ],
+   "confidence": "measured (N=60, 5-fold held-out, 7-sigma sweep; 9 tests)",
+   "scope": "binary stick/slip schema recognition on the cuboid substrate; the partial-observation recognition pattern generalizes",
+   "limitations": "recovers a BINARY verdict, not the continuous projector P_m (that is C3); one probe direction, one fixed force; featurization+classifier experiment-resident (extraction flagged for C3).",
+   "framework_consequence": "probe.constraint_counterfactual bumped to 1.1 (com_traj/tangential_traj = the partial-observation signal). C3 (projector estimation) authorized; C3 lands the probe_features extraction so C2/C3 share one observation model.",
+   "code_changes": [
+    "hymeko_rl/env/constraint_probe.py (ProbeResponse.com_traj, tangential_traj)",
+    "hymeko_rl/experiments/exp_constraint_schema_c2.py (observation model + standardized-logistic estimator + sigma-sweep)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_schema_c2.py"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Can the continuous projector P_m / d_perp / pivot axis be recovered from partial state (C3)?"
+  },
+  {
+   "id": "F-CSB-8",
+   "claim": "A linear classifier on physical-unit (metre-scale, ~1e-3) features MUST be standardized (StandardScaler in the pipeline); an unscaled LogisticRegression under default L2 underfits to the majority class and returns EXACTLY 0.500 even on cleanly-separable privileged input. The bug was caught because the PRIVILEGED CEILING (which must be near-perfect) was implausibly at chance: the privileged/oracle observer is a sanity tripwire -- if it is at chance, the harness is broken, not the task.",
+   "classification": "NEW_EVALUATION_REQUIREMENT",
+   "source_experiment": "constraint-schema-benchmark-c2 (2026-07-14, measured bug fix)",
+   "raw_evidence": [
+    "reports/2026-07-14-constraint-schema-benchmark-c2.md (Part: one measured bug fixed)",
+    "hymeko_rl/experiments/exp_constraint_schema_c2.py::_classifier"
+   ],
+   "confidence": "measured (privileged 0.500 -> 0.891 after adding the scaler)",
+   "scope": "any linear classifier on physical-unit features; general to scale-sensitive estimators + oracle-ceiling sanity checks",
+   "limitations": "specific to scale-sensitive linear models (tree/standardized models unaffected).",
+   "framework_consequence": "GUARD: schema recognizers use make_pipeline(StandardScaler(), LogisticRegression()); the privileged/oracle ceiling is a required sanity tripwire (measure it first; at-chance oracle => harness bug). Generalizes the eval-integrity 'measure the ceiling first' rule with a concrete scaling catch.",
+   "code_changes": [
+    "hymeko_rl/experiments/exp_constraint_schema_c2.py::_classifier (make_pipeline StandardScaler+LogisticRegression)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_schema_c2.py (pipeline-contains-StandardScaler test)"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-SAC-10",
+   "claim": "The greedy-rollout ablation (Arm C, single-variable vs Arm B: env stepped with action_mean, no exploration) REFUTES the exploration hypothesis (F-SAC-9): greedy-online median 0.208 vs DAgger 0.75, 0/3 hold, no better than stochastic Arm B (0.25). Restoring rollout self-consistency does NOT rescue the policy. The culprit is the -Q / off-policy CRITIC, not exploration: the DAgger policy is an IMITATION optimum, not the critic's Q-optimum, and the -Q gradient (a critic that extrapolates badly off the narrow DAgger manifold, still probed by the sampled-action actor loss even under greedy rollouts) pulls the actor off the DAgger optimum faster than the demo+rollout anchors (coef 2.5) hold it. RL refinement of an imitation-optimal flat policy fails at VALUE ESTIMATION, not exploration.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "Arm C greedy-rollout discriminator (flat_sac_rollout_state_dagger_anchor, 2026-07-15)",
+   "raw_evidence": [
+    "reports/canonical_integration/sac_rehab/rollout_dagger_armC/arm_c_results.json",
+    "reports/canonical_integration/sac_rehab/rollout_dagger_armC/fsac10_greedy_ablation.png"
+   ],
+   "confidence": "MEASURED single-variable 3-seed ablation (0/3 greedy hold; median 0.21 vs 0.75). The precise -Q-sampling-vs-critic split not fully isolated (a deterministic -Q ablation would pin it further).",
+   "scope": "off-policy actor-critic refinement of an imitation-optimal flat policy",
+   "limitations": "greedy_rollout changed only the ENV STEP; the actor loss still samples actions for -Q, so 'exploration' at the actor-loss level is not fully removed. But the ROLLOUT-covariate hypothesis is cleanly refuted.",
+   "framework_consequence": "Corrects F-SAC-9. Same failure class as F-PP-002 (offline actor-critic collapses the pick-place clone) -> a general guard: do NOT refine an imitation-optimal policy with off-policy actor-critic on a floorless task; the value drift degrades it regardless of exploration. Lever = the self-consistent DAgger loop (imitation.rollout_state_dagger). greedy_rollout added to SACConfig as a reusable diagnostic.",
+   "code_changes": [
+    "hymeko_rl/train/sac.py: SACConfig.greedy_rollout (diagnostic)",
+    "hymeko_rl/experiments/exp_flat_sac_rollout_dagger.py: run_arm_c / arm_b_dagger_sac(greedy=...)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_sac.py::test_train_sac_greedy_rollout_runs_finite"
+   ],
+   "superseded_findings": [
+    "F-SAC-9 exploration hypothesis (refuted)"
+   ],
+   "open_questions": "Would a deterministic -Q (DDPG-style, no actor-loss sampling) or a constrained/pessimistic critic (CQL/IQL) hold DAgger? (out of scope by the hard stop)"
+  },
+  {
+   "id": "F-CSB-9",
+   "claim": "The mechanical-schema motion projector P_m (d_perp, nullspace V0) is a DISCONTINUOUS function of pose at contact boundaries (adding/removing a contact changes d_perp discontinuously), so pose-only projector estimation is FRAGILE to sensor noise at the contact-detection scale. Measured (N=40 passive drops, sigma-sweep 0-20mm): naive geometric d_perp balanced accuracy 1.000 at sigma=0 (projector Frobenius error 0.000); the projector error JUMPS 0.000->0.933 at just 1mm (contact eps=2mm) -> 0.986 at 2mm; principal angle -> 37deg at 2mm; naive d_perp acc collapses to 0.498 at 20mm. A learned standardized-logistic classifier is noise-FLAT (~0.73): it robustifies above ~2-5mm but caps below the clean geometric extractor (1.00) and the privileged ceiling, worst on the rare transient (edge/vertex) modes.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "constraint-schema-benchmark-c3 (2026-07-15)",
+   "raw_evidence": [
+    "reports/2026-07-15-constraint-schema-benchmark-c3.md",
+    "reports/figures/2026-07-15-constraint-schema-c3.json",
+    "reports/framework/assimilations/constraint-schema-benchmark-c3.md"
+   ],
+   "confidence": "measured (N=40 drops, 6-sigma sweep; 9 tests)",
+   "scope": "pose-only projector/d_perp estimation on the passive cuboid substrate; the discontinuity is general to contact-mode schemas",
+   "limitations": "pose-only (Option A); a probe-informed estimator is untested; the loaded/slip projector is flicker-noisy (de-risk).",
+   "framework_consequence": "schema.constraint_extractor bumped to 1.1 (projector_frobenius_error + principal_angles_deg metrics). Motivates a probe-informed projector estimator (force/contact sensing) rather than pose-only for the loaded projector. Does NOT refute the probe -- the fragile regime is exactly the contact transitions where the C1/C2 probe is the natural signal.",
+   "code_changes": [
+    "hymeko_rl/env/constraint_schema.py (projector_frobenius_error, principal_angles_deg)",
+    "hymeko_rl/experiments/exp_constraint_schema_c3.py"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_schema_c3.py"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Does a probe-informed projector estimator (com_traj + probe_features) beat the pose-only fragility?"
+  },
+  {
+   "id": "F-CSB-10",
+   "claim": "Pose-only projector / admissible-subspace estimation must NOT be trusted near contact transitions: the projector is discontinuous there (F-CSB-9), so any pose-sensor noise at the contact scale jerks the projector error to ~1 and flips d_perp. Robust recovery of the loaded projector needs force/contact sensing (the C1/C2 probe), not pose alone.",
+   "classification": "NEGATIVE_RESULT_REQUIRING_A_GUARD",
+   "source_experiment": "constraint-schema-benchmark-c3 (2026-07-15)",
+   "raw_evidence": [
+    "reports/2026-07-15-constraint-schema-benchmark-c3.md",
+    "hymeko_rl/tests/test_constraint_schema_c3.py::test_noise_corrupts_the_geometric_projector"
+   ],
+   "confidence": "measured (proj err 0.93 at 1mm across 40 drops)",
+   "scope": "pose-only projector estimation on the passive substrate; scoped closure -- NOT a universal impossibility (probe-informed Option B untested)",
+   "limitations": "the loaded/slip projector is flicker-noisy (de-risk); a quasi-static controller could clean it.",
+   "framework_consequence": "GUARD: a future projector estimator should use force/contact sensing near contact transitions, not pose alone. The probe-informed estimator (reuse com_traj + land probe_features) is the recorded open lever (C4/C5).",
+   "code_changes": [
+    "(guard recorded; no default changed)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_schema_c3.py::test_noise_corrupts_the_geometric_projector",
+    "::test_c3_verdict_projector_pose_fragile"
+   ],
+   "superseded_findings": null,
+   "open_questions": "probe-informed projector estimation (the direct next lever)."
+  },
+  {
+   "id": "F-CSB-11",
+   "claim": "The recognised mechanical schema is CAUSALLY LOAD-BEARING for control. A supervised schema-conditioned controller (probe -> fitted belief -> calibrated push force) on a push-to-target-band task (net COM disp in [30,45]mm, no tip; the correct force depends on hidden mu) matches the oracle and dominates every schema-blind / belief-ablated arm. Measured (N=40 held-out): oracle 0.925 = schema 0.925 (recognition 0.99) >> flat 0.500 > frozen 0.425 >> swapped 0.000; placement error schema 4.0mm vs swapped 36.7mm; F_A=0.90N F_B=1.40N. The swapped-belief collapse to 0 (worse than schema-blind flat 0.50) is the decisive signature: success is a FUNCTION of the belief (a wrong belief is worse than no belief). First positive CONTROL gate; supervised (no RL).",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "constraint-schema-benchmark-c4 (2026-07-15)",
+   "raw_evidence": [
+    "reports/2026-07-15-constraint-schema-benchmark-c4.md",
+    "reports/figures/2026-07-15-constraint-schema-c4.json",
+    "reports/framework/assimilations/constraint-schema-benchmark-c4.md"
+   ],
+   "confidence": "measured (N=40 held-out seeds, calibration held out; 8 tests)",
+   "scope": "schema application on the robust 1-D slide-vs-stay mechanism (F-CSB-6) with a calibrated force-per-class controller; the causal method generalizes",
+   "limitations": "1-D lookup controller (not MPC); supervised calibration; schema application, not continuous multi-phase execution (C5).",
+   "framework_consequence": "C1->C2->C4 closes the recognition->application loop for the friction schema. The schema-conditioned controller pattern (probe->belief->calibrated force + freeze/swap ablations) is demonstrated; the controller is experiment-resident (extract when C5 reuses it). RL (C6) must beat this supervised ceiling to be authorised.",
+   "code_changes": [
+    "hymeko_rl/experiments/exp_constraint_schema_c4.py"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_schema_c4.py"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Continuous multi-phase execution (C5); a projector-informed controller where C3 pose is fragile."
+  },
+  {
+   "id": "F-CSB-12",
+   "claim": "A schema-application / control gate must include belief FREEZE + counterfactual-SWAP ablations to prove the schema is causally LOAD-BEARING (not merely correlated/present). A schema that is present but not load-bearing would still let a flat/frozen controller succeed; the decisive signature is SWAPPED-WORSE-THAN-FLAT (inverting the belief inverts the action -> worse than no belief, C4: swapped 0.00 < flat 0.50).",
+   "classification": "NEW_EVALUATION_REQUIREMENT",
+   "source_experiment": "constraint-schema-benchmark-c4 (2026-07-15)",
+   "raw_evidence": [
+    "reports/2026-07-15-constraint-schema-benchmark-c4.md",
+    "hymeko_rl/tests/test_constraint_schema_c4.py (honest-negative verdict branches)"
+   ],
+   "confidence": "measured (the verdict's two honest-negative branches are regression-locked)",
+   "scope": "any schema-application/control gate in the benchmark (and generally, causal attribution of a belief/representation to a control decision)",
+   "limitations": "the ablation proves causal dependence, not optimality; the belief must be manipulable (freeze/swap).",
+   "framework_consequence": "GUARD/METHOD: schema-controllers must be evaluated with freeze + counterfactual-swap belief ablations; report swapped vs flat. Registered as the causal-attribution method for the constraint-schema control gates.",
+   "code_changes": [
+    "hymeko_rl/experiments/exp_constraint_schema_c4.py::_verdict (freeze/swap degrade check)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_schema_c4.py::test_verdict_fails_when_flat_suffices",
+    "::test_verdict_fails_when_swap_does_not_degrade"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-CSB-13",
+   "claim": "The hidden mechanical schema (box mass) is NOT load-bearing for the continuous pivot-to-a-target-face. The pivot EXECUTES (passes through EDGE_PIVOT 100%, tips one face 0.99) but an adequate FIXED force + the OBSERVABLE balance-point release tips one face for ANY mass: N=40 oracle 0.99 = schema 0.99 = flat 0.99 >> open_loop 0.84 (no feedback); frozen=swapped 0.50 (a WRONG force fails, so force magnitude matters at the extremes, but a single max-adequate force (2.2N) covers both classes). So the pivot is controllable from observable geometry + an adequate action; hidden-parameter (mass) recognition earns no control credit. Echoes C3 (pose-determined projector); contrasts C4 (hidden friction WAS load-bearing for the single-step slide, swapped->0).",
+   "classification": "NEGATIVE_RESULT_CLOSING_A_DIRECTION",
+   "source_experiment": "constraint-schema-benchmark-c5 (2026-07-16)",
+   "raw_evidence": [
+    "reports/2026-07-16-constraint-schema-benchmark-c5.md",
+    "reports/figures/2026-07-16-constraint-schema-c5.json",
+    "reports/framework/assimilations/constraint-schema-benchmark-c5.md"
+   ],
+   "confidence": "measured (N=40 held-out seeds; 9 tests; deterministic pivot verified run1=run2)",
+   "scope": "the minimal external-wrench one-face-pivot task; closure scoped -- a harder pivot regime (narrow corridor / slip-during-pivot / obstacle) is untested (C5-prime)",
+   "limitations": "1-face pivot with a calibrated lookup controller; not MPC; not a universal impossibility.",
+   "framework_consequence": "Closes hidden-schema-conditioned pivot control for this task. GUARD: a schema-CONTROL claim must include an OPEN-LOOP (no-feedback) arm + an observability check -- if a fixed adequate action + observable feedback suffices, the hidden schema is not load-bearing. The balance-release pivot controller (realises the Galambos mode transition) is experiment-resident; extract if a C5-prime reuses it.",
+   "code_changes": [
+    "hymeko_rl/experiments/exp_constraint_schema_c5.py"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_schema_c5.py::test_c5_gate_honest_verdict",
+    "::test_verdict_hidden_schema_not_load_bearing"
+   ],
+   "superseded_findings": null,
+   "open_questions": "A harder pivot regime where observable feedback fails and the hidden schema could earn control credit (C5-prime)."
+  },
+  {
+   "id": "F-CSB-14",
+   "claim": "The hidden schema's CONTROL value is TASK-SPECIFIC across the C0-C5 arc: it is load-bearing for RECOGNITION (C1 identifiable / C2 recogniser) and for SLIDE control under genuine ambiguity (C4, swapped-belief->0.00), but NOT for the POSE-DETERMINED projector (C3) or the OBSERVABLE-FEEDBACK pivot (C5, schema=flat=oracle). The hidden schema earns CONTROL credit only where the action is a fine parameter choice under ambiguity the observation cannot resolve; where observable feedback + an adequate action suffice, it does not.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "constraint-schema-benchmark C0-C5 synthesis (2026-07-16)",
+   "raw_evidence": [
+    "reports/2026-07-16-constraint-schema-benchmark-c5.md",
+    "reports/framework/canonical_findings.json (F-CSB-2/7/9/11/13)"
+   ],
+   "confidence": "measured across five gates (C1-C5)",
+   "scope": "the constraint-schema benchmark; the principle (hidden-schema control value = ambiguity the observation cannot resolve) generalizes to schema/belief-conditioned control",
+   "limitations": "synthesized from this benchmark's tasks; the boundary (when is the control-relevant quantity observable) is task-dependent.",
+   "framework_consequence": "DESIGN PRINCIPLE + METHOD for schema-control gates: (1) include an open-loop / observable-only baseline; (2) claim schema-control value only when the control-relevant quantity is NOT observable and freeze/swap degrades. Directs future gates toward regimes with genuine observation-unresolvable ambiguity.",
+   "code_changes": [
+    "(cross-gate synthesis; method recorded)"
+   ],
+   "regression_tests": [
+    "the C1-C5 gate tests collectively (test_constraint_probe / _c2 / _c3 / _c4 / _c5)"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-SAC-11",
+   "claim": "PROXIMAL_ANCHOR_LIMITS_ACCUMULATED_DRIFT: a frozen-BC proximal penalty beta*||a_exec(pi(s))-a_exec(pi_0(s))||^2 on the EXECUTED (clipped) action, added to the -Q actor loss, DOES bound the actor's accumulated drift from the frozen init. At beta=400 (calibrated: smallest with median exec-delta<=0.005, p95<=0.015) the median deviation stays 0.003-0.008 across 5000 updates and grasp holds 9/9, versus the unanchored run which ran away to 0.066 and collapsed grasp/HL to 0 by update 5. The anchor is load-bearing against RUNAWAY value-drift; it converts a diverging actor into a bounded-oscillation actor around pi_0.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "TD3 frozen-BC proximal anchor beta=400 guarded smoke (coin_rl_anchor_smoke, 2026-07-23)",
+   "raw_evidence": [
+    "reports/2026-07-23-coin-td3-frozen-bc-anchor.md",
+    "experiments/2026_07_22_coin_v3_learning/rl_entry/anchor_smoke_result.json",
+    "reports/figures/coin_td3_frozen_bc_anchor.png"
+   ],
+   "confidence": "MEASURED single-run 5000-update guarded smoke vs the unanchored guarded-smoke baseline (c399531); RL not bit-reproducible (\u00a73 carve-out) but the deviation-bounding is deterministic in mechanism and consistent across the beta sweep (5..400 monotone).",
+   "scope": "off-policy actor-critic entry from a frozen imitation init on a chaos-sensitive clipped-action policy",
+   "limitations": "single seed at the chosen beta; the bound is on the ACCUMULATED deviation, not the first-step deviation (see F-SAC-12). Co-training critic OOD-boundary still drifts 0->0.92 by upd 5000 independently of the actor.",
+   "framework_consequence": "The proximal-BC anchor is a valid REGULARIZER for keeping an RL actor near a trusted init (prevents value-drift runaway, preserves grasp/gross competence). Wire it as an option where the goal is 'do not wander far from BC', NOT where the goal is 'preserve a first-step-fragile success set' (F-SAC-12).",
+   "code_changes": [
+    "experiments/2026_07_22_coin_v3_learning/rl_entry/coin_rl_anchor_smoke.py: anchor_loss + guarded anchored smoke",
+    "experiments/2026_07_22_coin_v3_learning/rl_entry/coin_rl_anchor_contract.py: \u00a76 Adam gradient-contract"
+   ],
+   "regression_tests": [
+    "(experiment harness; contract asserted in coin_rl_anchor_contract -> TD3_ANCHOR_GRADIENT_CONTRACT_PASS)"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Does an anneal or a per-state beta preserve MORE gross competence at longer budgets, and does a frozen/re-audited critic remove the OOD drift?"
+  },
+  {
+   "id": "F-SAC-12",
+   "claim": "PROXIMAL_ANCHOR_FAILS_FIRST_STEP_BASIN_PRESERVATION: a frozen-BC proximal anchor CANNOT preserve a NARROW_CHAOS_SENSITIVE success basin, because its gradient is IDENTICALLY ZERO at pi_0 (deviation=0 => grad ||a-a_0||^2 = 0, measured 0.0e0). The very first -Q step (executed-action deviation 0.0221, where the anchor is null) already exceeds the ~0.02 that destroys the chaos-marginal deliveries: headline falls 3->1 at update 1 and never recovers for ANY beta. The anchor is a SECOND-ORDER constraint on accumulation, not a first-step force; a weaker beta permits more first-step drift, a stronger beta cannot act earlier. The critic's Q-improvement direction is valid (sep +12, no early drift) but is NOT LOCALLY REALIZABLE on a first-step-fragile basin. Mechanically labelled ANCHOR_PRESERVES_INIT_BUT_NO_PROGRESS; root cause VALID_Q_DIRECTION_NOT_LOCALLY_REALIZABLE.",
+   "classification": "NEGATIVE_RESULT_REQUIRING_A_GUARD",
+   "source_experiment": "TD3 frozen-BC proximal anchor beta=400 guarded smoke + Adam gradient contract (2026-07-23)",
+   "raw_evidence": [
+    "reports/2026-07-23-coin-td3-frozen-bc-anchor.md",
+    "experiments/2026_07_22_coin_v3_learning/rl_entry/anchor_smoke_result.json",
+    "experiments/2026_07_22_coin_v3_learning/rl_entry/anchor_contract_result.json"
+   ],
+   "confidence": "MEASURED: update-0 anchor-grad-norm exactly 0.0e0 (structural, beta-independent); HL 3->1 at first update across the run; consistent with the unanchored collapse (c399531 / VALID_BUT_CHAOS_SENSITIVE).",
+   "scope": "basin preservation of a first-step-fragile (chaos-sensitive) success set during actor-critic entry",
+   "limitations": "the 'first-step-fragile' property is specific to this clipped-action policy whose raw pre-clip reaches +-63; on a smoother policy the first-step deviation might sit under the destruction threshold and the proximal anchor could then hold.",
+   "framework_consequence": "GUARD: do NOT use a proximal (soft-penalty) BC anchor to preserve a first-step-fragile success basin \u2014 it has no leverage on update 0. The correct lever is a HARD step-0 trust-region on the executed action (clip ||a_exec(pi)-a_exec(pi_0)|| per update), which acts exactly where the penalty is null; OR treat the basin as a SEARCH PRIOR, not a policy init (cf. coin genuine-RL R59/R60: only nonlocal exact-rollout search exceeded the supervised ceiling). Constrains any future 'anchor to preserve deliveries' proposal.",
+   "code_changes": [
+    "(negative; guard recorded. Next lever = hard step-0 trust-region, NOT yet implemented)"
+   ],
+   "regression_tests": [
+    "(the structural claim: coin_rl_anchor_contract asserts update-0 anchor-grad-norm ~ 0)"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Does a hard per-update executed-action trust-region (radius < 0.02) preserve the 3/9 marginal deliveries AND admit any Q-improvement, or is the basin simply not policy-improvable (only search-improvable)?"
+  }
+ ]
+}

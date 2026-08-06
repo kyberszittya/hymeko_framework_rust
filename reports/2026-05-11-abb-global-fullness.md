@@ -30,7 +30,7 @@ seed-0: $-3.00$pp; previously published $-7.6$pp on a different config):
 | `hymeko_graph/src/lib.rs` | +2 | exports |
 | `hymeko_py/src/cycles.rs` | +~90 | `enumerate_top_k_per_vertex_cycles_signed_filtered_bb_global_batched_rs` PyO3 binding |
 | `hymeko_py/src/lib.rs` | +1 | binding registration |
-| `signedkan_wip/src/n_tuples.py` | +~25 | `HSIKAN_USE_PER_VERTEX_ABB_MODE` + `HSIKAN_PER_VERTEX_ABB_FULLNESS_GATE` dispatch |
+| `hymeko_neuro/n_tuples.py` | +~25 | `HSIKAN_USE_PER_VERTEX_ABB_MODE` + `HSIKAN_PER_VERTEX_ABB_FULLNESS_GATE` dispatch |
 | `docs/plans/2026-05-11-abb-global-fullness/` | new | `plan.{tex,pdf,tikz,mmd}` + `plan_diagram.pdf` |
 
 No `CORE.YAML` items touched.
@@ -106,7 +106,7 @@ the $+0.0005$ "AUC-preserving" verdict.
 
 ## Slashdot enumeration walltime (post-dedup-fix, $k{=}4$, $m{=}128$, 3 iters + 1 warmup)
 
-Pure-enumeration bench via `signedkan_wip.src.bench_abb_enum_walltime`:
+Pure-enumeration bench via `hymeko_neuro.bench_abb_enum_walltime`:
 
 | Variant | Median (s) | n_cycles | Cycles vs OFF |
 |---|---|---|---|
@@ -164,7 +164,7 @@ catch this class of bug at the unit level.
 
 While running the Epinions FPN sweep in the overnight v3 queue, all four FPN variants
 (FPN-3, FPN-5, FPN-7, FPN-5-noABB) reported AUC = 0.6892865 to 7 decimals --- impossible
-for distinct ladders. Root cause: `signedkan_wip/src/cycle_cache.py::_topk_fingerprint`
+for distinct ladders. Root cause: `hymeko_neuro/graph/cycle_cache.py::_topk_fingerprint`
 captured only the older env-var set (`HSIKAN_TOPK_MODE`, `_K`, etc.) and missed every
 HSIKAN env var added in 2026-05-10/11:
 
@@ -176,7 +176,7 @@ With `HYMEKO_CYCLE_CACHE=1` on, the first FPN run wrote its cycle set to disk un
 the (truncated) old fingerprint; the subsequent three runs read those cached cycles.
 This is exactly the failure mode the docstring warned about.
 
-Fix landed in `signedkan_wip/src/cycle_cache.py`; verified
+Fix landed in `hymeko_neuro/graph/cycle_cache.py`; verified
 `_cache_key` distinguishes FPN-3 vs FPN-5 keys + ABB on/off keys.
 Stale Epinions JSONs deleted; the Stage-4 chain re-runs all four
 variants from scratch with the corrected fingerprint. Memory:
@@ -201,7 +201,7 @@ are full", which is achievable in CPG configs. Test
 A fused entry point `enumerate_top_k_per_vertex_cycles_signed_tiered_bb_global_batched_rs`
 lets `HSIKAN_TOPK_MODE=per_vertex_tiered` + `HSIKAN_TOPK_TIERS=...`
 + `HSIKAN_USE_PER_VERTEX_ABB_MODE=global` compose end-to-end.
-The Python dispatcher in `signedkan_wip/src/n_tuples.py` detects this
+The Python dispatcher in `hymeko_neuro/n_tuples.py` detects this
 combination and routes to the fused binding.
 
 The expected payoff: on graphs with skewed degree distribution (Epinions,

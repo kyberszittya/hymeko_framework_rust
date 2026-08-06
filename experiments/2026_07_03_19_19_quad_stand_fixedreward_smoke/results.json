@@ -1,0 +1,29 @@
+{
+  "reward": "fixed metric-aligned STAND_REWARD",
+  "algo": "td3 pure sa_hsikan",
+  "untrained": 0.0,
+  "peak_stand_rate": 0.0,
+  "peak_step": 20000,
+  "curve": [
+    {
+      "step": 20000,
+      "stand_rate": 0.0
+    },
+    {
+      "step": 40000,
+      "stand_rate": 0.0
+    },
+    {
+      "step": 60000,
+      "stand_rate": 0.0
+    },
+    {
+      "step": 80000,
+      "stand_rate": 0.0
+    },
+    {
+      "step": 100000,
+      "stand_rate": 0.0
+    }
+  ]
+}

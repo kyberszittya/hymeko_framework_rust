@@ -36,7 +36,7 @@ Bitcoin Alpha unbounded k=4: 790 ms → **48 ms** (16×).
 
 ---
 
-## 2. HSiKAN inference latency — `signedkan_wip/src/...`
+## 2. HSiKAN inference latency — `hymeko_neuro/...`
 
 Three surgical changes to make HSiKAN forward fast:
 
@@ -60,7 +60,7 @@ Catmull-Rom basis matrix is constructed inline inside
 
 CPU also benefits (1.4-3.0× on the same datasets).
 
-The bench JSON (`signedkan_wip/experiments/results/inference_bench.json`)
+The bench JSON (`hymeko_neuro/experiments/results/inference_bench.json`)
 shows worse Slashdot cuda numbers (~93 ms) due to cudagraph cache
 eviction across the cpu/cuda/multi-dataset cycling in the same
 process. Real-world inference (model loaded once, queries served)
@@ -234,7 +234,7 @@ section 5.)
 
 ---
 
-## 6. Future work, named (`signedkan_wip/FUTURE_DIRECTIONS.md`)
+## 6. Future work, named (`hymeko_neuro/FUTURE_DIRECTIONS.md`)
 
 Three new entries appended to the file's existing tree:
 
@@ -261,7 +261,7 @@ implicit follow-up — full hyperparameter search to actually hit
 - `hymeko_py/src/lib.rs` — re-export
 - `hymeko_py/Cargo.toml` — numpy + ndarray deps
 
-**Python (signedkan_wip):**
+**Python (hymeko_neuro):**
 - `src/n_tuples.py` — `_DEFAULT_CYCLE_CAP`, numpy-aware
   `_enumerate_cycles_fast`, `arr.tolist()` conversion
 - `src/signedkan.py` — `_sign_vals` buffer; `build_vertex_triad_incidence`
@@ -287,7 +287,7 @@ implicit follow-up — full hyperparameter search to actually hit
   full pruning Pareto
 
 **Future-directions index:**
-- `signedkan_wip/FUTURE_DIRECTIONS.md` — added §N1/N2/N3
+- `hymeko_neuro/FUTURE_DIRECTIONS.md` — added §N1/N2/N3
 
 ---
 

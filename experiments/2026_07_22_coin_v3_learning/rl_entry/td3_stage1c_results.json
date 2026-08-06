@@ -1,0 +1,285 @@
+{
+ "checkpoints": {
+  "0": {
+   "n": 12,
+   "late": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.417,
+    "exited": 0.0,
+    "contact_retention": 0.62,
+    "ret": -0.381
+   },
+   "pi0": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.417,
+    "exited": 0.0,
+    "contact_retention": 0.62,
+    "ret": -0.381
+   },
+   "delta_vs_pi0": {
+    "strict_success": 0.0,
+    "max_dwell": 0.0,
+    "entered": 0.0,
+    "exited": 0.0,
+    "contact_retention": 0.0,
+    "ret": 0.0
+   },
+   "auth": {
+    "finite_Q": true,
+    "finite_grad": true,
+    "boundary_pref": 0.0,
+    "boundary_ok": true,
+    "twin_disagree": 0.355,
+    "twin_ok": true,
+    "perturb_order": 1.0,
+    "perturb_ok": true,
+    "q1_mean": 0.058,
+    "q2_mean": 0.081,
+    "authorized": true
+   },
+   "anchor_L2_cumulative": {
+    "median": 0.0,
+    "p95": 0.0,
+    "max": 0.0
+   },
+   "anchor_cum_max": 0.0,
+   "anchor_L2_perstep_over_accepted": {
+    "median": 0.0,
+    "p95": 0.0,
+    "max": 0.0
+   },
+   "probe_Linf_diagnostic": 0.0,
+   "accepted": 0,
+   "rejected": 0
+  },
+  "2000": {
+   "n": 12,
+   "late": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.417,
+    "exited": 0.0,
+    "contact_retention": 0.62,
+    "ret": -0.381
+   },
+   "pi0": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.417,
+    "exited": 0.0,
+    "contact_retention": 0.62,
+    "ret": -0.381
+   },
+   "delta_vs_pi0": {
+    "strict_success": 0.0,
+    "max_dwell": 0.0,
+    "entered": 0.0,
+    "exited": 0.0,
+    "contact_retention": 0.0,
+    "ret": 0.0
+   },
+   "auth": {
+    "finite_Q": true,
+    "finite_grad": true,
+    "boundary_pref": 0.0,
+    "boundary_ok": true,
+    "twin_disagree": 0.105,
+    "twin_ok": true,
+    "perturb_order": 1.0,
+    "perturb_ok": true,
+    "q1_mean": -20.661,
+    "q2_mean": -20.119,
+    "authorized": true
+   },
+   "anchor_L2_cumulative": {
+    "median": 0.0,
+    "p95": 0.0,
+    "max": 0.0
+   },
+   "anchor_cum_max": 0.0,
+   "anchor_L2_perstep_over_accepted": {
+    "median": 0.0,
+    "p95": 0.0,
+    "max": 0.0
+   },
+   "probe_Linf_diagnostic": 0.0,
+   "accepted": 0,
+   "rejected": 0
+  },
+  "4000": {
+   "n": 12,
+   "late": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.5,
+    "exited": 0.083,
+    "contact_retention": 0.551,
+    "ret": -0.036
+   },
+   "pi0": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.417,
+    "exited": 0.0,
+    "contact_retention": 0.62,
+    "ret": -0.381
+   },
+   "delta_vs_pi0": {
+    "strict_success": 0.0,
+    "max_dwell": 0.0,
+    "entered": 0.083,
+    "exited": 0.083,
+    "contact_retention": -0.069,
+    "ret": 0.345
+   },
+   "auth": {
+    "finite_Q": true,
+    "finite_grad": true,
+    "boundary_pref": 0.0,
+    "boundary_ok": true,
+    "twin_disagree": 0.138,
+    "twin_ok": true,
+    "perturb_order": 1.0,
+    "perturb_ok": true,
+    "q1_mean": -41.188,
+    "q2_mean": -41.342,
+    "authorized": true
+   },
+   "anchor_L2_cumulative": {
+    "median": 0.02378,
+    "p95": 0.02995,
+    "max": 0.03067
+   },
+   "anchor_cum_max": 0.03067,
+   "anchor_L2_perstep_over_accepted": {
+    "median": 0.00166,
+    "p95": 0.00198,
+    "max": 0.00207
+   },
+   "probe_Linf_diagnostic": 0.08925,
+   "accepted": 21,
+   "rejected": 479
+  },
+  "6000": {
+   "n": 12,
+   "late": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.5,
+    "exited": 0.083,
+    "contact_retention": 0.551,
+    "ret": -0.036
+   },
+   "pi0": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.417,
+    "exited": 0.0,
+    "contact_retention": 0.62,
+    "ret": -0.381
+   },
+   "delta_vs_pi0": {
+    "strict_success": 0.0,
+    "max_dwell": 0.0,
+    "entered": 0.083,
+    "exited": 0.083,
+    "contact_retention": -0.069,
+    "ret": 0.345
+   },
+   "auth": {
+    "finite_Q": true,
+    "finite_grad": true,
+    "boundary_pref": 0.0,
+    "boundary_ok": true,
+    "twin_disagree": 0.051,
+    "twin_ok": true,
+    "perturb_order": 1.0,
+    "perturb_ok": true,
+    "q1_mean": -61.283,
+    "q2_mean": -61.956,
+    "authorized": true
+   },
+   "anchor_L2_cumulative": {
+    "median": 0.02378,
+    "p95": 0.02995,
+    "max": 0.03067
+   },
+   "anchor_cum_max": 0.03067,
+   "anchor_L2_perstep_over_accepted": {
+    "median": 0.00166,
+    "p95": 0.00198,
+    "max": 0.00207
+   },
+   "probe_Linf_diagnostic": 0.08925,
+   "accepted": 21,
+   "rejected": 979
+  },
+  "8000": {
+   "n": 12,
+   "late": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.5,
+    "exited": 0.083,
+    "contact_retention": 0.551,
+    "ret": -0.036
+   },
+   "pi0": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.417,
+    "exited": 0.0,
+    "contact_retention": 0.62,
+    "ret": -0.381
+   },
+   "delta_vs_pi0": {
+    "strict_success": 0.0,
+    "max_dwell": 0.0,
+    "entered": 0.083,
+    "exited": 0.083,
+    "contact_retention": -0.069,
+    "ret": 0.345
+   },
+   "auth": {
+    "finite_Q": true,
+    "finite_grad": true,
+    "boundary_pref": 0.0,
+    "boundary_ok": true,
+    "twin_disagree": 0.038,
+    "twin_ok": true,
+    "perturb_order": 1.0,
+    "perturb_ok": true,
+    "q1_mean": -79.545,
+    "q2_mean": -78.562,
+    "authorized": true
+   },
+   "anchor_L2_cumulative": {
+    "median": 0.02378,
+    "p95": 0.02995,
+    "max": 0.03067
+   },
+   "anchor_cum_max": 0.03067,
+   "anchor_L2_perstep_over_accepted": {
+    "median": 0.00166,
+    "p95": 0.00198,
+    "max": 0.00207
+   },
+   "probe_Linf_diagnostic": 0.08925,
+   "accepted": 21,
+   "rejected": 1479
+  }
+ },
+ "stage1c_pass": false,
+ "critic_ever_authorized": true,
+ "accepted": 21,
+ "rejected": 1479,
+ "phase_conditioned": true,
+ "dynamic_phase": true,
+ "campaign": "PHASE_SWITCHED_TD3_STAGE1C",
+ "config_sha": "d4cf53aeb735294f",
+ "wall_s": 59.1,
+ "verdict": "PHASE_SWITCHED_TD3_STAGE1C_NO_IMPROVEMENT",
+ "launch_sha": "46d634a97f6c"
+}

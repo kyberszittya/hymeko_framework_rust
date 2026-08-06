@@ -1,0 +1,72 @@
+{
+  "kind": "spec-reward offline de-risk (reward-quality vs native success)",
+  "stamp": "2026-07-13 18:46:52",
+  "n_synth": 200,
+  "seed": 0,
+  "datasets": {
+    "synthetic": {
+      "target (arbitrated)": {
+        "formula": "F(in_place >= 0.9)",
+        "n": 200,
+        "n_success": 100,
+        "mean_return_success": -8.2176,
+        "mean_return_failure": -12.1534,
+        "separation": 3.9359,
+        "point_biserial": 0.8297,
+        "auc": 0.99
+      },
+      "over-constrained raw": {
+        "formula": "F(near_object >= 0.7 AND grasp_success >= 0.5 AND in_place >= 0.9)",
+        "n": 200,
+        "n_success": 100,
+        "mean_return_success": -9.7745,
+        "mean_return_failure": -12.5576,
+        "separation": 2.7831,
+        "point_biserial": 0.7644,
+        "auc": 0.9524
+      },
+      "distractor": {
+        "formula": "F(grasp_success >= 0.5)",
+        "n": 200,
+        "n_success": 100,
+        "mean_return_success": 2.13,
+        "mean_return_failure": 1.86,
+        "separation": 0.27,
+        "point_biserial": 0.0637,
+        "auc": 0.5395
+      }
+    },
+    "real coffee-push": {
+      "arbitrated (formal)": {
+        "formula": "F(obj_to_target <= 0.071)",
+        "n": 200,
+        "n_success": 142,
+        "mean_return_success": -4.8043,
+        "mean_return_failure": -17.343,
+        "separation": 12.5387,
+        "point_biserial": 0.7994,
+        "auc": 0.9726
+      },
+      "arbitrated (weak-model gated)": {
+        "formula": "F(in_place >= 0.6 AND obj_to_target <= 0.071)",
+        "n": 200,
+        "n_success": 142,
+        "mean_return_success": -34.0903,
+        "mean_return_failure": -80.1172,
+        "separation": 46.027,
+        "point_biserial": 0.852,
+        "auc": 0.9933
+      },
+      "raw (weak-model)": {
+        "formula": "F(near_object >= 0.5 AND grasp_success >= 0.8 AND in_place >= 0.9 AND obj_to_target <= 0.1)",
+        "n": 200,
+        "n_success": 142,
+        "mean_return_success": -144.0221,
+        "mean_return_failure": -144.4367,
+        "separation": 0.4147,
+        "point_biserial": 0.3342,
+        "auc": 0.6684
+      }
+    }
+  }
+}

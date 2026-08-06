@@ -1,0 +1,24 @@
+{
+  "all_5000_sampleable": true,
+  "n_transitions": 5000,
+  "obs_normalized_range": [
+    -6.9,
+    10.8
+  ],
+  "obs_std_near_1": true,
+  "actions_in_[-1,1]": true,
+  "rewards_finite": true,
+  "success_transition_reward": 5.13,
+  "success_flag_present_on_success": true,
+  "success_reward_positive": true,
+  "no_boundary_leak_by_construction": true,
+  "composition": {
+    "reach": 1250,
+    "contact": 1250,
+    "partial": 1250,
+    "success": 1250
+  },
+  "balanced": true,
+  "episodes_rolled": 120,
+  "successful_episodes": 120
+}

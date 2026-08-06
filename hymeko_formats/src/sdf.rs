@@ -168,5 +168,15 @@ fn emit_sdf_geometry(out: &mut String, geom: &GeometryInfo, indent: usize) {
                 ));
             }
         }
+        GeometryShape::Capsule => {
+            // Capsule dims = [length, radius]; SDF has a native <capsule>.
+            let d = &geom.dimensions;
+            if d.len() >= 2 {
+                out.push_str(&format!(
+                    "{pad}<capsule>\n{pad}  <radius>{}</radius>\n{pad}  <length>{}</length>\n{pad}</capsule>\n",
+                    d[1], d[0]
+                ));
+            }
+        }
     }
 }

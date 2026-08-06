@@ -1,0 +1,29 @@
+{
+ "beta": 400.0,
+ "update0_anchor_grad_norm": 0.0,
+ "anchor_zero_at_pi0": true,
+ "p1_q_grad_norm": 19.9974,
+ "p1_anchor_grad_norm": 247.9784,
+ "p1_anchor_over_q_ratio": 12.4,
+ "p1_cos_gq_ga": -0.807,
+ "adam_combined_step": {
+  "L": [
+   65.2558,
+   64.4773
+  ],
+  "Q": [
+   -64.0868,
+   -64.1961
+  ],
+  "anchor": [
+   1.16901,
+   0.2812
+  ]
+ },
+ "obj_decreases": true,
+ "q_not_opposite": true,
+ "not_cancelled": true,
+ "frac_states_updated": 1.0,
+ "retain_update": true,
+ "pass": true
+}

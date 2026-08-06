@@ -1,0 +1,113 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,booktabs,hyperref,xcolor}
+\usepackage{graphicx}
+\title{\textbf{Learning Manipulation on HyMeKo Robot Hypergraphs}\\
+       \large Demonstrator + Behaviour Cloning + Off-Policy Refinement on Galambos and FANUC}
+\author{hymeko\_rl --- Kato collaboration / HSiKAN line}
+\date{2026-06-24}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent We study whether a structural policy backbone (HSiKAN, signed message passing over the robot's
+kinematic hypergraph) helps learn two manipulation tasks described in HyMeKo: \emph{Galambos} (two planar arms
+pull a coin into a target zone) and the \emph{FANUC} LR Mate-config top-down pick-and-place. The central finding
+is that \textbf{pure reinforcement learning cannot crack either task} --- it never discovers the long-horizon
+grasp from a scalar reward --- but \textbf{behaviour cloning (BC) from a scripted demonstrator breaks this
+exploration wall}. Beyond BC, on-policy PPO refines modestly while off-policy DDPG/TD3 \emph{degrade} the
+warm-started policy. The architecture (HSiKAN vs.\ a params-matched MLP) is effectively tied. FANUC is the
+tractable task (BC reaches $50\%$ placement); Galambos is bounded by a physical \emph{carry} ceiling
+($\sim 25\%$). The evidence points to declared task structure (an FSM / reward machine), not a richer function
+approximator, as the next lever.
+\end{abstract}
+
+\section{The problem: flat RL co-discovers structure and control}
+A Markov policy on a scalar reward must simultaneously learn the \emph{task decomposition}
+(reach\,$\to$\,grasp\,$\to$\,transport\,$\to$\,release) and the \emph{continuous control} within each phase. We
+measured this failure directly: BC-warm, curriculum PPO on FANUC reached return $+93$ yet placed $0\%$ greedily;
+PPO-from-scratch on Galambos stays flat at failure even with the coin spawned \emph{at} the zone
+($0.071$\,m from centre). The bottleneck is hard-exploration, not reach, control, backbone, or representation.
+
+\section{Behaviour cloning breaks the exploration wall}
+We script a demonstrator per task --- the FANUC IK expert (10/10 grasp), and a Galambos corral$\to$pinch$\to$carry
+controller built on an analytic planar 2-link IK --- collect successful trajectories, and clone the policy's
+action mean (MSE). BC gives the policy a competent \emph{starting behaviour}:
+\begin{center}\small
+\begin{tabular}{lccc}
+\toprule
+Task & untrained place & \textbf{BC place} & demonstrator ceiling \\
+\midrule
+FANUC pick-and-place & $0.00$ & $\mathbf{0.50}$ & $\sim 1.0$ (scripted) \\
+Galambos coin-grasp  & $0.00$ & $\mathbf{0.21\text{--}0.29}$ & $\sim 0.25$ (scripted) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Refinement: PPO stable, off-policy degrades}
+From the BC warm-start we refine. \textbf{Galambos, BC$\to$PPO} (HSiKAN vs.\ params-matched MLP, 3 seeds):
+\begin{center}\small
+\begin{tabular}{lccc}
+\toprule
+backbone & BC place & \textbf{$\to$PPO place} (per seed) & median \\
+\midrule
+HSiKAN & $0.04$--$0.21$ & $0.21,\ 0.25,\ 0.29$ & $\mathbf{0.25}$ \\
+MLP    & $0.08$         & $0.17,\ 0.21,\ 0.25$ & $\mathbf{0.21}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+HSiKAN edges the MLP ($0.25$ vs.\ $0.21$) but \emph{within the seed spread} --- effectively a tie, both pinned at
+the control ceiling. \textbf{Off-policy (BC$\to$TD3) is unreliable}: HSiKAN $0.083\!\to\!0.125$ (slight help), but
+MLP $0.292\!\to\!0.083$ (large degradation). A cold critic pulls the deterministic actor off the BC solution.
+
+\textbf{FANUC, BC$\to$off-policy} ($2\times10^4$ steps each, separate DDPG and TD3), post-refine placement vs.\
+the BC baseline ($\sim 0.50$):
+\begin{center}\small
+\begin{tabular}{lcc}
+\toprule
+ & DDPG & TD3 \\
+\midrule
+HSiKAN & $0.25$ (from $0.50$) & $0.00$ \\
+MLP    & $0.00$ (NaN-unstable) & $0.00$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\textbf{The collapse is consistent across both tasks}: off-policy refinement from a BC warm-start degrades or
+destroys the cloned policy (only DDPG--HSiKAN retained anything). On-policy PPO at least \emph{holds} the BC
+level. The practical conclusion: \textbf{the BC policy is the best learned-control result; off-policy is not the
+lever}, and the place to add capability is task structure, not the RL refiner.
+
+\section{Why Galambos caps at \texorpdfstring{$\sim 25\%$}{~25\%}: a control ceiling}
+Lowering the coin spawn from the whole table to \emph{at the zone} only moved the return $-224\to-198$ (flat,
+never delivering); fixing a degenerate hand-authored action interface did not change it either. The cause is
+physical: the coin is a free-spinning cylinder, and a two-finger clamp dragged perpendicular \emph{rolls out},
+while the two arms (rooted at $\pm x$) cannot both get behind a central coin to push it. Both RL and a carefully
+tuned scripted controller top out near $25\%$. This is the same wall as FANUC's $0\%$ greedy place --- a missing
+structural prior, not a tuning deficit.
+
+\section{HyMeKo as the substrate}
+All of the above rides on HyMeKo descriptions. The robot, observation, reward, and (newly) the whole
+\emph{scenario} are read from \texttt{.hymeko} models, parity-tested against the former Python configuration.
+The coin and zone were additionally promoted to graph vertices via grasp/goal \emph{hyperedges}
+(\texttt{with\_task\_hyperedges}), so structure can engage the task objective. A model's composition is itself a
+hypergraph: each model is a vertex and each model's imports form a composition hyperedge (a hub node), giving a
+hypergraph-of-hypergraphs (bundle-of-bundles); see \texttt{reports/figures/composition.dot}.
+
+\section{Conclusion}
+\begin{itemize}\itemsep2pt
+\item Pure RL fails both tasks; \textbf{BC is necessary} to break the exploration wall.
+\item \textbf{Architecture is not the lever here}: HSiKAN $\approx$ MLP at iso-parameters once BC supplies the
+      starting behaviour.
+\item \textbf{Off-policy from a BC warm-start is fragile}; on-policy PPO at least holds the BC level.
+\item \textbf{FANUC is the working learned-control demo} ($50\%$ placement from BC); \textbf{Galambos is a
+      documented hard case} bounded by physical carry.
+\item The strongest next lever is \textbf{declared task structure} --- an FSM / reward machine with HSiKAN leaf
+      controllers --- not a richer backbone. This is supported independently by both tasks.
+\end{itemize}
+
+\noindent\textit{Artifacts: 4 timestamped demonstrator-grasp GIFs (\texttt{reports/gifs/demonstrator/}); the
+model-composition hypergraph (\texttt{reports/figures/composition.dot}); checkpoints under
+\texttt{checkpoints/\{galambos,fanuc\}/}. Companion notes:
+\texttt{reports/2026-06-24-galambos-demonstrator-bc.md}, \texttt{2026-06-24-galambos-hyperedge-ab.md}.}
+
+\end{document}

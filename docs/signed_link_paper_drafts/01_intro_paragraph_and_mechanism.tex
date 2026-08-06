@@ -1,0 +1,147 @@
+% ============================================================
+% Introduction § 1 + § 2 (mechanism) — DRAFT for coworker review.
+%
+% This file is BOTH a standalone-compilable preview AND a fragment
+% you can \input{} into the main manuscript. To use as a fragment,
+% delete the documentclass / begin{document} / end{document} block.
+%
+% Length budgets:
+%   § 1 (the hook):       ~250 words
+%   § 2 (the mechanism):  ~400 words
+%
+% Tone: methodological-correction first, model second.
+% Editorial guidance: this is what an editor at NComms reads
+%   in the first 90 seconds. Every sentence has to do work.
+%
+% Markers:
+%   [TODO/CW]  = needs coworker confirmation or supplied value
+%   [PHASE B]  = number from the still-running audit matrix
+% ============================================================
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{amsmath}\usepackage{amssymb}\usepackage{microtype}
+\usepackage{hyperref}
+\setlength{\parskip}{6pt}
+\title{[Draft fragment] Test-edge leakage inflates seven years\\of signed-link prediction benchmarks; a strict protocol\\and audit restore comparability}
+\author{[Authors]}
+\date{}
+\begin{document}\maketitle
+
+% =========================================================
+% § 1 — The editorial hook (~250 words)
+% =========================================================
+\section{Introduction}
+
+Signed networks --- where edges carry a positive (cooperation, trust,
+agreement) or negative (interference, distrust, disagreement) sign
+in addition to topological information --- have become the canonical
+benchmark domain for evaluating sign-aware graph neural networks.
+Five publicly available datasets (Bitcoin-Alpha, Bitcoin-OTC,
+Slashdot, Epinions, Reddit Hyperlinks) have anchored a seven-year
+methodological trajectory: SGCN~\cite{sgcn2018}, SiGAT~\cite{sigat2019},
+SGCL~\cite{sgcl2022}, SiGformer~\cite{sigformer2023},
+SE-SGformer~\cite{sesgformer2024}, and DADSGNN~\cite{dadsgnn2025},
+with peer-reviewed AUROC ceilings rising from $\sim$0.85 to
+$\geq$0.99 on Bitcoin-Alpha and Bitcoin-OTC under a
+\emph{transductive} evaluation regime.
+
+We show that this trajectory does not reflect a corresponding
+improvement in sign-prediction capability. The standard transductive
+protocol leaks test-edge sign information into the model's feature
+pipeline at training time, allowing every published method we audited
+to recover the sign of held-out edges from features that should not
+have seen it. The leakage is not a bug in any specific implementation
+--- it is a structural property of how signed-graph message-passing
+is currently set up. We diagnose it with a simple
+\emph{label-shuffle audit}, define a \emph{strict training-edge-only
+protocol} that closes the leak, re-evaluate the audited methods
+under the corrected protocol, and present a compact architecture
+--- Gömb-strict --- that remains competitive under the corrected
+protocol with $30\,000$--$100\,000$ parameters and a total compute
+budget of $\sim$24 GPU-hours on a single consumer GPU.
+
+The corrected leaderboards differ from the published ones by
+$[\text{Phase B}: \Delta_{\min}\text{--}\Delta_{\max}]$ percentage points
+on average across methods and datasets; we recommend the
+2018--2025 signed-link-prediction literature be re-evaluated under
+the strict protocol.
+
+% =========================================================
+% § 2 — The mechanism (~400 words)
+% =========================================================
+\section{Why the transductive protocol leaks}
+
+\label{sec:mechanism}
+
+Signed graph neural networks construct per-vertex features by
+aggregating signed messages from incident edges. In every method we
+audited, the signed-incidence matrix
+$\mathbf{H}_{\mathrm{signed}} \in \{-1, 0, +1\}^{|V|\times|E|}$ used
+in this aggregation is constructed once from the \emph{full} edge
+list, before the train/test split is applied. Concretely:
+
+\begin{equation}
+\mathbf{H}_{\mathrm{signed}}[u, e] = \begin{cases}
++1 & \text{if } u \in e \text{ and } \mathrm{sign}(e) = +1, \\
+-1 & \text{if } u \in e \text{ and } \mathrm{sign}(e) = -1, \\
+0  & \text{otherwise.}
+\end{cases}
+\end{equation}
+
+The train/test split is then applied only to the \emph{supervisory
+signal} --- which edges' signs are masked from the loss --- not to
+the \emph{feature construction}. As a result, when a message-passing
+layer computes vertex features as
+$\mathbf{h}_v = \sigma\!\bigl(\sum_{e\ni v} \mathbf{H}_{\mathrm{signed}}[v, e]\,
+\mathbf{W}\,\mathbf{h}_v^{(e)}\bigr)$,
+the sign of every held-out test edge incident to $v$ is read directly
+from $\mathbf{H}_{\mathrm{signed}}$ and propagated into $v$'s
+representation. Backpropagation updates $\mathbf{W}$ using gradients
+computed from these leaked features. At test time, the trained model
+predicts the sign of a held-out edge $e^\star$ using vertex
+representations that already contained $\mathrm{sign}(e^\star)$ as
+an input.
+
+The same mechanism applies to all derived signed-graph features:
+signed Laplacians~\cite{sgcn2018}, balance-theoretic triad
+indicators~\cite{cartwright1956}, and structural-equivalence
+metrics. None of these can be computed without the full signed
+adjacency, and none of the audited methods rebuilds them per training
+mini-batch from training-edge signs only.
+
+The fix is straightforward in principle and invasive in practice:
+during training, every signed-feature artifact must be constructed
+from training-edge signs alone, with test-edge contributions zeroed
+out or replaced by a special "unknown" symbol. We call this the
+\emph{strict training-edge-only protocol} and define it formally in
+Section~\ref{sec:strict_protocol}.
+
+A label-shuffle audit makes the leakage visible without committing
+to any architectural fix: train under the standard protocol, then
+randomly permute the test-edge signs (preserving the training-edge
+signs), and measure test AUROC. If the feature pipeline is clean of
+test-edge information, shuffled-test AUROC should equal chance
+($0.5$ in expectation). If the feature pipeline leaks, shuffled-test
+AUROC remains substantially above chance, in proportion to the
+amount of test-edge sign information the features carry. The audit
+is a falsifiable, model-agnostic test: any signed-link-prediction
+method that fails it is, by definition, using information it
+should not.
+
+% ============================================================
+% References (only what's cited above; coworker to merge with
+% the manuscript's main .bib).
+% ============================================================
+\begin{thebibliography}{99}
+  \bibitem{sgcn2018}    [TODO/CW] SGCN — Derr et al., ICDM 2018.
+  \bibitem{sigat2019}   [TODO/CW] SiGAT — Huang et al., CIKM 2019.
+  \bibitem{sgcl2022}    [TODO/CW] SGCL — Shu et al., AAAI 2022.
+  \bibitem{sigformer2023} [TODO/CW] SiGformer — author/venue/year.
+  \bibitem{sesgformer2024} [TODO/CW] SE-SGformer — author/venue/year.
+  \bibitem{dadsgnn2025} [TODO/CW] DADSGNN — author/venue/year.
+  \bibitem{cartwright1956} F. Cartwright \& D. Harary, "Structural
+    balance: A generalization of Heider's theory,"
+    \emph{Psychological Review} 63(5):277--293, 1956.
+\end{thebibliography}
+
+\end{document}

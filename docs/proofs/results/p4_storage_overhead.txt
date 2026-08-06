@@ -1,0 +1,11 @@
+rho                         = (c_inc*d*m + c_rec*(m + n))/(c_inc*d*m)
+rho (c=c_rec/c_inc)         = (c*(m + n) + d*m)/(d*m)
+overhead rho-1              = c*(m + n)/(d*m)
+rho-1 <= (n=K m log n)      = c*(K*log(n) + 1)/d   == c(K log n + 1)/d : True
+lim_{d->oo} (rho-1 bound)    = 0  => rho -> 1
+d(rho-1)/d(d-bar)           = -c*(m + n)/(d**2*m)  (negative => decreasing)
+witness rho-1 (n=m=200,c=1) = 2/d  (= 2/d-bar)
+   d-bar=  2:  rho = 2.00
+   d-bar=200:  rho = 1.01
+
+PROPOSITION 4: machine-verified (symbolic derivation + bound + limit + monotonicity + witness).

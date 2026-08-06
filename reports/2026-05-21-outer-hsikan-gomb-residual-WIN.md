@@ -102,9 +102,9 @@ that work yesterday.
 
 | File | Status | LOC |
 | --- | --- | --- |
-| `signedkan_wip/src/hymeko_gomb/cascade.py` | extended | +28 (`base_node_embed` + `hsikan_gate_logit` + residual mix; `node_embed` property points at base) |
-| `signedkan_wip/tests/test_outer_hsikan_gomb.py` | extended | +50 (3 new tests: base-embed exposure, gate-low-at-init, backward-reaches-gate-and-base) |
-| `signedkan_wip/experiments/run_outer_hsikan_gomb_residual_2026_05_20.sh` | new | 128 (overnight grid with paired Δ vs plain Gömb AND vs substitute) |
+| `hymeko_neuro/models/hymeko_gomb/cascade.py` | extended | +28 (`base_node_embed` + `hsikan_gate_logit` + residual mix; `node_embed` property points at base) |
+| `hymeko_neuro/tests/test_outer_hsikan_gomb.py` | extended | +50 (3 new tests: base-embed exposure, gate-low-at-init, backward-reaches-gate-and-base) |
+| `hymeko_neuro/experiments/run_outer_hsikan_gomb_residual_2026_05_20.sh` | new | 128 (overnight grid with paired Δ vs plain Gömb AND vs substitute) |
 | `reports/2026-05-21-outer-hsikan-gomb-residual-WIN.md` | new | this file |
 
 Everything else (the class, the CLI, the GombConfig fields,
@@ -121,7 +121,7 @@ None.
 
 | Suite | Result |
 | --- | --- |
-| `pytest signedkan_wip/tests/test_outer_hsikan_gomb.py` | **10 / 10 pass** (8 prior + 3 new − 1 updated) |
+| `pytest hymeko_neuro/tests/test_outer_hsikan_gomb.py` | **10 / 10 pass** (8 prior + 3 new − 1 updated) |
 | All prior interpret / side / arity / fuzzy / stacked-middle / gomb-signature / cpml-edge-logits suites | no regression |
 | Bitcoin Alpha grid: 9/9 cells complete | — |
 | Slashdot grid: 6/9 cells complete (d=4 × 3 OOM at CR spline, same site as before) | — |
@@ -168,14 +168,14 @@ Clean.
 - **Wall:** ~5 min total.
 - **GPU:** RTX 2070 SUPER 8 GiB.
 - **JSONL:**
-  `signedkan_wip/experiments/results/outer_hsikan_gomb_residual_2026_05_20.jsonl`
+  `hymeko_neuro/experiments/results/outer_hsikan_gomb_residual_2026_05_20.jsonl`
   (15 successful cells).
 - **Baselines:**
   - Plain Gömb 3-seed at the same config from
-    `signedkan_wip/experiments/results/stacked_gomb_overnight_2026_05_20.jsonl`
+    `hymeko_neuro/experiments/results/stacked_gomb_overnight_2026_05_20.jsonl`
     (depth=1 cells = plain `HymeKoGomb`).
   - Substitute outer-HSIKAN 3-seed from
-    `signedkan_wip/experiments/results/outer_hsikan_gomb_overnight_2026_05_20.jsonl`.
+    `hymeko_neuro/experiments/results/outer_hsikan_gomb_overnight_2026_05_20.jsonl`.
 
 ## Acceptance check
 

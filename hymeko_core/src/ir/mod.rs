@@ -1,8 +1,8 @@
-pub mod ir;
-pub mod meta;
-pub mod hash;
-pub mod lower;
-mod time;
-pub mod common;
-pub mod hash_pass;
 pub mod canonical_hash;
+pub mod common;
+pub mod hash;
+pub mod hash_pass;
+pub mod ir;
+pub mod lower;
+pub mod meta;
+mod time;

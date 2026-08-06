@@ -2,14 +2,14 @@
 
 ## Summary
 
-Added `run_gomb_cycle_abb_compare` to run paired `run_gomb_smoke` subprocesses per ABB mode, print a Markdown table, optional JSONL append; added `signedkan_wip/docs/gomb_cycle_abb_optimization.md` (narrative + CLI); cross-linked usage in `run_gomb_smoke` module docstring.
+Added `run_gomb_cycle_abb_compare` to run paired `run_gomb_smoke` subprocesses per ABB mode, print a Markdown table, optional JSONL append; added `hymeko_neuro/assets/docs/gomb_cycle_abb_optimization.md` (narrative + CLI); cross-linked usage in `run_gomb_smoke` module docstring.
 
 ## Files touched
 
-- `signedkan_wip/src/benchmarks/run_gomb_cycle_abb_compare.py` (new)
-- `signedkan_wip/tests/test_run_gomb_cycle_abb_compare.py` (new)
-- `signedkan_wip/docs/gomb_cycle_abb_optimization.md` (new)
-- `signedkan_wip/src/run_gomb_smoke.py` (docstring usage block)
+- `hymeko_neuro/eval/benchmarks/run_gomb_cycle_abb_compare.py` (new)
+- `hymeko_neuro/tests/test_run_gomb_cycle_abb_compare.py` (new)
+- `hymeko_neuro/assets/docs/gomb_cycle_abb_optimization.md` (new)
+- `hymeko_neuro/run_gomb_smoke.py` (docstring usage block)
 
 ## CORE.YAML
 
@@ -17,7 +17,7 @@ None.
 
 ## Tests
 
-`pytest -p no:randomly signedkan_wip/tests/test_run_gomb_cycle_abb_compare.py` — 2 passed (~6.5 s wall, sbm_n200, 1 epoch, none vs start_local).
+`pytest -p no:randomly hymeko_neuro/tests/test_run_gomb_cycle_abb_compare.py` — 2 passed (~6.5 s wall, sbm_n200, 1 epoch, none vs start_local).
 
 ## Dependencies
 

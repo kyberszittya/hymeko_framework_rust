@@ -1,0 +1,32 @@
+{
+ "bundle": "coin_hymeko_v3_canonical",
+ "robot_spec": {
+  "file": "data/robotics/galambos_planar_v3.hymeko",
+  "sha16": "49ff35e91c3c8876"
+ },
+ "emitted_mjcf_sha16": "a37a6dab6f51fbc1",
+ "physical_model_fp": {
+  "nbody": 8,
+  "total_mass": 0.401822,
+  "geom_size_sha16": "e827e24a85199d71"
+ },
+ "semantic_graph_fp": "sem:469094de1fba54b2ff481706ca2e09ce",
+ "actor_input_dim": 48,
+ "control_contract": {
+  "joint_range": 4.0,
+  "ctrl_range": 4.0,
+  "damping": 1.5,
+  "kp": 40.0,
+  "kv": 4.0
+ },
+ "scene_spec": {
+  "file": "data/robotics/galambos_env.hymeko",
+  "sha16": "8be8246bb2af1a3c"
+ },
+ "reward_spec": {
+  "file": "data/robotics/galambos_task_deliver_v3.hymeko",
+  "sha16": "d42c9cbfbe5e343e"
+ },
+ "inertia": "golden-density parity (fingertip folded on link2)",
+ "integrator": "implicitfast timestep 0.002"
+}

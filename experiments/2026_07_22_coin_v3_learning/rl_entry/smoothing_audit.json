@@ -1,0 +1,59 @@
+{
+ "contract": {
+  "contract": "RESIDUAL_TARGET_SMOOTHING_SCALE_CONTRACT_V1",
+  "residual_bound": 0.25,
+  "smoothing_std_ratio": 0.2,
+  "smoothing_clip_ratio": 0.5,
+  "smoothing_std": 0.05,
+  "smoothing_clip": 0.125,
+  "target_residual": "clamp(target_residual_actor(o) + clamp(N(0,std), -clip, clip), -bound, bound)",
+  "base_never_smoothed": true,
+  "note": "scale-relative to the residual range, NOT absolute TD3 defaults"
+ },
+ "contract_sha": "d558443d83da8edc",
+ "regimes": {
+  "A_disabled": {
+   "post_clip_mean": 0.0,
+   "post_clip_std": 0.0,
+   "per_dim_bound_hit": 0.0,
+   "any_dim_bound_hit": 0.0,
+   "residual_norm_mean": 0.0,
+   "residual_norm_p95": 0.0,
+   "residual_norm_max": 0.0,
+   "analytic_per_dim_bound_hit": 0.0,
+   "analytic_clip_engage": 0.0,
+   "std": 0.0,
+   "clip": 0.0
+  },
+  "B_unscaled_abs": {
+   "post_clip_mean": -0.00014,
+   "post_clip_std": 0.19767,
+   "per_dim_bound_hit": 0.21101,
+   "any_dim_bound_hit": 0.61252,
+   "residual_norm_mean": 0.31564,
+   "residual_norm_p95": 0.4347,
+   "residual_norm_max": 0.5,
+   "analytic_per_dim_bound_hit": 0.2113,
+   "analytic_clip_engage": 0.01242,
+   "std": 0.2,
+   "clip": 0.5
+  },
+  "C_scale_correct": {
+   "post_clip_mean": -4e-05,
+   "post_clip_std": 0.04942,
+   "per_dim_bound_hit": 0.0,
+   "any_dim_bound_hit": 0.0,
+   "residual_norm_mean": 0.09327,
+   "residual_norm_p95": 0.14893,
+   "residual_norm_max": 0.24602,
+   "analytic_per_dim_bound_hit": 0.0,
+   "analytic_clip_engage": 0.01242,
+   "std": 0.05,
+   "clip": 0.125
+  }
+ },
+ "scientific_regime": "C_scale_correct",
+ "B_saturates": 0.61252,
+ "C_bound_hit": 0.0,
+ "verdict": "RESIDUAL_TARGET_SMOOTHING_SCALE_CONTRACT_PASS"
+}

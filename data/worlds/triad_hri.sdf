@@ -5,7 +5,7 @@
   A 4×4 m empty room with three agents: alice (-1, 0), bob (+1, 0),
   and r1 (0, -1). The three pose topics + r1's cmd_vel topic are
   bridged to ROS 2 by `ros_gz_bridge` (config in
-  signedkan_wip/src/rapport_ros2/bridge.yaml — Day 2).
+  hymeko_neuro/experiments/rapport_ros2/bridge.yaml — Day 2).
 
   Launch:
     gz sim data/worlds/triad_hri.sdf

@@ -1,19 +1,26 @@
 #[cfg(test)]
 
 mod test_tensor_representation {
-    use std::marker::PhantomData;
+    use crate::test_helpers::{
+        load_and_lower, log_test_footer, log_test_header, print_dense_matrix,
+    };
+    use crate::test_tensor_representations::constants::*;
     use hymeko::common::ids::{DeclId, EdgeId, NodeId};
     use hymeko::tensor::common::signed_incidence;
-    use hymeko_hnn::tensor::common_traversal::inc_to_real;
-    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
-    use hymeko_hnn::tensor::message_passing::{build_explicit_a, clique_diag, implicit_clique_step, print_dense_real, scatter_nodes_from_edges, CliqueStepCfg};
-    use hymeko_hre::expansion::{clique_expansion_coo, star_expansion_coo, star_expansion_coo_normalized};
-    use hymeko_hnn::tensor::tensor::{compute_bipartite_degrees, dense_view_slice};
     use hymeko::tensor::tensor_val::{EdgeWScalar, EdgeWeight, ScalarWeightExtractor};
-    use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header, print_dense_matrix};
+    use hymeko_hnn::tensor::common_traversal::inc_to_real;
+    use hymeko_hnn::tensor::message_passing::{
+        CliqueStepCfg, build_explicit_a, clique_diag, implicit_clique_step, print_dense_real,
+        scatter_nodes_from_edges,
+    };
+    use hymeko_hnn::tensor::tensor::{compute_bipartite_degrees, dense_view_slice};
+    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
+    use hymeko_hre::expansion::{
+        clique_expansion_coo, star_expansion_coo, star_expansion_coo_normalized,
+    };
     use log::info;
+    use std::marker::PhantomData;
     use std::time::Instant;
-    use crate::test_tensor_representations::constants::*;
 
     const STAR_EDGE_BASE: usize = STAR_NODE_COUNT;
 
@@ -54,12 +61,18 @@ mod test_tensor_representation {
             assert!(
                 (v - expected).abs() <= eps,
                 "mismatch at ({},{}) expected {} got {}",
-                r, c, expected, v
+                r,
+                c,
+                expected,
+                v
             );
         };
 
         // --- shape checks ---
-        assert_eq!(dim, STAR_EXPECTED_DIM, "expected dim=10 (root + 5 nodes + 4 edges)");
+        assert_eq!(
+            dim, STAR_EXPECTED_DIM,
+            "expected dim=10 (root + 5 nodes + 4 edges)"
+        );
         assert_eq!(edge_base, STAR_EDGE_BASE, "expected edge_base=num_nodes=6");
 
         // --- expected nonzeros (from your printed matrix) ---
@@ -85,7 +98,9 @@ mod test_tensor_representation {
         // --- optional: everything else is (near) zero ---
         // (Ha ez túl szigorú lesz későbbi bővítéseknél, ezt a blokkot vedd ki.)
         let mut expected = vec![vec![0u8; dim]; dim];
-        let mark = |r: usize, c: usize, expected: &mut Vec<Vec<u8>>| { expected[r][c] = 1; };
+        let mark = |r: usize, c: usize, expected: &mut Vec<Vec<u8>>| {
+            expected[r][c] = 1;
+        };
 
         // mark all expected nonzeros
         mark(2, edge_base + 0, &mut expected);
@@ -107,17 +122,16 @@ mod test_tensor_representation {
             for c in 0..dim {
                 if expected[r][c] == 0 {
                     let v = at(r, c);
-                    assert!(
-                        v.abs() <= eps,
-                        "expected ~0 at ({},{}) but got {}",
-                        r, c, v
-                    );
+                    assert!(v.abs() <= eps, "expected ~0 at ({},{}) but got {}", r, c, v);
                 }
             }
         }
 
         print_dense_matrix(&proj, "Projected star matrix (sum over slices)");
-        info!("Star projection validated for {} nodes and {} edges", num_nodes, num_edges);
+        info!(
+            "Star projection validated for {} nodes and {} edges",
+            num_nodes, num_edges
+        );
         log_test_footer(
             "test_tensor_representation_creation",
             Some(start.elapsed()),
@@ -138,8 +152,7 @@ mod test_tensor_representation {
 
         let ex = ScalarWeightExtractor::default();
 
-        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
-            &compiled.ir, &aggcfg, &ex);
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
         let coo = star_expansion_coo(&hg);
         let proj = hymeko_hnn::tensor::tensor::project_sum_over_slices(&coo);
 
@@ -167,7 +180,10 @@ mod test_tensor_representation {
             assert!(
                 (v - expected).abs() <= eps,
                 "mismatch at ({},{}) expected {} got {}",
-                r, c, expected, v
+                r,
+                c,
+                expected,
+                v
             );
         };
 
@@ -218,11 +234,7 @@ mod test_tensor_representation {
             for c in 0..dim {
                 if !expected[r][c] {
                     let v = at(r, c);
-                    assert!(
-                        v.abs() <= eps,
-                        "expected ~0 at ({},{}) but got {}",
-                        r, c, v
-                    );
+                    assert!(v.abs() <= eps, "expected ~0 at ({},{}) but got {}", r, c, v);
                 }
             }
         }
@@ -230,8 +242,7 @@ mod test_tensor_representation {
         print_dense_matrix(&proj, "Projected star matrix (sum over slices)");
         info!(
             "Star projection check completed for dim {} with {} edges",
-            dim,
-            num_edges
+            dim, num_edges
         );
         log_test_footer(
             "test_star_projection_linear_edge_values",
@@ -251,8 +262,7 @@ mod test_tensor_representation {
 
         let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
-        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
-            &compiled.ir, &aggcfg, &ex);
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
         // 1) "Dense" reference: clique_view -> matrix
         let clique_coo = clique_expansion_coo(&hg);
@@ -365,13 +375,12 @@ mod test_tensor_representation {
 
         let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
-        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
-            &compiled.ir, &aggcfg, &ex);
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
         // cfg must match your implicit_clique_step semantics
         let cfg = CliqueStepCfg {
-            use_abs: true,       // recommended: stable
-            include_self: true,  // make comparison easier first
+            use_abs: true,      // recommended: stable
+            include_self: true, // make comparison easier first
         };
 
         let n = hg.num_nodes();
@@ -448,17 +457,21 @@ mod test_tensor_representation {
             assert!(
                 d <= eps,
                 "implicit clique mismatch at i={} dense={} imp={} |diff|={}",
-                i, y_dense[i], y_imp[i], d
+                i,
+                y_dense[i],
+                y_imp[i],
+                d
             );
         }
         let a_coo = build_explicit_a(&hg, cfg);
         let a_dense = dense_view_slice(&a_coo, 0);
-        print_dense_real(&a_dense, "Explicit A = B B^T (matches implicit_clique_step)");
+        print_dense_real(
+            &a_dense,
+            "Explicit A = B B^T (matches implicit_clique_step)",
+        );
         info!(
             "Implicit clique verified for {} nodes and {} edges using include_self={}",
-            n,
-            m,
-            cfg.include_self
+            n, m, cfg.include_self
         );
         log_test_footer(
             "test_implicit_clique_step_matches_explicit_bwb_t",
@@ -478,8 +491,7 @@ mod test_tensor_representation {
 
         let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
-        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
-            &compiled.ir, &aggcfg, &ex);
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
         let (deg_v, deg_e) = compute_bipartite_degrees(&hg, true); // abs degree
 
@@ -492,24 +504,23 @@ mod test_tensor_representation {
 
         // node degrees (sum of abs incidence weights per node)
 
-        assert!((deg_v[0] - 0.0).abs() <= eps);   // root
-        assert!((deg_v[1] - 3.0).abs() <= eps);   // node0: 1.5 + 0.75 + 0.75
-        assert!((deg_v[2] - 4.45).abs() <= eps);  // node1: 2.5 + 1.95
-        assert!((deg_v[3] - 2.7).abs() <= eps);   // node2: 0.75 + 1.95
-        assert!((deg_v[4] - 7.5).abs() <= eps);   // node3: 7.5
-        assert!((deg_v[5] - 23.8).abs() <= eps);  // node4: 8.8 + 7.5 + 7.5
+        assert!((deg_v[0] - 0.0).abs() <= eps); // root
+        assert!((deg_v[1] - 3.0).abs() <= eps); // node0: 1.5 + 0.75 + 0.75
+        assert!((deg_v[2] - 4.45).abs() <= eps); // node1: 2.5 + 1.95
+        assert!((deg_v[3] - 2.7).abs() <= eps); // node2: 0.75 + 1.95
+        assert!((deg_v[4] - 7.5).abs() <= eps); // node3: 7.5
+        assert!((deg_v[5] - 23.8).abs() <= eps); // node4: 8.8 + 7.5 + 7.5
 
         // edge degrees (sum of abs incidence weights per edge)
-        assert!((deg_e[0] - 12.8).abs() <= eps);  // e1: 1.5+2.5+8.8
-        assert!((deg_e[1] - 8.25).abs() <= eps);  // e2: 0.75+7.5
-        assert!((deg_e[2] - 10.2).abs() <= eps);  // e3: 0.75+1.95+7.5
-        assert!((deg_e[3] - 10.2).abs() <= eps);  // e4: 0.75+1.95+7.5
+        assert!((deg_e[0] - 12.8).abs() <= eps); // e1: 1.5+2.5+8.8
+        assert!((deg_e[1] - 8.25).abs() <= eps); // e2: 0.75+7.5
+        assert!((deg_e[2] - 10.2).abs() <= eps); // e3: 0.75+1.95+7.5
+        assert!((deg_e[3] - 10.2).abs() <= eps); // e4: 0.75+1.95+7.5
         let sum_nodes: f32 = deg_v.iter().sum();
         let sum_edges: f32 = deg_e.iter().sum();
         info!(
             "Bipartite degrees OK: node mass = {:.2}, edge mass = {:.2}",
-            sum_nodes,
-            sum_edges
+            sum_nodes, sum_edges
         );
         log_test_footer(
             "test_bipartite_degrees_linear_edge_values",
@@ -529,8 +540,7 @@ mod test_tensor_representation {
 
         let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
-        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
-            &compiled.ir, &aggcfg, &ex);
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
         // normalized star
         let coo = star_expansion_coo_normalized(&hg, true, STAR_NORMALIZATION_EPS);
@@ -557,7 +567,10 @@ mod test_tensor_representation {
             assert!(
                 (v - expected).abs() <= eps,
                 "mismatch at ({},{}) expected {} got {}",
-                r, c, expected, v
+                r,
+                c,
+                expected,
+                v
             );
         };
 
@@ -583,8 +596,7 @@ mod test_tensor_representation {
         assert_close(edge_base + 3, 2, 0.28943731); // e4 -> node1
         info!(
             "Normalized star projection covered dim {} with {} edges",
-            dim,
-            num_edges
+            dim, num_edges
         );
         log_test_footer(
             "test_star_projection_linear_edge_values_normalized",
@@ -604,13 +616,14 @@ mod test_tensor_representation {
 
         let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
-        let hg1 = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
-            &compiled.ir, &aggcfg, &ex);
-        let mut hg2 = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
-            &compiled.ir, &aggcfg, &ex);
+        let hg1 = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
+        let mut hg2 =
+            HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
         // scale all incidence weights by c
-        for w in &mut hg2.flat_edge_w { *w *= INCIDENCE_SCALE_FACTOR; }
+        for w in &mut hg2.flat_edge_w {
+            *w *= INCIDENCE_SCALE_FACTOR;
+        }
 
         let coo1 = star_expansion_coo_normalized(&hg1, true, STAR_NORMALIZATION_EPS);
         let proj1 = hymeko_hnn::tensor::tensor::project_sum_over_slices(&coo1);
@@ -628,18 +641,24 @@ mod test_tensor_representation {
         let mut max_diff = 0.0f32;
 
         for r in 0..dim {
-             for c in 0..dim {
-                 let d = (at1(r, c) - at2(r, c)).abs();
+            for c in 0..dim {
+                let d = (at1(r, c) - at2(r, c)).abs();
                 max_diff = max_diff.max(d);
-                 assert!(d <= eps, "scale invariance failed at ({},{}) diff={}", r, c, d);
-             }
-         }
+                assert!(
+                    d <= eps,
+                    "scale invariance failed at ({},{}) diff={}",
+                    r,
+                    c,
+                    d
+                );
+            }
+        }
         info!("Normalized star scale invariance max diff {:.3e}", max_diff);
-         log_test_footer(
-             "test_star_projection_normalized_scale_invariant",
-             Some(start.elapsed()),
-             "Normalized star projection remained stable under global scaling.",
-         );
+        log_test_footer(
+            "test_star_projection_normalized_scale_invariant",
+            Some(start.elapsed()),
+            "Normalized star projection remained stable under global scaling.",
+        );
     }
 
     #[test]
@@ -674,20 +693,20 @@ mod test_tensor_representation {
         let sum_e: f64 = deg_e.iter().sum();
 
         assert!(
-             (sum_v - sum_e).abs() <= eps,
-             "Regression caught: Bipartite degree mass mismatch. Node sum: {}, Edge sum: {}. They must be identical.",
-             sum_v, sum_e
-         );
-        info!(
-            "Degree-init regression check sums: nodes={:.2}, edges={:.2}",
+            (sum_v - sum_e).abs() <= eps,
+            "Regression caught: Bipartite degree mass mismatch. Node sum: {}, Edge sum: {}. They must be identical.",
             sum_v,
             sum_e
         );
-         log_test_footer(
-             "test_regression_degree_initialization_starts_at_zero",
-             Some(start.elapsed()),
-             "Degree buffers started at zero and preserved node=edge mass.",
-         );
+        info!(
+            "Degree-init regression check sums: nodes={:.2}, edges={:.2}",
+            sum_v, sum_e
+        );
+        log_test_footer(
+            "test_regression_degree_initialization_starts_at_zero",
+            Some(start.elapsed()),
+            "Degree buffers started at zero and preserved node=edge mass.",
+        );
     }
 
     #[test]
@@ -718,8 +737,9 @@ mod test_tensor_representation {
             // --- Edge to Node CSR (The one compute_bipartite_degrees actually uses) ---
             edge_offsets: vec![0, 2, 3], // Edge 0 has 2 nodes, Edge 1 has 1 node
             flat_edge_nodes: vec![
-                NodeId::new(1), NodeId::new(2), // Edge 0's nodes
-                NodeId::new(1)             // Edge 1's nodes
+                NodeId::new(1),
+                NodeId::new(2), // Edge 0's nodes
+                NodeId::new(1), // Edge 1's nodes
             ],
             flat_edge_sign: vec![1, 1, 1],
 
@@ -735,23 +755,37 @@ mod test_tensor_representation {
 
         // 1. Verify Node Degrees
         assert_eq!(deg_v[0], 0.0, "Isolated node must have exactly 0.0 degree.");
-        assert_eq!(deg_v[1], 2.0 + 3.5, "Node 1 degree should be the sum of its incidence weights.");
-        assert_eq!(deg_v[2], 4.0, "Node 2 degree should exactly match its single incidence.");
+        assert_eq!(
+            deg_v[1],
+            2.0 + 3.5,
+            "Node 1 degree should be the sum of its incidence weights."
+        );
+        assert_eq!(
+            deg_v[2], 4.0,
+            "Node 2 degree should exactly match its single incidence."
+        );
 
         // 2. Verify Edge Degrees
-        assert_eq!(deg_e[0], 2.0 + 4.0, "Edge 0 degree should be sum of Node 1 and Node 2 weights.");
-        assert_eq!(deg_e[1], 3.5, "Edge 1 degree should exactly match Node 1's weight.");
+        assert_eq!(
+            deg_e[0],
+            2.0 + 4.0,
+            "Edge 0 degree should be sum of Node 1 and Node 2 weights."
+        );
+        assert_eq!(
+            deg_e[1], 3.5,
+            "Edge 1 degree should exactly match Node 1's weight."
+        );
 
         // 3. Verify Bipartite Mass Invariant
         let sum_v: f64 = deg_v.iter().sum();
         let sum_e: f64 = deg_e.iter().sum();
         assert_eq!(sum_v, sum_e, "Total node mass must equal total edge mass.");
         info!("Manual degree sums: nodes={:.1}, edges={:.1}", sum_v, sum_e);
-         log_test_footer(
-             "test_compute_bipartite_degrees_manual_simple",
-             Some(start.elapsed()),
-             "Manual bipartite degree example preserved node=edge mass.",
-         );
+        log_test_footer(
+            "test_compute_bipartite_degrees_manual_simple",
+            Some(start.elapsed()),
+            "Manual bipartite degree example preserved node=edge mass.",
+        );
     }
 
     #[test]
@@ -792,19 +826,17 @@ mod test_tensor_representation {
 
         // 3) Verify the mathematical accumulation was written to this specific buffer
         assert!(
-             sum > 0.001,
-             "Regression caught: scatter_nodes_from_edges zeroed the caller's buffer but failed to write the accumulated results into it (Sum is 0.0)."
-         );
+            sum > 0.001,
+            "Regression caught: scatter_nodes_from_edges zeroed the caller's buffer but failed to write the accumulated results into it (Sum is 0.0)."
+        );
         info!(
             "Scatter regression ran with {} nodes, {} edges; summed mass {:.3}",
-            n,
-            m,
-            sum
+            n, m, sum
         );
-         log_test_footer(
-             "test_regression_scatter_no_phantom_allocation",
-             Some(start.elapsed()),
-             "Scatter path mutated the caller buffer and produced positive mass.",
-         );
+        log_test_footer(
+            "test_regression_scatter_no_phantom_allocation",
+            Some(start.elapsed()),
+            "Scatter path mutated the caller buffer and produced positive mass.",
+        );
     }
 }

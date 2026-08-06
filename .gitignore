@@ -12,6 +12,9 @@
 .DS_Store
 Thumbs.db
 
+# MS Office lock/temp files (created while a doc is open, e.g. in PowerPoint)
+~$*
+
 # Build artifacts
 *.rlib
 *.rmeta
@@ -51,8 +54,8 @@ htmlcov/
 /data/benchmarks/
 
 # Dataset / ML caches (local or downloaded; regenerable — do not add new blobs)
-# SignedKAN: `datasets.load` / `python -m signedkan_wip.src.datasets --download …`
-/signedkan_wip/data/
+# SignedKAN: `datasets.load` / `python -m hymeko_neuro.data.datasets --download …`
+/hymeko_neuro/assets/data/
 # Repo-root `data/`: local caches only (tracked trees: minimal_examples/, nn/, hsikan/, robotics*)
 /data/torchvision/
 /data/ntuples_cache/
@@ -74,11 +77,15 @@ htmlcov/
 # One-off archive
 /archive.zip
 
+# Galambos collaborator scenario: handwritten sketch + private chat notes,
+# kept local-only (collaborator IP / unpublished demo spec).
+/docs/demo/galambos_scenario/
+
 # Claude scheduling lock
 /.claude/scheduled_tasks.lock
 
 # GPU driver flock (pid audit tail; local mutex — not source of truth)
-/signedkan_wip/experiments/results/.cuda_job_serial.lock
+/hymeko_neuro/experiments/results/.cuda_job_serial.lock
 
 # Rust subcrate build artifacts
 **/target/
@@ -103,3 +110,14 @@ htmlcov/
 *.fls
 *.fdb_latexmk
 *.synctex.gz
+.torchinductor_cache/
+
+# secrets — never commit
+.keys/
+
+# Media artifacts — keep on disk, not in git (2026-07-21, user request)
+*.mp4
+*.gif
+# Campaign run artifacts (results kept out of git; live under experiments/campaign_*)
+experiments/campaign_smoke/
+experiments/campaign_coin_video/

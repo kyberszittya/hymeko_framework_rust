@@ -1,0 +1,187 @@
+{
+  "stage": "B",
+  "mode": "train",
+  "trained": true,
+  "warm_start": true,
+  "bc": {
+    "demo_steps": 4320,
+    "demo_success_episodes": 24,
+    "bc_final_loss": 0.00348,
+    "bc_success_rate": 0.4583
+  },
+  "budget": {
+    "total_env_steps": 6000
+  },
+  "results": {
+    "original": {
+      "certification": {
+        "delivers": true,
+        "discriminating": true,
+        "n_success": 7,
+        "n_rollouts": 12,
+        "mean_return_success": 992.1674,
+        "mean_return_failure": -258.1373
+      },
+      "episodes": 34,
+      "env_steps": 6120,
+      "wall_s": 1.9,
+      "returns": [
+        1380.486676723389,
+        1389.348928129634,
+        1376.3515311095032,
+        1375.6833814380786,
+        -516.5111919018495,
+        -342.2944695190298,
+        -364.46748099714085,
+        477.9955276597278,
+        -5.634881230595761,
+        188.65061254834683,
+        43.509800229154045,
+        -233.89481439655484,
+        330.2856153413804,
+        -1.3984884448614496,
+        354.18185727805457,
+        290.5603359105057,
+        183.47760162401082,
+        578.1094434122789,
+        1295.232900479371,
+        579.7763348395296,
+        561.2718750652064,
+        325.72913223932187,
+        243.75017442542318,
+        286.29209141722197,
+        585.4654512626345,
+        434.7930957054359,
+        188.73369815546,
+        591.5399978280129,
+        382.8334591381957,
+        94.20109275566732,
+        909.8281388645252,
+        754.6241025811125,
+        -163.03154604251034,
+        -65.74052772718396
+      ],
+      "final_return": -65.74052772718396,
+      "checkpoint": "reports/figures/2026_07_09_metaworld_stageb_real/original/policy.pt",
+      "eval": {
+        "success_rate": 0.625,
+        "near_fraction": 0.5549,
+        "grasp_fraction": 0.4942,
+        "obj_to_target_delta": 0.156,
+        "progress_score": 0.5755,
+        "reward_own_mean": 749.1223,
+        "reward_under_original_mean": 749.1223,
+        "reward_monitor_disagreement": 0.144928,
+        "loadings": {
+          "progress_score": 2923.1965,
+          "grasp_fraction": -2270.6146,
+          "near_fraction": 1970.8963,
+          "obj_to_target_delta": -690.9502
+        },
+        "cross_view_agree": true,
+        "reward_reconstruction_r2": 0.9976,
+        "gif": "reports/figures/2026_07_09_metaworld_stageb_real/original/rollout.gif",
+        "gif_success": true
+      },
+      "eval_command": "python -m hymeko_rl.experiments.exp_metaworld_reward_stageb --post-eval --task pick-place --profile original --checkpoint reports/figures/2026_07_09_metaworld_stageb_real/original/policy.pt"
+    },
+    "mw_in_place_off": {
+      "certification": {
+        "delivers": true,
+        "discriminating": true,
+        "n_success": 8,
+        "n_rollouts": 12,
+        "mean_return_success": 35.5572,
+        "mean_return_failure": -372.5418
+      },
+      "episodes": 34,
+      "env_steps": 6120,
+      "wall_s": 1.9,
+      "returns": [
+        -448.19141951747525,
+        135.14425159008655,
+        81.37523169497474,
+        142.02569303395413,
+        -526.9856358826866,
+        -432.95095069800544,
+        137.96234111804483,
+        138.0669735024743,
+        -531.1545387748045,
+        -422.3824573956945,
+        -530.0107392074935,
+        -530.3440133306175,
+        -529.911492021636,
+        -531.3381382170401,
+        -532.3011290007614,
+        111.68049720277541,
+        108.4480006283651,
+        -532.5422566954843,
+        -532.5149210967132,
+        -442.1992615386305,
+        2.9338763418108664,
+        -7.735200759834957,
+        -439.6559705855064,
+        -1.4314467222321139,
+        -448.10476582334695,
+        -445.9074807089266,
+        -461.63546349590774,
+        -443.1618525253373,
+        -466.5406661014453,
+        -441.2964424503892,
+        -444.97586481330563,
+        -446.56673780793034,
+        -458.88172768669614,
+        -468.28431073049313
+      ],
+      "final_return": -468.28431073049313,
+      "checkpoint": "reports/figures/2026_07_09_metaworld_stageb_real/mw_in_place_off/policy.pt",
+      "eval": {
+        "success_rate": 0.0,
+        "near_fraction": 0.0102,
+        "grasp_fraction": 0.0,
+        "obj_to_target_delta": 0.0144,
+        "progress_score": 0.1718,
+        "reward_own_mean": -465.7224,
+        "reward_under_original_mean": -218.3616,
+        "reward_monitor_disagreement": 0.311594,
+        "loadings": {
+          "progress_score": 1598.388,
+          "near_fraction": 176.5145,
+          "obj_to_target_delta": -238.8168
+        },
+        "cross_view_agree": true,
+        "reward_reconstruction_r2": 0.6475,
+        "gif": "reports/figures/2026_07_09_metaworld_stageb_real/mw_in_place_off/rollout.gif",
+        "gif_success": false
+      },
+      "eval_command": "python -m hymeko_rl.experiments.exp_metaworld_reward_stageb --post-eval --task pick-place --profile mw_in_place_off --checkpoint reports/figures/2026_07_09_metaworld_stageb_real/mw_in_place_off/policy.pt"
+    }
+  },
+  "comparison": {
+    "comparable": true,
+    "success_rate": {
+      "original": 0.625,
+      "mw_in_place_off": 0.0,
+      "delta": -0.625
+    },
+    "grasp_fraction": {
+      "original": 0.4942,
+      "mw_in_place_off": 0.0,
+      "delta": -0.4942
+    },
+    "progress_score": {
+      "original": 0.5755,
+      "mw_in_place_off": 0.1718,
+      "delta": -0.4037
+    },
+    "obj_to_target_delta": {
+      "original": 0.156,
+      "mw_in_place_off": 0.0144,
+      "delta": -0.1416
+    },
+    "reward_monitor_disagreement": {
+      "original": 0.144928,
+      "mw_in_place_off": 0.311594
+    }
+  }
+}

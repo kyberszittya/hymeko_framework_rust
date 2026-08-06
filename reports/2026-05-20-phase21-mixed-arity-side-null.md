@@ -23,11 +23,11 @@ do not improve it.
 
 | File | Status | LOC |
 | --- | --- | --- |
-| `signedkan_wip/src/core/side_signedkan.py` | extended | +165 (`SideMixedAritySignedKAN` + config) |
-| `signedkan_wip/tests/test_side_mixed_arity.py` | new | 213 (10 unit tests) |
-| `signedkan_wip/experiments/runs/run_phase2_mixed_arity.py` | extended | +18 (`n_branches`, `side_fusion` kwargs + dispatch + smooth-reg over all branches) |
-| `signedkan_wip/experiments/runs/run_final_cell.py` | extended | +24 (CLI `--n-branches`, `--side-fusion`; dispatch in `cell_signed_graph`) |
-| `signedkan_wip/experiments/run_phase21_side_mixed_5seed_2026_05_20.sh` | new | 109 |
+| `hymeko_neuro/hyperedge/side_signedkan.py` | extended | +165 (`SideMixedAritySignedKAN` + config) |
+| `hymeko_neuro/tests/test_side_mixed_arity.py` | new | 213 (10 unit tests) |
+| `hymeko_neuro/experiments/runs/run_phase2_mixed_arity.py` | extended | +18 (`n_branches`, `side_fusion` kwargs + dispatch + smooth-reg over all branches) |
+| `hymeko_neuro/experiments/runs/run_final_cell.py` | extended | +24 (CLI `--n-branches`, `--side-fusion`; dispatch in `cell_signed_graph`) |
+| `hymeko_neuro/experiments/run_phase21_side_mixed_5seed_2026_05_20.sh` | new | 109 |
 | `docs/plans/2026-05-20-phase21-mixed-arity-side/{plan.tex,plan.pdf,plan.tikz,plan.mmd}` | new | 4 plan formats per CLAUDE.md §2 |
 | `reports/2026-05-20-phase21-mixed-arity-side-null.md` | new | this file |
 
@@ -146,8 +146,8 @@ Cartesian-product surface).
 
 | Suite | Result |
 | --- | --- |
-| `pytest signedkan_wip/tests/test_side_mixed_arity.py` | **10 / 10 pass** |
-| `pytest signedkan_wip/tests/test_side_signedkan.py` | 12 / 12 pass (no regression) |
+| `pytest hymeko_neuro/tests/test_side_mixed_arity.py` | **10 / 10 pass** |
+| `pytest hymeko_neuro/tests/test_side_signedkan.py` | 12 / 12 pass (no regression) |
 | `cargo test -p hymeko_pgraph` | **96 / 96 + 1 ignored doctest** |
 | N=1 seed-0 baseline reproduces Optuna SOTA at 0.9970 | ✓ |
 
@@ -156,7 +156,7 @@ Cartesian-product surface).
 - **(1) Cartesian-product API:** no — single new class with
   `n_branches` and `fusion` as config fields.
 - **(2) Algorithm code behind a binding layer:** no —
-  wrapper sits in `signedkan_wip/src/core/` next to the
+  wrapper sits in `hymeko_neuro/hyperedge/` next to the
   other side/membrane/stacked variants.
 - **(3) Per-experiment scaffold duplication:** no — reuses
   `run_one_mixed` and `cell_signed_graph` training loops
@@ -230,7 +230,7 @@ budget and 16 GB §4 cap were never approached.
   `/tmp/phase21_side_mixed_5seed_20260520T154226Z/`
   (per-cell logs + `orchestrator.log`).
 - **JSONL results:**
-  `signedkan_wip/experiments/results/phase21_side_mixed_5seed_2026_05_20.jsonl`.
+  `hymeko_neuro/experiments/results/phase21_side_mixed_5seed_2026_05_20.jsonl`.
 - **GPU:** RTX 2070 SUPER, 8 GiB.
 - **5-seed wall:** ~105 min total (256 s + 1023 s + 253 s +
   1022 s + 254 s + 1022 s + 256 s + 1033 s + 253 s + 1015 s,

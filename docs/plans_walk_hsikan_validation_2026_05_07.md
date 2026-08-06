@@ -2,7 +2,7 @@
 
 Goal: promote Walk-HSiKAN from a §V Future-Work bullet in `paper/smc2026_hsikan_wip/main.tex` to an honest table row, with 5-seed evidence that it beats cycle-HSiKAN under the same protocol.
 
-The Walk-HSiKAN enumerator is shipped (Rust + PyO3, 12-case parity suite green; `signedkan_wip/src/walks.py`, env-var `HSIKAN_WALK_LENS`). Single-seed exploratory training already exists; what remains is the same statistical rigour that locks in the cycle-HSiKAN Table I numbers.
+The Walk-HSiKAN enumerator is shipped (Rust + PyO3, 12-case parity suite green; `hymeko_neuro/walks.py`, env-var `HSIKAN_WALK_LENS`). Single-seed exploratory training already exists; what remains is the same statistical rigour that locks in the cycle-HSiKAN Table I numbers.
 
 ## Numbers to beat (cycle-HSiKAN, paper Table I, 5-seed)
 
@@ -32,7 +32,7 @@ Param count for Walk-HSiKAN was ~1.3 M vs cycle-HSiKAN at $h{=}16$ (~few-hundred
 
 ## Required runs
 
-For each (dataset, model) cell: 5 seeds, same protocol as Table I (edge-in-cycle leakage, `signedkan_wip/src/run_final_cell.py` driver), one isolated CUDA process per seed.
+For each (dataset, model) cell: 5 seeds, same protocol as Table I (edge-in-cycle leakage, `hymeko_neuro/run_final_cell.py` driver), one isolated CUDA process per seed.
 
 Five datasets × {Walk-HSiKAN, cycle-HSiKAN-rerun} × 5 seeds = **50 runs** at minimum. The cycle-HSiKAN re-run is for the **paired** comparison (same seed list as Walk-HSiKAN, so we can compute paired Δ rather than two independent means). If the existing Table I seed list is recoverable, skip the cycle re-run and re-use the 5 logged results.
 
@@ -44,7 +44,7 @@ Five datasets × {Walk-HSiKAN, cycle-HSiKAN-rerun} × 5 seeds = **50 runs** at m
 | Hidden $h$ | $16$ for paired comparison; $4$ as a pruning sweep on Slashdot |
 | Layers $L_{\rm SKL}$ | $2$ shared (matches paper) |
 | Spline grid $G$ | $3$ |
-| Epochs / optimiser | match `signedkan_wip/src/run_final_cell.py` defaults exactly |
+| Epochs / optimiser | match `hymeko_neuro/run_final_cell.py` defaults exactly |
 | Seeds | the same 5 used for cycle-HSiKAN Table I — **find and pin these first**; do not re-roll |
 
 ### Param-parity guard
@@ -95,9 +95,9 @@ If risk #1 fires (single-seed → NULL), the conservative §V softening already 
 
 ## Order of operations
 
-1. **Recover the cycle-HSiKAN seed list** — search `signedkan_wip/experiments/results/` for the JSON manifests that produced the Table I rows. Hardpin the 5 seeds.
-2. **Iso-param Walk-HSiKAN config** — derive $h$ such that the param count matches cycle-HSiKAN at $h{=}16$ within $\pm 10\%$. The `signedkan_wip/src/walks.py` Walk-HSiKAN module probably already supports this; if not, add a `--match_params` flag.
-3. **Run the 5×5 grid** — 25 Walk-HSiKAN cells, in isolated CUDA processes, log to `signedkan_wip/experiments/results/walk_hsikan_5seed_2026_05_07.jsonl`.
+1. **Recover the cycle-HSiKAN seed list** — search `hymeko_neuro/experiments/results/` for the JSON manifests that produced the Table I rows. Hardpin the 5 seeds.
+2. **Iso-param Walk-HSiKAN config** — derive $h$ such that the param count matches cycle-HSiKAN at $h{=}16$ within $\pm 10\%$. The `hymeko_neuro/walks.py` Walk-HSiKAN module probably already supports this; if not, add a `--match_params` flag.
+3. **Run the 5×5 grid** — 25 Walk-HSiKAN cells, in isolated CUDA processes, log to `hymeko_neuro/experiments/results/walk_hsikan_5seed_2026_05_07.jsonl`.
 4. **Compute paired Δ** — for each dataset, paired $t$-test or paired bootstrap on the 5 (cycle, walk) pairs; report mean ± std and paired-Δ ± paired-std.
 5. **Apply the decision tree** — edit the paper or don't, based on outcome.
 
@@ -110,8 +110,8 @@ If risk #1 fires (single-seed → NULL), the conservative §V softening already 
 ## Files this plan will touch when executed
 
 ```
-signedkan_wip/src/walks.py                            (possibly: --match_params flag)
-signedkan_wip/experiments/results/walk_hsikan_5seed_2026_05_07.jsonl   (new)
+hymeko_neuro/walks.py                            (possibly: --match_params flag)
+hymeko_neuro/experiments/results/walk_hsikan_5seed_2026_05_07.jsonl   (new)
 paper/smc2026_hsikan_wip/main.tex                     (Table I + §V if green)
 docs/plans_walk_hsikan_validation_2026_05_07.md       (this file — close out with results)
 ```

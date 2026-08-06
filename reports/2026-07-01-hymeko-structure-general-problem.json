@@ -1,0 +1,745 @@
+{
+  "classification_labels": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2
+  ],
+  "closed_form_entropy_feedback": {
+    "mechanism": "two closed-form ridge solves; append normalized predictive entropy from pass 1 to pooled features for pass 2",
+    "per_model_delta": {
+      "fixed_hsikan": {
+        "classification_acc_delta": 0.25,
+        "entropy_mean_delta": -0.053569674491882324,
+        "regression_rmse_delta": -0.00017737038433551788
+      },
+      "fsr": {
+        "classification_acc_delta": 0.25,
+        "entropy_mean_delta": -0.019874155521392822,
+        "regression_rmse_delta": -0.001206154003739357
+      },
+      "gomb_soma": {
+        "classification_acc_delta": 0.08333337306976318,
+        "entropy_mean_delta": -0.020250380039215088,
+        "regression_rmse_delta": 0.0009420136921107769
+      },
+      "hsikan": {
+        "classification_acc_delta": 0.25,
+        "entropy_mean_delta": -0.05354738235473633,
+        "regression_rmse_delta": -0.00017905980348587036
+      },
+      "raw_features": {
+        "classification_acc_delta": -0.08333337306976318,
+        "entropy_mean_delta": 0.005218565464019775,
+        "regression_rmse_delta": -0.0010657943785190582
+      },
+      "sa_hsikan": {
+        "classification_acc_delta": 0.0,
+        "entropy_mean_delta": -0.004507184028625488,
+        "regression_rmse_delta": 0.0016152635216712952
+      }
+    },
+    "ridge_equation": "W = (X^T X + lambda I)^-1 X^T Y",
+    "training_loop": "none"
+  },
+  "entropy_feedback": "append normalized predictive entropy from first-pass classifier to pooled graph features",
+  "fsr_clifford": {
+    "algebra": "unit quaternion rotor, even Clifford subalgebra Cl(0,2)+",
+    "energy": {
+      "input_block_norm_mean": 1.2455930709838867,
+      "output_block_norm_mean": 0.57607102394104,
+      "output_block_norm_std": 0.03305763378739357
+    },
+    "hidden_shape": [
+      36,
+      6,
+      6
+    ],
+    "n_blocks": 2,
+    "relative_offsets": 6,
+    "rotor": {
+      "bivector_norm_max": 0.0,
+      "bivector_norm_mean": 0.0,
+      "unit_norm_max_abs_error": 0.0
+    },
+    "sign": {
+      "soft_sign_max": 0.7615941762924194,
+      "soft_sign_mean": 0.7615942358970642,
+      "soft_sign_min": 0.7615941762924194
+    },
+    "spike_k": 2,
+    "timing_us": {
+      "batched_amortized_forward_pool_median": 41.68333333333334,
+      "per_graph_forward_pool_median": 880.5
+    },
+    "transport_slots": {
+      "causal_pairs": 756,
+      "dense_all_pairs": 1296,
+      "sparse_topk_slots": 432,
+      "sparse_vs_causal_ratio": 0.5714285714285714,
+      "sparse_vs_dense_ratio": 0.3333333333333333
+    }
+  },
+  "global_pool": "concat(mean, std, max) over node representations",
+  "mode": "traced",
+  "models": {
+    "fixed_hsikan": {
+      "classification": {
+        "entropy_feedback": {
+          "acc": 0.9166666865348816,
+          "entropy_mean": 0.8848097920417786,
+          "pred": [
+            1,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            2,
+            2,
+            2,
+            2
+          ]
+        },
+        "plain": {
+          "acc": 0.6666666865348816,
+          "entropy_mean": 0.9383794665336609,
+          "pred": [
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ]
+        }
+      },
+      "forward_pool_us": {
+        "max_us": 1851.3,
+        "mean_us": 1113.5873333333334,
+        "median_us": 1072.75,
+        "min_us": 732.4
+      },
+      "pooled_dim": 24,
+      "regression": {
+        "entropy_feedback": {
+          "pred": [
+            0.5581830739974976,
+            0.5484507083892822,
+            0.5438310503959656,
+            0.5481728315353394,
+            0.6519339680671692,
+            0.6652688980102539,
+            0.678979218006134,
+            0.6998676657676697,
+            0.8414878249168396,
+            0.8474559783935547,
+            0.8479438424110413,
+            0.8534142374992371
+          ],
+          "rmse": 0.012050828896462917
+        },
+        "plain": {
+          "pred": [
+            0.5597260594367981,
+            0.5484021306037903,
+            0.5430164933204651,
+            0.5481597781181335,
+            0.6606093049049377,
+            0.6736316084861755,
+            0.6869850158691406,
+            0.706659197807312,
+            0.8286154866218567,
+            0.83406001329422,
+            0.8347874283790588,
+            0.8388074040412903
+          ],
+          "rmse": 0.012228199280798435
+        }
+      }
+    },
+    "fsr": {
+      "classification": {
+        "entropy_feedback": {
+          "acc": 0.9166666865348816,
+          "entropy_mean": 0.9272098541259766,
+          "pred": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            2,
+            2,
+            2,
+            2,
+            2
+          ]
+        },
+        "plain": {
+          "acc": 0.6666666865348816,
+          "entropy_mean": 0.9470840096473694,
+          "pred": [
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ]
+        }
+      },
+      "forward_pool_us": {
+        "max_us": 1294.8,
+        "mean_us": 914.363,
+        "median_us": 880.5,
+        "min_us": 629.6
+      },
+      "pooled_dim": 18,
+      "regression": {
+        "entropy_feedback": {
+          "pred": [
+            0.536949098110199,
+            0.5505172610282898,
+            0.5578293800354004,
+            0.554076075553894,
+            0.6605020761489868,
+            0.6938923597335815,
+            0.7265338897705078,
+            0.7471990585327148,
+            0.7953442335128784,
+            0.805761456489563,
+            0.8247734308242798,
+            0.8409742116928101
+          ],
+          "rmse": 0.023561973124742508
+        },
+        "plain": {
+          "pred": [
+            0.5358629822731018,
+            0.5498479008674622,
+            0.5576273798942566,
+            0.5543673634529114,
+            0.6662091612815857,
+            0.6986010670661926,
+            0.729890763759613,
+            0.7491511702537537,
+            0.7941500544548035,
+            0.8047975897789001,
+            0.8237046599388123,
+            0.839608371257782
+          ],
+          "rmse": 0.024768127128481865
+        }
+      }
+    },
+    "gomb_soma": {
+      "classification": {
+        "entropy_feedback": {
+          "acc": 0.9166666865348816,
+          "entropy_mean": 0.9226758480072021,
+          "pred": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            2,
+            2,
+            2,
+            2,
+            2
+          ]
+        },
+        "plain": {
+          "acc": 0.8333333134651184,
+          "entropy_mean": 0.9429262280464172,
+          "pred": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ]
+        }
+      },
+      "forward_pool_us": {
+        "max_us": 789.6,
+        "mean_us": 382.71933333333334,
+        "median_us": 371.95,
+        "min_us": 298.9
+      },
+      "pooled_dim": 24,
+      "regression": {
+        "entropy_feedback": {
+          "pred": [
+            0.5485153198242188,
+            0.5450407862663269,
+            0.5444333553314209,
+            0.5496823787689209,
+            0.672255277633667,
+            0.6930506229400635,
+            0.7092431783676147,
+            0.7254923582077026,
+            0.8451285362243652,
+            0.851599395275116,
+            0.8554657101631165,
+            0.8619658350944519
+          ],
+          "rmse": 0.006285742856562138
+        },
+        "plain": {
+          "pred": [
+            0.550661027431488,
+            0.5457440614700317,
+            0.5434198975563049,
+            0.5471091866493225,
+            0.6676493287086487,
+            0.682384192943573,
+            0.6966536045074463,
+            0.7153748869895935,
+            0.8449159860610962,
+            0.8524186611175537,
+            0.8575590252876282,
+            0.8663021326065063
+          ],
+          "rmse": 0.005343729164451361
+        }
+      }
+    },
+    "hsikan": {
+      "classification": {
+        "entropy_feedback": {
+          "acc": 0.9166666865348816,
+          "entropy_mean": 0.8848317265510559,
+          "pred": [
+            1,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            2,
+            2,
+            2,
+            2
+          ]
+        },
+        "plain": {
+          "acc": 0.6666666865348816,
+          "entropy_mean": 0.9383791089057922,
+          "pred": [
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ]
+        }
+      },
+      "forward_pool_us": {
+        "max_us": 2356.4,
+        "mean_us": 1292.0266666666666,
+        "median_us": 1263.85,
+        "min_us": 786.6
+      },
+      "pooled_dim": 24,
+      "regression": {
+        "entropy_feedback": {
+          "pred": [
+            0.5581834316253662,
+            0.5484499931335449,
+            0.5438300371170044,
+            0.5481724143028259,
+            0.6519384384155273,
+            0.6652734279632568,
+            0.6789838671684265,
+            0.6998713612556458,
+            0.8414806723594666,
+            0.8474487066268921,
+            0.8479366898536682,
+            0.8534061312675476
+          ],
+          "rmse": 0.012049113400280476
+        },
+        "plain": {
+          "pred": [
+            0.5597259402275085,
+            0.5484018921852112,
+            0.5430163145065308,
+            0.548159658908844,
+            0.6606091856956482,
+            0.6736317873001099,
+            0.6869854927062988,
+            0.7066594958305359,
+            0.8286154866218567,
+            0.83406001329422,
+            0.8347873091697693,
+            0.8388072848320007
+          ],
+          "rmse": 0.012228173203766346
+        }
+      }
+    },
+    "raw_features": {
+      "classification": {
+        "entropy_feedback": {
+          "acc": 0.8333333134651184,
+          "entropy_mean": 0.9321794509887695,
+          "pred": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            2,
+            2,
+            2,
+            2,
+            1
+          ]
+        },
+        "plain": {
+          "acc": 0.9166666865348816,
+          "entropy_mean": 0.9269608855247498,
+          "pred": [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            2,
+            2,
+            2,
+            2
+          ]
+        }
+      },
+      "forward_pool_us": {
+        "max_us": 199.4,
+        "mean_us": 86.98733333333334,
+        "median_us": 81.1,
+        "min_us": 52.1
+      },
+      "pooled_dim": 12,
+      "regression": {
+        "entropy_feedback": {
+          "pred": [
+            0.5554265379905701,
+            0.5510714650154114,
+            0.5491712689399719,
+            0.5529906749725342,
+            0.6672763824462891,
+            0.684054434299469,
+            0.7008856534957886,
+            0.7208929657936096,
+            0.8385847806930542,
+            0.8481560945510864,
+            0.8568296432495117,
+            0.8681068420410156
+          ],
+          "rmse": 0.002073368290439248
+        },
+        "plain": {
+          "pred": [
+            0.5553436875343323,
+            0.5510795712471008,
+            0.549089252948761,
+            0.5527065396308899,
+            0.6684622168540955,
+            0.6844852566719055,
+            0.7001729607582092,
+            0.7191815376281738,
+            0.8408992886543274,
+            0.8499689698219299,
+            0.8582297563552856,
+            0.8708228468894958
+          ],
+          "rmse": 0.0031391626689583063
+        }
+      }
+    },
+    "sa_hsikan": {
+      "classification": {
+        "entropy_feedback": {
+          "acc": 0.8333333134651184,
+          "entropy_mean": 0.9235150218009949,
+          "pred": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ]
+        },
+        "plain": {
+          "acc": 0.8333333134651184,
+          "entropy_mean": 0.9280222058296204,
+          "pred": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ]
+        }
+      },
+      "forward_pool_us": {
+        "max_us": 905.6,
+        "mean_us": 630.334,
+        "median_us": 658.9000000000001,
+        "min_us": 396.2
+      },
+      "pooled_dim": 24,
+      "regression": {
+        "entropy_feedback": {
+          "pred": [
+            0.5340754985809326,
+            0.5343337655067444,
+            0.5382922887802124,
+            0.5468652248382568,
+            0.677996039390564,
+            0.7138915061950684,
+            0.738166332244873,
+            0.7485214471817017,
+            0.8099653124809265,
+            0.8150525093078613,
+            0.8226485252380371,
+            0.8287266492843628
+          ],
+          "rmse": 0.025854093953967094
+        },
+        "plain": {
+          "pred": [
+            0.5333899259567261,
+            0.5343661308288574,
+            0.5362884998321533,
+            0.5395161509513855,
+            0.6823822855949402,
+            0.7033687829971313,
+            0.7231110334396362,
+            0.7392986416816711,
+            0.8037631511688232,
+            0.8103390336036682,
+            0.8216793537139893,
+            0.8316468000411987
+          ],
+          "rmse": 0.0242388304322958
+        }
+      }
+    }
+  },
+  "n_samples": 36,
+  "optimized_forward_pool_us": {
+    "fsr_batched_amortized": {
+      "max_us": 90.275,
+      "mean_us": 42.516046296296295,
+      "median_us": 41.68333333333334,
+      "min_us": 25.866666666666667
+    }
+  },
+  "regression_target": [
+    0.44242000579833984,
+    0.4713221788406372,
+    0.49182260036468506,
+    0.5073704719543457,
+    0.522352933883667,
+    0.5379229784011841,
+    0.5510430932044983,
+    0.5576083660125732,
+    0.5567495226860046,
+    0.5523151159286499,
+    0.5501187443733215,
+    0.5534228682518005,
+    0.5607516765594482,
+    0.567986011505127,
+    0.5727656483650208,
+    0.577110230922699,
+    0.5858255624771118,
+    0.602146327495575,
+    0.6246298551559448,
+    0.6481728553771973,
+    0.668250560760498,
+    0.6845248341560364,
+    0.700551450252533,
+    0.7199103832244873,
+    0.7423682808876038,
+    0.763646125793457,
+    0.7790443301200867,
+    0.7876173257827759,
+    0.7930703163146973,
+    0.800553023815155,
+    0.812278151512146,
+    0.8259655237197876,
+    0.8374999761581421,
+    0.8453115820884705,
+    0.8524014353752136,
+    0.8640968203544617
+  ],
+  "source": "D:\\hakiko_ai_ws\\03_implementation\\hymeko_framework_rust\\scripts\\dev\\hymeko_structure_toy.hymeko",
+  "structure_search": {
+    "abb": {
+      "name": "Accelerated Branch-and-Bound",
+      "uses": [
+        "prune SSG search when candidate sets are large",
+        "optimize multi-objective structure scores such as accuracy, latency, parameters, and entropy",
+        "select inference-time branches when learned alpha weights collapse onto a sparse support"
+      ]
+    },
+    "existing_repo_hooks": [
+      "hymeko_neuro/experiments/hsikan_pgraph_mapping.py",
+      "hymeko_neuro/experiments/gomb_pgraph_mapping.py",
+      "hymeko_pgraph::msg / ssg / abb_solve via hymeko_pgraph_dump"
+    ],
+    "msg": {
+      "name": "Maximal Structure Generation",
+      "uses": [
+        "generate the maximal admissible structural candidate set",
+        "precompute all feasible feature/topology branches before learning",
+        "define the superset for alpha-mixing and branch pruning"
+      ]
+    },
+    "ssg": {
+      "name": "Solution Structure Generation",
+      "uses": [
+        "enumerate feasible subsets of MSG candidates",
+        "act as discrete feature selection over structural generators",
+        "emit alternative HSIKAN/Gomb/FSR wiring candidates for small searches"
+      ]
+    },
+    "targets": [
+      "cycle/walk arity selection",
+      "structural feature enrichment selection",
+      "pgraph-generated topology branches",
+      "alpha-mixing branch pruning",
+      "cached sparse-incidence generation for fixed-topology speedups"
+    ]
+  },
+  "test_indices": [
+    8,
+    9,
+    10,
+    11,
+    20,
+    21,
+    22,
+    23,
+    32,
+    33,
+    34,
+    35
+  ],
+  "test_samples": 12,
+  "train_indices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31
+  ],
+  "train_samples": 24
+}

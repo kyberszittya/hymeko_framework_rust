@@ -1,0 +1,12 @@
+Storage overhead rho across arity regimes (n=m, c=1 ; rho = 1 + 2/d_bar):
+
+  regime                        d_bar     rho
+  robotics (binary joints)          2    2.00
+  low-arity (tri/quad)              3    1.67
+  mixed                             6    1.33
+  high-arity relations             20    1.10
+  very high arity                 200    1.01
+
+  lim_(d_bar->inf) rho = 1  (vanishing overhead) ; d(rho)/d(d_bar) < 0 : True  (monotone decreasing)
+  HONEST framing for the article: overhead is CONTROLLED, asymptotically vanishing for HIGH-arity
+  relations; in the binary-joint robotics regime (d_bar~2) rho~2.0 -- a small constant, not rho->1.

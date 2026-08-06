@@ -1,0 +1,286 @@
+{
+ "pairs": [
+  {
+   "seed": 0,
+   "rep": 0,
+   "s2_cov": 0,
+   "s2_loose": 0,
+   "s2_maxclr": 0.0,
+   "s1_ret": -6,
+   "strong_ret": -1,
+   "r64102": 0,
+   "t_s2cov": 0,
+   "c_s2cov": 0,
+   "t_maxclr": 0.0,
+   "c_maxclr": 0.0,
+   "t_s1": 3,
+   "c_s1": 9,
+   "t_strong": false,
+   "c_strong": true
+  },
+  {
+   "seed": 0,
+   "rep": 1,
+   "s2_cov": 0,
+   "s2_loose": 0,
+   "s2_maxclr": 0.0,
+   "s1_ret": 3,
+   "strong_ret": 0,
+   "r64102": 1,
+   "t_s2cov": 0,
+   "c_s2cov": 0,
+   "t_maxclr": 0.0,
+   "c_maxclr": 0.0,
+   "t_s1": 5,
+   "c_s1": 2,
+   "t_strong": false,
+   "c_strong": false
+  },
+  {
+   "seed": 1,
+   "rep": 0,
+   "s2_cov": 0,
+   "s2_loose": 0,
+   "s2_maxclr": 0.0,
+   "s1_ret": 1,
+   "strong_ret": 0,
+   "r64102": 0,
+   "t_s2cov": 0,
+   "c_s2cov": 0,
+   "t_maxclr": 0.0,
+   "c_maxclr": 0.0,
+   "t_s1": 6,
+   "c_s1": 5,
+   "t_strong": false,
+   "c_strong": false
+  },
+  {
+   "seed": 1,
+   "rep": 1,
+   "s2_cov": 0,
+   "s2_loose": 0,
+   "s2_maxclr": 0.0,
+   "s1_ret": 3,
+   "strong_ret": 0,
+   "r64102": 0,
+   "t_s2cov": 0,
+   "c_s2cov": 0,
+   "t_maxclr": 0.0,
+   "c_maxclr": 0.0,
+   "t_s1": 5,
+   "c_s1": 2,
+   "t_strong": false,
+   "c_strong": false
+  },
+  {
+   "seed": 2,
+   "rep": 0,
+   "s2_cov": 0,
+   "s2_loose": 0,
+   "s2_maxclr": 0.0,
+   "s1_ret": 3,
+   "strong_ret": -1,
+   "r64102": 0,
+   "t_s2cov": 0,
+   "c_s2cov": 0,
+   "t_maxclr": 0.0,
+   "c_maxclr": 0.0,
+   "t_s1": 7,
+   "c_s1": 4,
+   "t_strong": false,
+   "c_strong": true
+  },
+  {
+   "seed": 2,
+   "rep": 1,
+   "s2_cov": 0,
+   "s2_loose": 0,
+   "s2_maxclr": 0.0,
+   "s1_ret": 3,
+   "strong_ret": 1,
+   "r64102": 0,
+   "t_s2cov": 0,
+   "c_s2cov": 0,
+   "t_maxclr": 0.0,
+   "c_maxclr": 0.0,
+   "t_s1": 7,
+   "c_s1": 4,
+   "t_strong": true,
+   "c_strong": false
+  },
+  {
+   "seed": 3,
+   "rep": 0,
+   "s2_cov": 0,
+   "s2_loose": 0,
+   "s2_maxclr": 0.0,
+   "s1_ret": 7,
+   "strong_ret": 1,
+   "r64102": 0,
+   "t_s2cov": 0,
+   "c_s2cov": 0,
+   "t_maxclr": 0.0,
+   "c_maxclr": 0.0,
+   "t_s1": 8,
+   "c_s1": 1,
+   "t_strong": true,
+   "c_strong": false
+  },
+  {
+   "seed": 3,
+   "rep": 1,
+   "s2_cov": 0,
+   "s2_loose": 0,
+   "s2_maxclr": 0.0,
+   "s1_ret": 1,
+   "strong_ret": 0,
+   "r64102": -1,
+   "t_s2cov": 0,
+   "c_s2cov": 0,
+   "t_maxclr": 0.0,
+   "c_maxclr": 0.0,
+   "t_s1": 7,
+   "c_s1": 6,
+   "t_strong": false,
+   "c_strong": false
+  }
+ ],
+ "aggregate": {
+  "s2_cov": {
+   "values": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mean": 0.0,
+   "median": 0.0,
+   "iqr": 0.0,
+   "pos": 0,
+   "zero": 8,
+   "neg": 0,
+   "boot95": [
+    0.0,
+    0.0
+   ]
+  },
+  "s2_loose": {
+   "values": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mean": 0.0,
+   "median": 0.0,
+   "iqr": 0.0,
+   "pos": 0,
+   "zero": 8,
+   "neg": 0,
+   "boot95": [
+    0.0,
+    0.0
+   ]
+  },
+  "s2_maxclr": {
+   "values": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mean": 0.0,
+   "median": 0.0,
+   "iqr": 0.0,
+   "pos": 0,
+   "zero": 8,
+   "neg": 0,
+   "boot95": [
+    0.0,
+    0.0
+   ]
+  },
+  "s1_ret": {
+   "values": [
+    -6.0,
+    3.0,
+    1.0,
+    3.0,
+    3.0,
+    3.0,
+    7.0,
+    1.0
+   ],
+   "mean": 1.875,
+   "median": 3.0,
+   "iqr": 2.0,
+   "pos": 7,
+   "zero": 0,
+   "neg": 1,
+   "boot95": [
+    -0.625,
+    4.0
+   ]
+  },
+  "strong_ret": {
+   "values": [
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    -1.0,
+    1.0,
+    1.0,
+    0.0
+   ],
+   "mean": 0.0,
+   "median": 0.0,
+   "iqr": 0.5,
+   "pos": 2,
+   "zero": 4,
+   "neg": 2,
+   "boot95": [
+    -0.5,
+    0.5
+   ]
+  },
+  "r64102": {
+   "values": [
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -1.0
+   ],
+   "mean": 0.0,
+   "median": 0.0,
+   "iqr": 0.0,
+   "pos": 1,
+   "zero": 6,
+   "neg": 1,
+   "boot95": [
+    -0.375,
+    0.375
+   ]
+  }
+ },
+ "classification": "NO_EFFECT",
+ "n_pairs": 8,
+ "bootstrap_seed": 20260721,
+ "any_stage2_certified": false
+}

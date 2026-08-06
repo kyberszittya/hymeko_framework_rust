@@ -7,16 +7,13 @@
 //!   - Structural entropy from singular value spectrum
 
 use crate::tensor::common::Real;
-use crate::tensor::representations::tensor_coo::{TensorCoo};
+use crate::tensor::representations::tensor_coo::TensorCoo;
 
 /// Mode-k unfolding: reshape 3D tensor to 2D matrix.
 /// Mode 0: rows = k (edges),    cols = i×J + j
 /// Mode 1: rows = i (src nodes), cols = k×J + j
 /// Mode 2: rows = j (dst nodes), cols = k×I + i
-pub fn mode_k_unfold<F: Real>(
-    tensor: &TensorCoo<F>,
-    mode: usize,
-) -> (Vec<F>, usize, usize) {
+pub fn mode_k_unfold<F: Real>(tensor: &TensorCoo<F>, mode: usize) -> (Vec<F>, usize, usize) {
     let (K, I, J) = (tensor.num_slices, tensor.dim_i, tensor.dim_j);
 
     let (num_rows, num_cols) = match mode {
@@ -73,21 +70,29 @@ pub fn truncated_svd_power<F: Real>(
             mat_vec(&residual, m, n, &v, &mut u);
             let s = norm(&u);
             if s > F::zero() {
-                for x in u.iter_mut() { *x = *x / s; }
+                for x in u.iter_mut() {
+                    *x = *x / s;
+                }
             }
 
             // v = A^T * u
             mat_t_vec(&residual, m, n, &u, &mut v);
             let s2 = norm(&v);
             if s2 > F::zero() {
-                for x in v.iter_mut() { *x = *x / s2; }
+                for x in v.iter_mut() {
+                    *x = *x / s2;
+                }
             }
             sigma[k] = s;
         }
 
         // Store k-th singular triplet
-        for i in 0..m { u_mat[i * r + k] = u[i]; }
-        for j in 0..n { vt_mat[k * n + j] = v[j]; }
+        for i in 0..m {
+            u_mat[i * r + k] = u[i];
+        }
+        for j in 0..n {
+            vt_mat[k * n + j] = v[j];
+        }
 
         // Deflate: residual -= sigma[k] * u * v^T
         for i in 0..m {
@@ -152,18 +157,34 @@ pub fn hosvd<F: Real>(
         }
     }
 
-    HosvdResult { core, r0, r1, r2, u0, u1, u2, sigma0: s0, sigma1: s1, sigma2: s2 }
+    HosvdResult {
+        core,
+        r0,
+        r1,
+        r2,
+        u0,
+        u1,
+        u2,
+        sigma0: s0,
+        sigma1: s1,
+        sigma2: s2,
+    }
 }
 
 /// Structural entropy from singular value spectrum.
 /// H = -Σ p_i log(p_i), where p_i = σ_i² / Σ σ_j²
 pub fn spectral_entropy<F: Real>(sigmas: &[F]) -> f64 {
-    let total: f64 = sigmas.iter().map(|s| {
-        let sf = s.as_f64();
-        sf * sf
-    }).sum();
+    let total: f64 = sigmas
+        .iter()
+        .map(|s| {
+            let sf = s.as_f64();
+            sf * sf
+        })
+        .sum();
 
-    if total < 1e-15 { return 0.0; }
+    if total < 1e-15 {
+        return 0.0;
+    }
 
     let mut entropy = 0.0;
     for s in sigmas {
@@ -176,10 +197,7 @@ pub fn spectral_entropy<F: Real>(sigmas: &[F]) -> f64 {
 }
 
 /// Frobenius norm reconstruction error: ||T - G ×₁ U₀ ×₂ U₁ ×₃ U₂||_F
-pub fn reconstruction_error<F: Real>(
-    tensor: &TensorCoo<F>,
-    result: &HosvdResult<F>,
-) -> f64 {
+pub fn reconstruction_error<F: Real>(tensor: &TensorCoo<F>, result: &HosvdResult<F>) -> f64 {
     let mut err_sq = 0.0;
 
     for entry in tensor.iter() {
@@ -208,26 +226,34 @@ pub fn reconstruction_error<F: Real>(
 fn normalize<F: Real>(v: &mut [F]) {
     let n = norm(v);
     if n > F::zero() {
-        for x in v.iter_mut() { *x = *x / n; }
+        for x in v.iter_mut() {
+            *x = *x / n;
+        }
     }
 }
 
 fn norm<F: Real>(v: &[F]) -> F {
     let mut s = F::zero();
-    for &x in v { s += x * x; }
+    for &x in v {
+        s += x * x;
+    }
     s.sqrt()
 }
 
 fn mat_vec<F: Real>(a: &[F], m: usize, n: usize, x: &[F], y: &mut [F]) {
     for i in 0..m {
         let mut acc = F::zero();
-        for j in 0..n { acc += a[i * n + j] * x[j]; }
+        for j in 0..n {
+            acc += a[i * n + j] * x[j];
+        }
         y[i] = acc;
     }
 }
 
 fn mat_t_vec<F: Real>(a: &[F], m: usize, n: usize, x: &[F], y: &mut [F]) {
-    for j in 0..n { y[j] = F::zero(); }
+    for j in 0..n {
+        y[j] = F::zero();
+    }
     for i in 0..m {
         for j in 0..n {
             y[j] += a[i * n + j] * x[i];

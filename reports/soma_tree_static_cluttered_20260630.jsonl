@@ -1,0 +1,5 @@
+{"model": "gomb_soma_tree_static", "seed": 0, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 5210, "test_acc": 0.54, "wall_s": 234.39918849998503, "dataset": "cluttered", "canvas": 48}
+{"model": "gomb_soma_tree_static", "seed": 1, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 5210, "test_acc": 0.544, "wall_s": 275.13209080000524, "dataset": "cluttered", "canvas": 48}
+{"model": "gomb_soma_tree_static", "seed": 2, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 5210, "test_acc": 0.585, "wall_s": 227.4880320999946, "dataset": "cluttered", "canvas": 48}
+{"model": "gomb_soma_tree_static", "seed": 3, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 5210, "test_acc": 0.588, "wall_s": 214.80220249999547, "dataset": "cluttered", "canvas": 48}
+{"model": "gomb_soma_tree_static", "seed": 4, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 5210, "test_acc": 0.535, "wall_s": 238.39478800000506, "dataset": "cluttered", "canvas": 48}

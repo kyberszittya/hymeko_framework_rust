@@ -1,0 +1,18 @@
+{
+ "prev_branch": "exp/coin-bridge-relay",
+ "prev_head": "5019d4b",
+ "continuation_branch": "exp/coin-bridge-dwell-relay",
+ "transport_policy": "39551de3bbde7465",
+ "best_b0_bridge": "c669c1e59c97a8cb",
+ "bridge_result": "a128bf830ef2c00c",
+ "bridge_report": "eda139f3375f7c6b",
+ "transfer_pp": "d2da720ab2ed42bf",
+ "transfer_beni": "4630b53757b35332",
+ "facts": {
+  "transport_alone": "4/24",
+  "best_b0": "5/24",
+  "prev_handoffs": "0/24",
+  "transport_state": "04870b0e",
+  "transport_clearance": "+0.0253"
+ }
+}

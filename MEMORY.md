@@ -1,0 +1,72 @@
+# Memory index
+
+- [HANDOFF 2026-07-05 06:05: full state in reports/2026-07-05-session-handoff-coin-toss-rl.md](project-work-queue-2026-07-05.md) — teacher 0.84 / clone 0.52 / all RL continuations subtract (mechanism table); DAgger ready; user handing work to another tool
+- [STANDING ROBOTICS QUEUE 2026-07-05](project-work-queue-2026-07-05.md) — (1) coin-toss; (2) extend coin-toss to k arms; (3) FANUC pick-and-place; (4) quadruped standing/walking; (5) humanoid standing/walking; (6) Niitsuma rapport through robot-robot interaction. Clean OO/dataflow code throughout.
+
+- [Oracle-certify BEFORE queue (RULE)](feedback-oracle-certify-before-queue.md) — 2026-07-05: never launch RL training without certify(training reward).delivers=True quoted at launch; match reward to the CURRENT teacher's strategy; Campaign evals step-0 BC floor; no per-monitor-event chatter
+
+- [FANUC pick-place next (blocked by failed refine)](project-fanuc-pick-place-push-next.md) — 2026-07-05 condition was NOT met: Galambos TD3+BC refinement degraded the BC floor. Do not port this as a success pattern until the Q-term/critic failure is diagnosed; keep only the declarative controller/monitor idea as suspect framework evidence.
+
+- [NAGARE holonomy line (state 2026-07-04)](project-nagare-holonomy-line.md) — hymeko_nagare local-learning: holonomy/ package promoted + FD-tested project_alpha_mix kernel + frozen seed-53 fixture, promotion bit-identical; fused kernel had a serial-vs-rayon 3× defect (fixed); PyTorch still ~1.6–2× faster on entropy-feedback shape (narrowed not closed); extraction repo go/no-go pending
+- [LiNGAM-SH: signed-hypergraph LiNGAM (Kato)](project-kato-lingam-cip-hymeko.md) — 2026-07-04 Hajdu: EXTEND LiNGAM to signed hypergraphs (B = star-expansion factorization, ICA identifies the grouping = the theorem); arXiv:2511.03831 (CAM→hypergraph) must-cite but doesn't pre-empt; pipeline SMC_02→LiNGAM-SH→CIP→Kato arms; PoC = LiNGAM over coin-toss rollouts → .hymeko. Sibling: digital-twin article
+- [Naming RULES: consult first; technical or Japanese-Hungarian only](feedback-k-arm-coin-toss-naming.md) — scenario = "k-arm coin toss" (coin is a CYLINDER); plain functional names; NEVER coin a new name without asking the user first; no biblical/branded/cute naming; July-5 rejected-name incident is recorded in the linked rule
+- [Collab CTDE + substrate + Galambos env](project-collab-ctde-substrate-galambos.md) — 2026-07-03: CTDE beats joint (0.40>0.34); declarative-MDP .hymeko substrate PoC works (TD3 0.96); fingertip-only collision masks break old demonstrator — physics-route beats reward-penalty
+- [Quadruped standing TD3 diverges + GPU fix](project-quadruped-standing-td3-diverges.md) — 2026-07-03: torch.compile CUDA-graph crash fixed (ddpg.py, ~5×); standing UNSOLVED by pure-TD3 at 60k/150k — next lever is BC warm-start→TD3+BC, not more steps
+- [Every experiment → own folder (RULE)](feedback-experiment-own-folder.md) — each run in `experiments/<ts>_<name>/` (gifs+policies+results.json+README+log); never shared checkpoints (overwrites); use evaluate.experiment_dir
+- [Gömb-Soma remapped into RL](project-gomb-soma-rl-remap.md) — 2026-07-02: cognitive stack as RL backbone (Soma quadtree → Gömb shells → CPML readout); step 1 = rotary-spike membrane; TOY-validate Cl(0,1)↔SO(3) first; plan on disk
+- [Ditch PPO → off-policy + SA-HSiKAN](project-ditch-ppo-offpolicy-sahsikan.md) — 2026-07-01 directive: PPO out indefinitely; RL line = TD3+BC/SAC/DDPG + SA-HSiKAN; pruning = deploy lever not training
+- [RL evaluator + simulator ecosystem](project-rl-evaluator-simulator-ecosystem.md) — 2026-07-01: eval loops unified (evaluate.eval_metric + RolloutMetric); tasks.py TaskSpec registry with best-arch per scenario. RULE: register TaskSpec, don't rebuild eval loops
+- [Pick-place "win" was an EXPLOSION ARTIFACT](project-pick-place-explosion-artifact.md) — 2026-06-30: 0.875 lift was physics blow-up counted as success; real ≈0.125, task unsolved; timestep 5e-4 + blow-up guard + RolloutMonitor added. LESSON: divergence can INFLATE a metric
+- [Quadruped-as-collaboration de-risked](project-quadruped-collaboration-derisk.md) — 2026-06-30: 4-leg CTDE trains but loses to flat on goal-reach (non-cyclic = wrong test); GAIT (cyclic/holonomy) is the real test; next = gait .hymeko reward
+- [Soma-vision is READOUT-bound](project-soma-vision-readout-bound.md) — 2026-06-29: walk-vision falsification was mostly a mean-pool artifact; position-preserving Soma 0.945+ beats linear 0.906; revival = position-aware pool + cluttered re-test
+- [Soma-holonomy vision FALSIFIED](project-soma-holonomy-vision-falsified.md) — 2026-06-29: holonomy 0.489 ≤ routing 0.519 ≪ linear 0.906; don't re-propose holonomy-revives-walk-vision
+- [Gömb/HSiKAN/FSR LLM Ph1](project-gomb-hsikan-fsr-llm.md) — 2026-06-29: FSR-prenorm 2.479 BEATS transformer 2.570 (3-seed, TinyShakespeare); Gömb-sphere variant loses; 3.1× slower/token; reports on disk
+- [StructuralActor + walk-holonomy](project-structural-actor-walk-holonomy.md) — 2026-06-28: static gather along walks (=Z2 holonomy=B^L matmul); HSiKAN accuracy at ~10× speed/30× fewer params; Steiner AG(2,3) best basis
+- [HyMeKo as control substrate (BIG pivot)](project-hymeko-as-control-substrate.md) — Hajdu+Kato 2026-06-27: contribution = declarative control substrate, not "HSiKAN beats MLP"; siblings: runtime-tunable reward DSL; topology→controller benchmarking
+- [User intuition is calibrated (RULE)](feedback-user-intuition-is-calibrated.md) — Hajdu's guesses are calibrated intuition, high hit-rate; lead with his direction, bring data to certify, don't over-caveat
+- [Reward definition in .hymeko (RULE)](feedback-reward-definition-in-hymeko.md) — reward changes ALWAYS edit the .hymeko, never in-memory overrides; git is the audit trail
+- [Reward-conflict hypergraph (BREAKTHROUGH)](project-reward-conflict-hypergraph.md) — 2026-06-28: grasping solved by SIMPLIFYING reward (0.10→0.615); conflict magnitude predicts grasping; causally confirmed; NEXT = principal-axes (term-comovement) study
+- [HyMeKo cross-view consistency proven](project-hymeko-cross-view-consistency.md) — 2026-06-28: machine-verified commuting square vs real CLI emitters (16×5 views); Z3 + non-robotics witness; article updated
+- [Fast RL sanity suite](project-fast-rl-sanity-suite.md) — 2026-06-29: physics-free testbeds (seconds vs hours); linear graph targets don't discriminate HSiKAN vs MLP; SA-HSiKAN 5× deploy win
+- [Topology→control = MATCHING law](project-topology-control-matching-law.md) — 2026-06-28: best_controller[plant]==plant 9/9; coherence does NOT rank control; "Steiner best" was plant-specific
+- [HSiKAN launch-bound alternatives](project-hsikan-launchbound-alternatives.md) — 2026-06-28: B=1 dispatch-bound, not "HSiKAN slow" (17× cheaper batched); SA-HSiKAN shipped; CR-Chebyshev hybrid = train-CR/deploy-Chebyshev; torch.compile needs MSVC = skip on Windows
+- [HyMeKo props machine-verified](project-hymeko-props-machine-verified.md) — 2026-06-28: 4 T-SMC props verified (sympy + property tests); real gap found: byte-equal emit fails under sibling reorder (only hash canonical); parse_dsl accumulates — fresh engine per parse
+- [HSiKAN-loses = possible bug](project-hsikan-loses-possible-bug.md) — 2026-06-26: wiring-bug hypothesis FALSIFIED across all tasks; question splits genuine-parity vs silent forward bug; decisive next = toy graph-property task
+- [G-SPHF attractor+planning](project-gsphf-attractor-planning-integration.md) — longer goal: G-SPHF unifying attractor-field control + discrete planning; rides on hypergraph, mostly non-core
+- [Cross-profile instance refs](project-xprofile-instance-refs.md) — CORE dep-usings fix done+approved; phase 2 = import-aware read_bundle + shared reward .hymeko + AgentSpec.from_hymeko
+- [Engine transitive imports needed](project-engine-transitive-imports.md) — engine follows only 1 level of imports; fix = core edit (approval-gated); Python bridge works around it
+- [MDSD reuse + docs](project-mdsd-reuse-and-docs.md) — reused ROS2 scenario −33% vs frozen baseline; SYSTEM_ENGINEERING_VIEW manifesto; hymeko_query test target = `integration`
+- [Cayley-rotor idea](project-cayley-rotor-idea.md) — one rotor primitive unifying leakage-free embeddings + ANN index projection; user-flagged high-value, back it
+- [HSiKAN geometric attention + Berge](project-hsikan-geometric-attention-berge.md) — fold quaternion+Clifford scoring into signed-triad attention to close SiGAT gap; 4 pieces exist, don't rebuild
+- [Fuzzy defuzzification heads](project-fuzzy-defuzzification-heads.md) — rotor/KAN readout heads are structurally defuzzification; unify with fuzzy-signature line; design-unification not AUROC
+- [SISY 2026 control paper](project-sisy2026-control-paper.md) — 6pp, review-fixed, ROS pick-and-place demo runs
+- [VOC HyMeYOLO baseline](project-voc-hymeyolo-baseline.md) — held-out VOC test mAP 0.0149 (ep60); eval_voc tool
+- [No-leakage benchmark resume](project-no-leakage-benchmark-resume.md) — E1 harness built+smoke-clean; resume at narrow-deep n_layers then full E1
+- [Seminar demos + HyMeYOLO plan](project-seminar-demos-and-hymeyolo-plan.md) — finish 6 inference demos + HyMeYOLO (Demo 4); spec in docs/INFERENCE_DEMOS_OUTLINE.md
+- [UR sim setup](project-ur-sim-setup.md) — UR5e Gazebo+MoveIt2 stack; relaxed controllers YAML, sim_time, RViz SIGSEGV workaround
+- [SMC paper additions queue](project-smc-paper-additions-queue.md) — 2026-06-14 queue: SMC #5/#6 artifacts + seminar demos + web editor
+- [Hero demo plan](project-hero-demo.md) — one model→many targets, validation-gated; plan at docs/plans/2026-06-13-hero-demo/; ~80% exists
+- [Nature leakage paper](project-nature-leakage-paper.md) — signed-link label-shuffle audit; Phase B harness+figure done, 5-seed grid running
+- [Reachability rules article](project-reachability-rules-article.md) — audit protocols as reachability rules unifying leakage audit + P-graph axioms; possible article
+- [Backlog + Done tracking](project-backlog-done-tracking.md) — repo-root BACKLOG.md/DONE.md; HyMeYOLO D-3/H open
+- [Kato collaboration — grasping + affective](project-kato-collaboration-grasping.md) — learned control head on tensorised robot hypergraph, Phase 2 paused; affective valence-shaped reward in meta_affect.hymeko, P1 "big hit for Kato"
+- [hymeko_rl Phase 2 debug](project-hymeko-rl-phase2-debug.md) — truncation-bootstrap bug ALREADY FIXED (don't re-chase)
+- [Galambos reward shaping](project-galambos-reward-shaping.md) — "RL not moving" was a FROZEN SHOULDER (emitter link overlap), not reward; emitter geometry fix still open
+- [Rotor joint-encoding falsified](project-rotor-joint-encoding-falsified.md) — S¹ rotor on joint angles is dead (joints never wrap); don't re-propose
+- [Editor MDP project](project-editor-mdp-project.md) — WASM editor loads Galambos MDP multi-file project; DONE + verified; add ?v= cache-bust next
+- [Cart-pole HSiKAN testbed](project-cartpole-hsikan-testbed.md) — inverted_pendulum.hymeko = canonical testbed; emitter gotchas handled via strip_actuators
+- [Editor hyperedge-on-hyperedge](reference-editor-hyperedge-on-hyperedge.md) — 3D editor renders edge-on-edge incidence; member idx ≥ n_vertices = another edge's hub
+- [Policy as HyMeKo storage](reference-policy-as-hymeko-storage.md) — policy state_dict ⇄ .hymeko bit-exact; HyMeKo numbers reject scientific notation
+- [RL algorithm roadmap](project-rl-algorithm-roadmap.md) — PPO + DDPG done (~250× sample-eff); TD3/SAC next; safe-RL queued
+- [Actor-critic shared reasoning](project-actor-critic-shared-reasoning.md) — share HSiKAN structural reasoning across actor+critic; shared trunk + dual heads
+- [FSM-structured RL + HTL](project-fsm-structured-rl.md) — RL fits expert-declared reward machine; HSiKAN leaves + HTL accountability; likely article pivot; plan on disk
+- [Galambos HSiKAN tie root-cause](project-galambos-hsikan-tie-rootcause.md) — tie because coin+zone aren't graph nodes AND both fail; fix = grasp/goal hyperedge; A/B defined
+- [Unify HSiKAN core](project-unify-hsikan-core.md) — one signed-KAN core + pluggable aggregation backend; HSiKAN = Highway Signed KAN, never rename
+- [Kato dual-discriminator plan](project-kato-dual-discriminator-plan.md) — k-agent Galambos CTDE + dual-discriminator (deliberative/reflexive) + edge weights; plan on disk; 3 decisions for Kato
+- [FANUC off-policy collapse](project-fanuc-offpolicy-collapse.md) — warm-start bridge failed on FANUC (under-budget 12k); fix = TD3+BC + ≥1e5 steps
+- [Morning queue: viz + DDPG](project-morning-queue-viz-ddpg.md) — 2026-06-24 queue: BC→DDPG, sim-view GIFs (built), HSiKAN-arch-as-hypergraph (TODO)
+- [HyMeKo aggregation semantics](project-hymeko-aggregation-semantics.md) — Kato 2026-06-25: declared `aggregate` tag (sum/product/T-norm) so one incidence = conv/parity/fuzzy-rule; grammar = CORE-gated
+- [Planner demos (A*/RRT) → RL mimics](project-planner-demos-imitation.md) — exact planner as BC demo source; plan-then-amortise; planners are kinematic (no contact)
+- [Gauge holonomy signed HSiKAN](project-gauge-holonomy-signed-hsikan.md) — BIG 2026-06-25: balance = Z2 holonomy (theorem); rotor = CONNECTION not readout; learned continuous holonomy generalizes balance parity; likely THE paper; docs/theory PDF
+- [Measurements are CACHED FACTS — never re-measure from the start (RULE)](feedback-baseline-once-parallel-ab.md) — Hajdu 2026-07-04+05: baseline once; grep reports/results.json BEFORE running anything; after a code change re-measure ONLY the affected cell (one-seed identity check, not the grid); teacher anchors once per (physics, controller); treatment arms parallel; oracle pre-screens
+- [Galambos: push-controller useful, RL refine failed](project-galambos-reward-fixed-rl-below-demo.md) — 2026-07-05 corrected state: push-controller teacher is useful scripted evidence (~0.80-0.84), BC clone is the learned floor (~0.34 median in early memory; later campaign curves report step-0 BC separately), but TD3+BC/SAC-style refinement degrades the clone. Next step is Q-term/critic diagnosis, not more refine or scenario redesign.

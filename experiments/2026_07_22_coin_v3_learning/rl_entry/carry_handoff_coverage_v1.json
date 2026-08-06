@@ -1,0 +1,68 @@
+{
+ "contract": "CARRY_HANDOFF_COVERAGE_V1",
+ "date": "2026-07-24",
+ "no_new_campaign": true,
+ "smoke": false,
+ "freeze": {
+  "pi_0": "1902454c",
+  "settling": "SETTLING_SKILL_CONFIRMED strict\u22651\u2192K6\u22480.95",
+  "settling_critic": "SETTLING_VALUE (unused here)"
+ },
+ "method": {
+  "handoff": "strict\u22651 (contained+slow) then FROZEN pi_0 delivers K6",
+  "candidate": "support-bounded pi_0 + clipped offset seq",
+  "expert": "bounded CEM (existence only, not a learned policy)",
+  "shots": 24,
+  "length": 30,
+  "iters": 4,
+  "mag_max": 0.2,
+  "horizon": 120,
+  "controls": [
+   "pi_0",
+   "random"
+  ]
+ },
+ "panel": {
+  "n": 30,
+  "families": {
+   "contact_retention": 25,
+   "transport": 5
+  },
+  "all_held_out": true,
+  "strict": 0
+ },
+ "aggregate": {
+  "pi_0": {
+   "handoff_rate": 0.1,
+   "k6_coverage": 0.1,
+   "mean_max_strict": 0.6
+  },
+  "random": {
+   "handoff_rate": 0.267,
+   "k6_coverage": 0.2,
+   "mean_max_strict": 1.33
+  },
+  "cem_expert": {
+   "handoff_rate": 0.333,
+   "k6_coverage": 0.333,
+   "mean_max_strict": 2.0
+  }
+ },
+ "per_family": {
+  "contact_retention": {
+   "n": 25,
+   "pi0_K6": 0.12,
+   "cem_K6": 0.32,
+   "cem_handoff": 0.32
+  },
+  "transport": {
+   "n": 5,
+   "pi0_K6": 0.0,
+   "cem_K6": 0.4,
+   "cem_handoff": 0.4
+  }
+ },
+ "verdict": "PARTIAL_CARRY_COVERAGE_CANDIDATE_CLASS_WORKS_FOR_A_SUBSET",
+ "next_lever": "a bounded carry-prefix delivers end-to-end on a subset (CEM 0.333 vs pi_0 0.1, and CEM>random 0.2 so SEARCH helps, not just any perturbation); before distilling a carry actor, WIDEN the support (mag_max/length/horizon): if coverage rises \u2192 support-limited; if it plateaus \u2192 the candidate class (pi_0+offset) is wrong for carry and a carry-specific action structure is needed",
+ "verdict_note": "auto-verdict recomputed: 0.5 bar too harsh for 33%/3.3x partial coverage"
+}

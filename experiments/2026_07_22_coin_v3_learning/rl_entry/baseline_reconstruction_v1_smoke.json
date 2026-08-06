@@ -1,0 +1,244 @@
+{
+ "campaign": "COIN_FEEDBACK_BASELINE_RECONSTRUCTION_V1",
+ "date": "2026-07-23",
+ "no_training": true,
+ "smoke": true,
+ "horizon": 60,
+ "frozen_arc": [
+  {
+   "verdict": "PHASE_GATED_RESIDUAL_CRITIC_ROUTE_BLOCKED",
+   "artifact": "reports/2026-07-23-coin-push-delivery-evening-v2.json",
+   "exists": true,
+   "sha256_16": "aa580d64b8a180d0"
+  },
+  {
+   "verdict": "HOLD_SIGNAL_DOMINATED_BY_HARM",
+   "artifact": "experiments/2026_07_22_coin_v3_learning/rl_entry/beneficial_support_audit_v1.json",
+   "exists": true,
+   "sha256_16": "cac2c2573e0c1101"
+  },
+  {
+   "verdict": "PHASE_SWITCHED_TD3_STAGE1_NO_IMPROVEMENT",
+   "artifact": "experiments/2026_07_22_coin_v3_learning/rl_entry/td3_baseline_v1_results.json",
+   "exists": true,
+   "sha256_16": "13c78ca57fe8e71a"
+  },
+  {
+   "verdict": "PHASE_SWITCHED_TD3_STAGE1B_NO_IMPROVEMENT",
+   "artifact": "experiments/2026_07_22_coin_v3_learning/rl_entry/td3_stage1b_results.json",
+   "exists": true,
+   "sha256_16": "a359ece5420a1346"
+  },
+  {
+   "verdict": "PHASE_SWITCHED_TD3_STAGE1C_NO_IMPROVEMENT",
+   "artifact": "experiments/2026_07_22_coin_v3_learning/rl_entry/td3_stage1c_results.json",
+   "exists": true,
+   "sha256_16": "3736db29e8fded23"
+  },
+  {
+   "verdict": "TRANSPORT_DWELL_TD3_NO_IMPROVEMENT",
+   "artifact": "experiments/2026_07_22_coin_v3_learning/rl_entry/transport_dwell_results.json",
+   "exists": true,
+   "sha256_16": "062573bd67d769ce"
+  },
+  {
+   "verdict": "FEEDBACK_CHUNK_WARMSTART_V2_STILL_UNDERPERFORMS",
+   "artifact": "experiments/2026_07_22_coin_v3_learning/rl_entry/feedback_chunk_warmstart_v2.json",
+   "exists": true,
+   "sha256_16": "65ba43413502ab34"
+  },
+  {
+   "verdict": "CHUNK_SUPERVISED_M1_FEEDBACK_NO_GAIN",
+   "artifact": "experiments/2026_07_22_coin_v3_learning/rl_entry/chunk_m1_diagnostic.json",
+   "exists": true,
+   "sha256_16": "3171532026ea248b"
+  }
+ ],
+ "identities": {
+  "pi0": {
+   "path": "experiments/2026_07_22_coin_v3_learning/rl_entry/frozen/pi0_shared_clip_actor.pt",
+   "sha256": "1902454ca7a74c2716798589b532853d5c27f23c49245b0973ca03be4da761b0",
+   "expected_prefix": "1902454c",
+   "role": "frozen deployed late controller B"
+  },
+  "e_approach": {
+   "path": "experiments/2026_07_08_seed_stabilized/E_valselect_v2.pt",
+   "sha256": "7dbbf1a7782f39f067eeb9f23fc22d58fc7ea33c5e677ba9c5beca4f575e02ae",
+   "expected_prefix": "7dbbf1a7",
+   "role": "recovered frozen approach A"
+  },
+  "planner_config": {
+   "horizon": 30,
+   "pop": 40,
+   "iters": 6,
+   "elite": 8,
+   "scorer": "lexo strict>dwell>-min_dtz>-min_speed>-effort (NO contact term)"
+  },
+  "reward": {
+   "file": "data/robotics/galambos_task_deliver_v3.hymeko",
+   "sha256_16": "d42c9cbfbe5e343e",
+   "held_dwell": 6
+  },
+  "certifier": {
+   "center_tol": 0.02,
+   "settle_vel": 0.06,
+   "dwell_req": 6,
+   "grading": "CoinRL4Dof._strict>=6 \u2227 touched"
+  },
+  "seed_banks": {
+   "transport": {
+    "n": 15,
+    "sha16": "cbc49369aa311dfa"
+   },
+   "braking": {
+    "n": 10,
+    "sha16": "ed6d090fe382ab5b"
+   },
+   "settling_dwell": {
+    "n": 6,
+    "sha16": "a0598728dd04355a"
+   }
+  },
+  "d_pilot": {
+   "path": "experiments/2026_07_22_coin_v3_learning/receding_horizon/feedback_pilot_h30_result.json",
+   "sha256_16": "1115ade36b17f2b8"
+  }
+ },
+ "gold_baseline": {
+  "A_e_approach": {
+   "start": "neutral",
+   "n": 9,
+   "first_contact": 9,
+   "bilateral_grasp": 5,
+   "scope": "approach-only"
+  },
+  "B_pi0": {
+   "start": "dev-handoff",
+   "n": 1,
+   "first_contact": 1.0,
+   "bilateral_grasp": 0.0,
+   "required_contact_retention": 1.0,
+   "first_contact_loss_step": 0.0,
+   "target_entry": 1.0,
+   "entry_velocity": 0.1351,
+   "target_exit": 0.0,
+   "braking": 0.0291,
+   "max_dwell": 0.0,
+   "strict_success": 0.0,
+   "total_return": -31.8505,
+   "progress": 0.057,
+   "lost_required_contact": 0.0
+  },
+  "C_h30_planner": {
+   "start": "dev-handoff",
+   "n": 1,
+   "first_contact": 1.0,
+   "bilateral_grasp": 0.0,
+   "required_contact_retention": 0.25,
+   "first_contact_loss_step": 2.0,
+   "target_entry": 1.0,
+   "entry_velocity": 1.8079,
+   "target_exit": 0.0,
+   "braking": 1.8029,
+   "max_dwell": 6.0,
+   "strict_success": 1.0,
+   "total_return": 13.8816,
+   "progress": 0.0617,
+   "lost_required_contact": 1.0
+  },
+  "D_composed_h30": {
+   "start": "neutral",
+   "source": "read from feedback_pilot_h30 (not re-run)",
+   "n": 9,
+   "delivered": 7,
+   "contact_loss_after_acq": 5,
+   "target_exit_after_entry": 1
+  }
+ },
+ "teacher_qualification": {
+  "aggregate": {
+   "n": 1,
+   "new_required_contact_losses": 1,
+   "new_target_exits": 0,
+   "mean_d_contact_retention": -0.75,
+   "mean_d_dwell": 6.0,
+   "mean_d_return": 45.7321,
+   "planner_strict_rate": 1.0,
+   "pi0_strict_rate": 0.0,
+   "planner_exit_rate": 0.0,
+   "pi0_exit_rate": 0.0,
+   "planner_req_contact": 0.25,
+   "pi0_req_contact": 1.0,
+   "n_improved": 1
+  },
+  "per_state": [
+   {
+    "contact_ok": false,
+    "exit_ok": true,
+    "improved": true,
+    "d_contact": -0.75,
+    "d_dwell": 6,
+    "d_strict": 1,
+    "d_return": 45.7321
+   }
+  ],
+  "clauses": {
+   "contact": false,
+   "exit": true,
+   "improve": true
+  },
+  "qualified": false,
+  "verdict": "H30_TEACHER_UNQUALIFIED:LOSES_REQUIRED_CONTACT"
+ },
+ "per_state": [
+  {
+   "seed": 6200,
+   "family": "transport",
+   "prefix": 35,
+   "pi0": {
+    "first_contact": true,
+    "first_contact_step": 0,
+    "bilateral_grasp": false,
+    "bilateral_step": null,
+    "required_contact_retention": 1.0,
+    "first_contact_loss_step": null,
+    "lost_required_contact": false,
+    "target_entry": true,
+    "entry_step": 15,
+    "entry_velocity": 0.1351,
+    "target_exit": false,
+    "braking": 0.0291,
+    "max_coin_speed_near": 0.1593,
+    "max_dwell": 0,
+    "strict_success": false,
+    "progress": 0.057,
+    "total_return": -31.8505,
+    "stable_entry_step": null,
+    "n_steps": 60
+   },
+   "planner": {
+    "first_contact": true,
+    "first_contact_step": 0,
+    "bilateral_grasp": false,
+    "bilateral_step": null,
+    "required_contact_retention": 0.25,
+    "first_contact_loss_step": 2,
+    "lost_required_contact": true,
+    "target_entry": true,
+    "entry_step": 1,
+    "entry_velocity": 1.8079,
+    "target_exit": false,
+    "braking": 1.8029,
+    "max_coin_speed_near": 1.8079,
+    "max_dwell": 6,
+    "strict_success": true,
+    "progress": 0.0617,
+    "total_return": 13.8816,
+    "stable_entry_step": 8,
+    "n_steps": 14
+   }
+  }
+ ],
+ "verdict": "H30_TEACHER_UNQUALIFIED:LOSES_REQUIRED_CONTACT",
+ "next_command": "STEP 7 \u2014 REPAIR the H=30 planner objective (lexicographic/constrained: 1 preserve required contact, 2 prevent target exit, 3 progress, 4 brake, 5 settle+K6), then re-evaluate the planner itself until it qualifies. DO NOT train a student."
+}

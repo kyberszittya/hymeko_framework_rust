@@ -1,0 +1,803 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.65in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black}
+\graphicspath{{./}{reports/}{reports/figures/}{reports/figures/topology_zoo/}{reports/figures/toy_worlds/}{reports/figures/walk_geometry/}{docs/seminar/figures/}{docs/figures/2026-06-21-policy-storage/}}
+
+\title{\textbf{HyMeKo Visual Atlas}\\[2pt]
+\large Figures, plots, tables, and evidence map from the accessible workspace}
+\author{Codex visual companion for Dr. Csaba Hajdu}
+\date{2026-06-30}
+
+\newcommand{\src}[1]{\par\footnotesize\textcolor{gray!70!black}{Source: \nolinkurl{#1}}\normalsize}
+\newcommand{\note}[1]{\par\small\textit{#1}\normalsize}
+\newcommand{\taggood}{\textcolor{green!45!black}{strong}}
+\newcommand{\tagmixed}{\textcolor{orange!70!black}{mixed}}
+\newcommand{\tagopen}{\textcolor{blue!60!black}{open}}
+\newcommand{\tagneg}{\textcolor{red!70!black}{negative}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent This is the visual companion to
+\nolinkurl{reports/2026-06-30-hymeko-exploration-summary.pdf}. It explains the
+current HyMeKo state mostly through figures, plots, compact tables, and
+evidence captions. It only uses artifacts accessible in this workspace: reports,
+figures, benchmark CSVs, JSON summaries, and the current verification run.
+\end{abstract}
+
+\section{One-page evidence map}
+
+This page is the reader's orientation key. It separates mature, publishable
+evidence from open research bets, and it names the figure family that supports
+each claim. The rest of the atlas expands each row into its figures, tables,
+and missing discriminator.
+
+\begin{table}[!htbp]\centering\small
+\begin{tabular}{p{0.15\linewidth}p{0.28\linewidth}p{0.36\linewidth}p{0.11\linewidth}}
+\toprule
+Area & Main visual evidence & What it says & Readiness \\
+\midrule
+Cross-view IR & Cross-view grid and verification table & One HyMeKo source can
+emit multiple concrete views whose recovered invariants agree. & \taggood \\
+Performance substrate & Scaling and control-loop tables & Core emission,
+expansion, and inference paths are fast enough to support tooling and demos. & \taggood \\
+Topology matching & Topology map, zoo, arity plots & More edges do not
+automatically help; controller topology/arity must match the plant. & \taggood \\
+RL/control & Overnight RL, toy worlds, BC/off-policy plots & BC works; PPO or
+off-policy refinement can collapse task success; fast toy lab is needed. & \tagopen \\
+Vision/Soma & Readout ladder, spatial tree, RicciStim transfer & Position-aware
+readout partially rehabilitates Soma vision; readout matters more than holonomy. & \tagmixed \\
+FSR-LM & Architecture diagrams, bpb curve, speed curve & FSR pre-norm beats a
+tiny transformer on bpb; top-k spike gate fixes dense long-context wall. & \tagopen \\
+Holonomy & Probe table & Pure cycle holonomy is multiplicative transport, not
+plain additive signed-walk aggregation. & \tagopen \\
+\bottomrule
+\end{tabular}
+\caption{Compact map of the workspace's current evidence.}
+\end{table}
+
+\section{Cross-view consistency: the publishable kernel}
+
+This is the strongest near-term contribution because it is a property of the
+working system, not a training run. The verifier treats each emitted view as a
+separate concrete syntax, extracts the same invariant, and checks agreement
+against the IR-level query. That makes model drift a falsifiable engineering
+failure rather than a vague documentation risk.
+
+\begin{figure}[!htbp]\centering
+\includegraphics[width=0.90\linewidth]{reports/figures/cross_view_consistency.png}
+\caption{Machine-verified cross-view consistency. The key claim is a commuting
+square over real emitted views: parse the concrete view back to an invariant,
+and it agrees with the IR-level invariant.}
+\src{reports/figures/cross_view_consistency.png; reports/2026-06-28-cross-view-consistency.md}
+\end{figure}
+
+\begin{table}[!htbp]\centering\small
+\begin{tabular}{p{0.28\linewidth}p{0.24\linewidth}p{0.34\linewidth}}
+\toprule
+Domain & Views checked & Recovered invariant \\
+\midrule
+Robotics / kinematics & URDF, SDF, MJCF, DOT, Mermaid & Links, masses,
+actuated joints, parent/child polarity, joint axes; exact for interchange views,
+topological for diagram views. \\
+Systems engineering & SysML requirements, DOT requirements & Requirements,
+blocks, satisfy/allocate/derive relations, coverage, DAG/forest-style global
+properties. \\
+Drift demo & Single-source HyMeKo vs pairwise manual files & HyMeKo re-emission
+keeps views synchronized; pairwise editing drifts by construction. \\
+\bottomrule
+\end{tabular}
+\caption{The central formal-methods story is not a benchmark score; it is
+machine-checkable consistency across concrete views.}
+\end{table}
+
+\section{Core scaling and control-loop substrate}
+
+The infrastructure layer matters because the research claims sit on top of a
+real compiler, transform registry, query engine, and tensor substrate. These
+tables are not the paper's main novelty, but they show that the framework can
+run the workflows that the papers and demos require.
+
+\subsection{Evidence inventory}
+
+\begin{table}[!htbp]\centering\small
+\begin{tabular}{lrl}
+\toprule
+Artifact type under \nolinkurl{reports/} & Count & Meaning \\
+\midrule
+Markdown reports & 345 & Acceptance records and experiment narratives. \\
+JSONL logs & 78 & Per-seed or per-run raw experiment traces. \\
+PDF reports & 61 & Built technical reports, plans, and paper-style notes. \\
+LaTeX sources & 56 & Rebuildable source for technical notes. \\
+JSON summaries & 15 & Compact numeric outputs and benchmark summaries. \\
+PNG figures at report root & 13 & Directly embedded summary plots. \\
+\bottomrule
+\end{tabular}
+\caption{The repo is not just code; it is an evidence archive. This matters
+because most claims can be traced to a report, figure, and raw-ish artifact.}
+\src{PowerShell inventory over reports/}
+\end{table}
+
+\begin{table}[!htbp]\centering\small
+\begin{tabular}{lrrrrrrrr}
+\toprule
+June report date & 15 & 16 & 17 & 18 & 19 & 20 & 21 & 29 \\
+\midrule
+Markdown reports & 17 & 7 & 10 & 12 & 14 & 14 & 13 & 12 \\
+\bottomrule
+\end{tabular}
+\caption{June 2026 had several dense experiment days. The atlas focuses on the
+highest-signal slices, not every report.}
+\src{PowerShell grouping of reports/2026-06-*.md}
+\end{table}
+
+\begin{table}[!htbp]\centering\small
+\begin{tabular}{lrrr}
+\toprule
+Corpus & Compile median ms & Star expansion median ms & MP forward median ms \\
+\midrule
+10 hyperedges & 0.514 & 0.000201 & 0.00684 \\
+100 hyperedges & 3.074 & 0.00129 & 0.0580 \\
+1000 hyperedges & 30.852 & 0.0128 & 0.554 \\
+10000 hyperedges & 465.336 & 0.169 & 13.072 \\
+\bottomrule
+\end{tabular}
+\caption{Selected scaling rows from the benchmark CSV. Expansion is tiny; message
+passing stays practical into 10k-edge synthetic fixtures.}
+\src{hymeko_bench/results/scaling.csv}
+\end{table}
+
+\begin{table}[!htbp]\centering\small
+\begin{tabular}{llrr}
+\toprule
+Pipeline & Stage & Median us & P95 us \\
+\midrule
+Hypergraph & state assembly & 0.190 & 0.201 \\
+Hypergraph & forward & 1.313 & 1.343 \\
+Hypergraph & total & 1.593 & 1.624 \\
+TD3 & total & 0.431 & 0.441 \\
+PID+TD3 & total & 0.371 & 0.401 \\
+\bottomrule
+\end{tabular}
+\caption{Older control-cycle benchmark: the hypergraph path has overhead versus
+TD3/PID+TD3 but remains microsecond-scale in this harness.}
+\src{hymeko_bench/results/control_cycle.csv}
+\end{table}
+
+\section{Hypergraph views and tensor intuition}
+
+HyMeKo is most legible when the same object is viewed through several lenses:
+star expansion, clique expansion, tensor/incidence views, and generated target
+formats. These figures explain why the framework can talk simultaneously about
+formal views, graph learning, and control. They also explain why arity and view
+choice are not cosmetic: they change what information is preserved.
+
+\begin{figure}[!htbp]\centering
+\begin{minipage}{0.48\linewidth}\centering
+\includegraphics[width=0.88\linewidth]{docs/seminar/figures/star_expansion.png}
+\small Star expansion
+\end{minipage}
+\begin{minipage}{0.48\linewidth}\centering
+\includegraphics[width=0.88\linewidth]{docs/seminar/figures/clique_expansion.png}
+\small Clique expansion
+\end{minipage}
+\caption{Two canonical graph views of a hypergraph. Star expansion preserves
+hyperedge identity via hub nodes; clique expansion collapses each hyperedge into
+pairwise relations. This visual distinction underlies much of the arity and
+view-consistency story.}
+\src{docs/seminar/figures/star_expansion.png; docs/seminar/figures/clique_expansion.png}
+\end{figure}
+
+\begin{figure}[!htbp]\centering
+\includegraphics[width=0.90\linewidth]{docs/seminar/figures/tensor_panels.png}
+\caption{Tensor-view panels used in the seminar materials. These are the bridge
+from declarative signed hypergraphs to tensorized learning/control substrates:
+incidence, expansion, and message-passing views become concrete arrays.}
+\src{docs/seminar/figures/tensor_panels.png}
+\end{figure}
+
+\begin{figure}[!htbp]\centering
+\includegraphics[width=0.88\linewidth]{docs/seminar/figures/publications.png}
+\caption{Publication/portfolio map from the seminar deck. It is useful as a
+visual reminder that the project has multiple venue families, not one monolithic
+paper.}
+\src{docs/seminar/figures/publications.png}
+\end{figure}
+
+\section{Topology: the matching law}
+
+The topology line asks a control-facing question: if the plant has a coupling
+structure, should the controller mirror it? The supervised topology map says yes
+at proxy scale: the matched controller wins every row, while the densest
+complete controller does not act as a universal substitute. The important
+claim is not ``this topology is best''; it is ``match beats capacity.''
+
+\begin{figure}[!htbp]\centering
+\includegraphics[width=0.93\linewidth]{reports/topology_map/topology_map.png}
+\caption{Topology-to-performance matrix. The matched controller wins every
+plant in this supervised structural proxy; the dense complete controller is not
+a universal solution.}
+\src{reports/topology_map/topology_map.png; reports/2026-06-27-topology-performance-map.md}
+\end{figure}
+
+\begin{figure}[!htbp]\centering
+\includegraphics[width=0.96\linewidth]{reports/figures/topology_zoo/gallery.png}
+\caption{Topology zoo: generic graphs, combinatorial designs, and extremal
+high-symmetry constructions. These are candidate walk bases for structural
+controllers.}
+\src{reports/figures/topology_zoo/gallery.png; reports/2026-06-28-topology-zoo.tex}
+\end{figure}
+
+\begin{figure}[!htbp]\centering
+\includegraphics[width=0.85\linewidth]{reports/figures/walk_geometry/coherence_bar.png}
+\caption{Walk-basis frame coherence across topologies. Low coherence looks
+mathematically attractive, but the companion control map shows that matching the
+plant dominates any universal topology ranking.}
+\src{reports/figures/walk_geometry/coherence_bar.png}
+\end{figure}
+
+\section{Arity: hypergraph lift is not free}
+
+This section kills an attractive but wrong shortcut: lifting a graph plant into
+a hypergraph does not automatically improve compute or accuracy. The lift helps
+only when the plant itself is hypergraph-structured. That gives the project a
+cleaner law: match arity to the plant, instead of treating hypergraphs as a free
+upgrade over graphs.
+
+\begin{figure}[!htbp]\centering
+\begin{minipage}{0.48\linewidth}\centering
+\includegraphics[width=\linewidth]{reports/figures/topology_zoo/compute_arity.png}
+\small Compute cost
+\end{minipage}
+\begin{minipage}{0.48\linewidth}\centering
+\includegraphics[width=\linewidth]{reports/figures/topology_zoo/accuracy_arity.png}
+\small Accuracy on graph plants
+\end{minipage}
+\caption{The closed-neighbourhood hypergraph lift costs more and hurts graph
+plants. The lift is a structural change, not a universal upgrade.}
+\src{reports/figures/topology_zoo/compute_arity.png; reports/figures/topology_zoo/accuracy_arity.png}
+\end{figure}
+
+\begin{figure}[!htbp]\centering
+\includegraphics[width=0.58\linewidth]{reports/figures/topology_zoo/arity_matching.png}
+\caption{Arity matching. Graph controllers win on graph plants; hypergraph
+controllers win on hypergraph plants. This is one of the cleanest control-side
+principles in the repo.}
+\src{reports/figures/topology_zoo/arity_matching.png; reports/2026-06-29-arity-study.tex}
+\end{figure}
+
+\section{RL/control: useful substrate, unresolved architecture win}
+
+The RL part is an experimental engine rather than a finished victory claim. The
+repo already has MuJoCo tasks, BC warm starts, PPO/off-policy refiners, GIF
+rendering, checkpoints, and fast physics-free sanity worlds. The key lesson is
+that task success and scalar return must be separated: a refinement run can make
+the reward curve look better while the policy stops completing the task.
+
+\begin{figure}[!htbp]\centering
+\includegraphics[width=0.85\linewidth]{reports/figures/overnight_rl.png}
+\caption{Overnight RL result. Behavior cloning produces useful pick-and-place
+success; PPO refinement improves scalar return while actual lift/place success
+collapses. This is reward misalignment, not yet an architecture win.}
+\src{reports/figures/overnight_rl.png; reports/2026-06-29-rl-overnight.md}
+\end{figure}
+
+\begin{figure}[!htbp]\centering
+\begin{minipage}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{reports/figures/toy_worlds/ablations.png}
+\small Toy-world ablations
+\end{minipage}
+\begin{minipage}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{reports/figures/toy_worlds/nav_trajectories.png}
+\small Navigation trajectories
+\end{minipage}
+\caption{Fast RL sanity worlds. These physics-free tests run real backbones in
+seconds and are the right front-end before hour-scale MuJoCo runs.}
+\src{reports/figures/toy_worlds/ablations.png; reports/figures/toy_worlds/nav_trajectories.png}
+\end{figure}
+
+\begin{figure}[!htbp]\centering
+\begin{minipage}{0.32\linewidth}\centering
+\includegraphics[width=\linewidth]{reports/figures/bc_breaks_wall.png}
+\small BC break-through
+\end{minipage}
+\begin{minipage}{0.32\linewidth}\centering
+\includegraphics[width=\linewidth]{reports/figures/offpolicy_collapse.png}
+\small Off-policy collapse
+\end{minipage}
+\begin{minipage}{0.32\linewidth}\centering
+\includegraphics[width=\linewidth]{reports/figures/fanuc_ppo_return.png}
+\small Return curve
+\end{minipage}
+\caption{Manipulation learning diagnostics. The visual pattern is consistent:
+imitation helps; naive refinement can move the scalar objective while damaging
+task success.}
+\src{reports/figures/bc_breaks_wall.png; reports/figures/offpolicy_collapse.png; reports/figures/fanuc_ppo_return.png}
+\end{figure}
+
+\begin{table}[!htbp]\centering\small
+\begin{tabular}{lrrr}
+\toprule
+Fast RL arm & Reward / accuracy signal & Deploy ms & Params \\
+\midrule
+MLP & -0.157 & 0.12 & 3847 \\
+SA-HSiKAN & -0.158 & 0.91 & 775 \\
+HSiKAN-Chebyshev & -0.125 & 3.63 & 8071 \\
+HSiKAN-CR & -0.133 & 4.67 & 8071 \\
+Mixture & -0.146 & 5.17 & 11833 \\
+\bottomrule
+\end{tabular}
+\caption{Fast bandit sanity results. SA-HSiKAN is far smaller/faster than vanilla
+HSiKAN; HSiKAN-Chebyshev can improve reward but costs more rollout time.}
+\src{reports/2026-06-29-fast-rl-sanity-suite.md}
+\end{table}
+
+\section{Vision/Soma: readout is the lever}
+
+The vision line is best read as a diagnosis story. Early global-mean-pool
+Soma/RicciStim looked falsified against simple controls. The later readout
+sweeps show that the structure was often being compressed through the wrong
+interface: discarding position erased the useful signal. Spatial-pyramid pooling
+is the current reusable component because it keeps multi-scale position without
+requiring a fixed flatten head.
+
+\begin{figure}[!htbp]\centering
+\includegraphics[width=0.82\linewidth]{reports/figures/soma_cheby_cell_readout_20260629.png}
+\caption{Cell-by-readout sweep. The readout effect is much larger than the cell
+effect: preserving position can flip Soma from apparent failure to useful signal.}
+\src{reports/figures/soma_cheby_cell_readout_20260629.png; reports/2026-06-29-soma-cheby-cell-readout-sweep.md}
+\end{figure}
+
+\begin{figure}[!htbp]\centering
+\begin{minipage}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{reports/figures/soma_posreadout_cluttered_20260629.png}
+\small Single-vector readout plateau
+\end{minipage}
+\begin{minipage}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{reports/figures/soma_readout_ladder_20260629.png}
+\small Readout ladder
+\end{minipage}
+\caption{Position-aware readout program. Mean pooling discards location;
+attention helps; spatial pyramid/tree is the scalable middle; flatten is the
+fixed-grid upper reference.}
+\src{reports/figures/soma_posreadout_cluttered_20260629.png; reports/figures/soma_readout_ladder_20260629.png}
+\end{figure}
+
+\begin{figure}[!htbp]\centering
+\begin{minipage}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{reports/figures/soma_ricci_tree_readout_20260630.png}
+\small RicciStim transfer
+\end{minipage}
+\begin{minipage}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{reports/figures/soma_holonomy_group_ablation_20260629.png}
+\small Holonomy group ablation
+\end{minipage}
+\caption{The visual verdict: position-aware spatial pooling helps RicciStim;
+Z2/U(1) holonomy variants do not become the vision lever.}
+\src{reports/figures/soma_ricci_tree_readout_20260630.png; reports/figures/soma_holonomy_group_ablation_20260629.png}
+\end{figure}
+
+\begin{table}[!htbp]\centering\small
+\begin{tabular}{lrr}
+\toprule
+Readout & Parameters & Cluttered-MNIST accuracy \\
+\midrule
+Linear control & 23050 & 0.213 \\
+Mean-pool & 2010 & 0.314 \\
+Attention & 2027 & 0.466 \\
+Spatial tree & 5227 & 0.537 \\
+Flatten & 24890 & 0.617 \\
+\bottomrule
+\end{tabular}
+\caption{Readout ladder as a table. The spatial-tree readout is the scalable
+knee: about 87 percent of the attention-to-flatten gap at about one fifth of
+flatten's parameters.}
+\src{reports/2026-06-29-soma-spatial-tree-readout.md}
+\end{table}
+
+\section{FSR-LM: architecture, quality, and speed}
+
+The FSR language-model line is the newest architecture bet. It is not a mature
+scaling result; it is a tiny, controlled proof-of-concept that separates which
+parts of the idea currently work. The pre-norm FSR mixer plus HSiKAN channel mix
+beats a matched transformer on byte-level TinyShakespeare, while the spherical
+Gomb residual loses. Sparse top-k fixes the long-context memory wall, but fused
+attention still wins absolute throughput.
+
+\begin{figure}[!htbp]\centering
+\begin{minipage}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{reports/2026-06-29-fsr-lm-arch-model.png}
+\small Model stack
+\end{minipage}
+\begin{minipage}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{reports/2026-06-29-fsr-lm-arch-mixer.png}
+\small Fiber-Spike-Rotor mixer
+\end{minipage}
+\caption{FSR-LM architecture. The sequence mixer is signed, rotor-transported,
+and spike-gated; the strongest reported variant uses standard pre-norm rather
+than the Gomb spherical residual.}
+\src{reports/2026-06-29-fsr-lm-arch-model.png; reports/2026-06-29-fsr-lm-arch-mixer.png}
+\end{figure}
+
+\begin{figure}[!htbp]\centering
+\begin{minipage}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{reports/2026-06-29-fsr-lm-phase1.png}
+\small TinyShakespeare A/B
+\end{minipage}
+\begin{minipage}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{reports/2026-06-29-fsr-lm-speed.png}
+\small Throughput vs sequence length
+\end{minipage}
+\caption{FSR quality and speed. FSR pre-norm beats the matched transformer on
+tiny byte-LM bpb; hard top-k sparsity prevents the dense long-context wall, but
+absolute speed still trails fused transformer kernels.}
+\src{reports/2026-06-29-fsr-lm-phase1.png; reports/2026-06-29-fsr-lm-speed.png}
+\end{figure}
+
+\begin{table}[!htbp]\centering\small
+\begin{tabular}{lrrr}
+\toprule
+Model & Val bpb median & Tokens/s median & Params \\
+\midrule
+FSR sphere & 2.7702 & 11780 & 367328 \\
+FSR pre-norm & 2.4791 & 11161 & 368960 \\
+Transformer & 2.5698 & 35080 & 369324 \\
+\bottomrule
+\end{tabular}
+\caption{FSR Phase 1 result table. The win belongs to FSR pre-norm; the sphere
+residual loses at full budget.}
+\src{reports/2026-06-29-fsr-lm-phase1-ab.json}
+\end{table}
+
+\begin{table}[!htbp]\centering\small
+\begin{tabular}{rrrr}
+\toprule
+Sequence length & Dense FSR tok/s & FSR k=16 tok/s & Transformer tok/s \\
+\midrule
+128 & 5510 & 5795 & 20789 \\
+256 & 4527 & 11365 & 35275 \\
+512 & 583 & 14765 & 46808 \\
+1024 & OOM & 11138 & 106329 \\
+\bottomrule
+\end{tabular}
+\caption{Top-k sparse FSR changes the scaling regime: dense collapses/OOMs while
+k=16 remains feasible.}
+\src{reports/2026-06-29-fsr-lm-throughput-vs-T.json}
+\end{table}
+
+\section{Holonomy: multiplicative transport is the signal}
+
+This section is deliberately small but important. It decides what kind of
+``structure'' the gauge line needs. A cycle-parity label is not an additive
+aggregate; it is a product accumulated around a loop. The current probe shows
+that a multiplicative transport reader solves the task exactly, while an
+additive signed-walk reader, a flat MLP, and a linear guard stay near chance.
+That supports rotor/transport-style mechanisms for holonomy-heavy tasks and
+warns against overclaiming plain additive HSiKAN on pure parity.
+
+\begin{table}[!htbp]\centering\small
+\begin{tabular}{lrrp{0.34\linewidth}}
+\toprule
+Arm & Accuracy & Params & Meaning \\
+\midrule
+Transport / rotor-like reader & 1.0000 & 49 & Reads the product around the
+cycle exactly. \\
+Additive signed-walk reader & 0.4805 & 225 & The additive HSiKAN-like
+mechanism does not expose pure parity holonomy here. \\
+MLP & 0.5913 & 1505 & Near chance; parity is hard from raw local signs. \\
+Linear guard & 0.5054 & 13 & Confirms no local linear leakage. \\
+\bottomrule
+\end{tabular}
+\caption{Current holonomy probe run performed during the exploration. This is a
+decisive visual table: pure cycle holonomy is multiplicative transport, not a
+plain additive signed-walk sum.}
+\src{Command: .\\.venv\\Scripts\\python.exe -m hymeko_rl.holonomy_probe --ring-size 12 --seeds 2}
+\end{table}
+
+\begin{table}[!htbp]\centering\small
+\begin{tabular}{p{0.22\linewidth}p{0.31\linewidth}p{0.31\linewidth}}
+\toprule
+Question & What the probe answers & What it does not yet answer \\
+\midrule
+Is parity locally visible? & No. Linear guard stays at chance, so the label is
+not leaking through a local linear cue. & It does not test every possible
+feature-engineered baseline. \\
+Does additive message passing read pure holonomy? & No. The additive reader is
+near chance on this task. & It does not falsify HSiKAN on non-parity tasks. \\
+Does transport read holonomy? & Yes. Multiplicative transport reaches 1.0
+accuracy in the current run. & Continuous Spin holonomy and aromaticity variants
+still need full execution. \\
+\bottomrule
+\end{tabular}
+\caption{Interpretation guard for the holonomy probe. The result is sharp, but
+its scope is parity-like cycle holonomy, not all structural learning.}
+\end{table}
+
+\section{Signed-link and rotor line}
+
+The signed-link line contains some of the strongest-looking numbers in the repo,
+but it also contains the strongest warnings about leakage and attribution. The
+safe framing is: strict protocol design and structural features are valuable;
+rotor embeddings are parameter-efficient and inductive; the rotor geometry
+itself is not yet the measured source of AUROC gains. This section therefore
+prioritizes audit discipline over headline SOTA language.
+
+\begin{figure}[!htbp]\centering
+\begin{minipage}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{docs/seminar/figures/rotor_param_efficiency.png}
+\small Parameter efficiency
+\end{minipage}
+\begin{minipage}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{docs/seminar/figures/rotor_pareto.png}
+\small Pareto view
+\end{minipage}
+\caption{Cayley-rotor signed-link evidence. The honest reading from the reports:
+rotor embeddings are parameter-efficient and inductive, but later ablations say
+the rotor geometry itself is not the sole load-bearing ingredient for AUROC. The
+value is structural features plus strict leakage discipline.}
+\src{docs/seminar/figures/rotor_param_efficiency.png; docs/seminar/figures/rotor_pareto.png; ROADMAP.md; DONE.md}
+\end{figure}
+
+\begin{table}[!htbp]\centering\small
+\begin{tabular}{lrrrp{0.34\linewidth}}
+\toprule
+Model/result family & Alpha & OTC & Slashdot/Epinions & Interpretation \\
+\midrule
+Gomb strict tuned & 0.897 & 0.915 & Slashdot 0.902 / Epinions 0.943 &
+Honest strict baseline; avoids the sigma-leakage that inflated earlier cycle
+numbers. \\
+Optuna-best HSiKAN & 0.996 & 0.993 & -- & Strong iso-protocol numbers, but
+reported as transductive/leakage-sensitive and must be framed carefully. \\
+Rotor-vs-MLP embed & tied & tied & tied & Foundational ablation: rotor
+geometry is not load-bearing on AUROC; structural features are the safer claim. \\
+\bottomrule
+\end{tabular}
+\caption{Signed-link takeaway table. The graph-learning line is valuable, but
+the publishable story is strict protocols and structural priors, not unqualified
+SOTA claims.}
+\src{docs/SOTA_RESULTS.md; reports/2026-06-18-rotor-vs-mlp-embed-ablation.md}
+\end{table}
+
+\begin{table}[!htbp]\centering\small
+\begin{tabular}{p{0.24\linewidth}p{0.30\linewidth}p{0.30\linewidth}}
+\toprule
+Risk & Why it matters & Current mitigation \\
+\midrule
+Sigma-product leakage & Cycle products can silently include test-edge sign
+information under transductive conventions. & Shuffle gates and strict
+train-edge enumeration identify inflated numbers. \\
+Geometry overclaim & Rotor representations can look novel even when an MLP
+embedding ties their AUROC. & Rotor-vs-MLP ablation reframes the win as
+structural features / inductive compactness. \\
+Protocol mismatch & Published baselines may use different dedup or reachability
+rules. & Protocol-matched SiGAT comparison and planned tier-2/3 audits. \\
+\bottomrule
+\end{tabular}
+\caption{Why the signed-link section should be read cautiously. The contribution
+is stronger when it leads with protocol honesty and parameter efficiency.}
+\end{table}
+
+\section{Policy-as-hypergraph storage}
+
+A useful bridge between the framework and RL is that trained policies can become
+HyMeKo artifacts themselves. The point is not only storing weights compactly; it
+is making policy provenance, reconstruction, and rendering part of the same
+hypergraph workflow. This is currently proven on cart-pole-scale policy storage
+and should be extended to manipulation policies once BC policies are selected as
+the reliable demo baseline.
+
+\begin{figure}[!htbp]\centering
+\begin{minipage}{0.32\linewidth}\centering
+\includegraphics[width=\linewidth]{docs/figures/2026-06-21-policy-storage/01-weight-matrix-star-expansion.png}
+\small Weight matrix as star expansion
+\end{minipage}
+\begin{minipage}{0.32\linewidth}\centering
+\includegraphics[width=\linewidth]{docs/figures/2026-06-21-policy-storage/03-actor-critic-dataflow.png}
+\small Actor-critic dataflow
+\end{minipage}
+\begin{minipage}{0.32\linewidth}\centering
+\includegraphics[width=\linewidth]{docs/figures/2026-06-21-policy-storage/06-roundtrip-verification.png}
+\small Round-trip verification
+\end{minipage}
+\caption{Policy storage as HyMeKo hypergraph. A trained policy can be serialized
+as a valid HyMeKo graph, reconstructed, and checked bit-exact in the reported
+cart-pole storage work. This is a bridge between framework and RL: models become
+first-class graph artifacts.}
+\src{docs/figures/2026-06-21-policy-storage/; reports/2026-06-21-policy-weight-storage.md}
+\end{figure}
+
+\begin{table}[!htbp]\centering\small
+\begin{tabular}{lrrp{0.38\linewidth}}
+\toprule
+Storage tier & HyMeKo size & External blob & Meaning \\
+\midrule
+T0 decimal & 332 KB & none & Human-readable but large. \\
+T1 base64/auto & 142--148 KB & none & More compact textual embedding. \\
+T2 content-addressed & 9 KB & NPZ blob & Small HyMeKo manifest plus verified
+external tensor payload. \\
+\bottomrule
+\end{tabular}
+\caption{Policy-storage tiers reported on 2026-06-21. The important idea is not
+compression alone; it is provenance and structural round-trip as part of the
+model artifact.}
+\src{DONE.md, 2026-06-21 policy-storage entries}
+\end{table}
+
+\section{Thirteen pursuit lanes: what is still missing}
+
+The atlas is evidence-heavy, but evidence is only useful if it points to the
+next decisive measurement. This board lists the thirteen lanes that would
+convert the repository's current state into a set of finished claims. Each lane
+has an existing artifact, a missing discriminator, and a smallest credible next
+action.
+
+\begin{table}[!htbp]\centering\scriptsize
+\begin{tabular}{rp{0.19\linewidth}p{0.27\linewidth}p{0.27\linewidth}p{0.14\linewidth}}
+\toprule
+\# & Lane & What exists now & Missing discriminator & Near action \\
+\midrule
+1 & Cross-view paper & Real CLI emitters, robotics+SysML witnesses, drift demo,
+proof bundle & Reviewer-proof positioning and final article polish & Submit
+T-SMC/SMC-style package. \\
+2 & CI consistency gate & 22-test cross-view suite, extractor strategies & CI
+integration and optional Gazebo/torch-dataflow extensions & Add verifier as
+regression gate. \\
+3 & Topology matching & 8/8 supervised topology map, exact equivariance guard &
+Closed-loop correlation on real control & Run matched-vs-mismatched controller
+on cart-pole/arm. \\
+4 & Arity matching & Graph-vs-hypergraph plant reversal proves matching law &
+More plant families and task types & Repeat on contact/gait hypergraph plants. \\
+5 & RL refinement & BC works; PPO/off-policy can collapse success & BC-anchor
+and success-aligned reward proving success does not collapse & Make BC anchor
+default for refine sweeps. \\
+6 & Fast RL lab & Bandit/grid/hex/collab toys; prescreen module & Correlation
+between toy ranking and MuJoCo ranking & One real-scale confirm per toy-chosen
+winner. \\
+7 & Holonomy & Transport solves parity; additive/MLP near chance & Continuous
+Spin holonomy and aromaticity versions through production arms & Extend probe
+beyond T1 parity. \\
+8 & StructuralActor & B-power collapse, speed/parameter win, Steiner basis &
+Closed-loop actuator use, not just supervised target fit & Wire to a control
+task. \\
+9 & FSR-LM & TinyShakespeare bpb win; sparse top-k long-context feasibility &
+Scale beyond 1 MB corpus, ablations of sign/rotor/spike/cell & Enwik8/text8
+subset with spike\_k=16. \\
+10 & Soma readout & Spatial tree/pyramid improves fixed and variable anchors &
+Natural-image or cortical-predictivity validation & Export
+SpatialPyramidPool and test in HyMeYOLO/RL vision. \\
+11 & Signed-link & Strict Gomb baseline, leakage audit, rotor Pareto evidence &
+Final strict baseline table and no-overclaim narrative & Finish tier-2/3 and
+shuffle audits. \\
+12 & Policy storage & Bit-exact policy round-trip and compact T2 storage &
+Generalize from cart-pole to manipulation policies & Store/render pick-place
+BC policies as HyMeKo artifacts. \\
+13 & Demo narrative & Many figures, GIFs, web views, editor surfaces & One
+curated path that a collaborator can run end-to-end & Script ``one source,
+many views, one policy'' demo. \\
+\bottomrule
+\end{tabular}
+\caption{The missing-detail board. These are the thirteen lanes that convert the
+atlas from evidence inventory into an execution plan.}
+\end{table}
+
+\begin{table}[!htbp]\centering\small
+\begin{tabular}{p{0.22\linewidth}p{0.26\linewidth}p{0.25\linewidth}p{0.17\linewidth}}
+\toprule
+Scenario / artifact & Current accessible outputs & Main risk visible in atlas & Best next measurement \\
+\midrule
+Pick-and-place & BC/PPO checkpoints, overnight plot, GIF folders & PPO improves
+return but collapses success & BC-anchor A/B on lift/place success. \\
+Coin-toss / Galambos & Collaborative GIFs, checkpoints, delivery table & CTDE
+undertrained; single agent currently wins & Longer CTDE refine with anchor. \\
+Planar walker & Walker checkpoint and GIF & Partial forward movement, not full
+goal reaching & 300-iter or shorter-goal confirm. \\
+Cart-pole storage & Policy graph, storage figures, GIFs & Easy task; structure
+not load-bearing & Use as storage/provenance demo, not architecture proof. \\
+FSR-LM & Phase0/1 plots, architecture diagrams, speed plots & Tiny scale and
+absolute speed gap & Larger corpus plus fused-kernel decision. \\
+Soma/RicciStim & Readout ladders and Ricci tree figures & Still below flatten
+and conventional baselines & Spatial pyramid in detection/RL vision. \\
+Cross-view IR & Proof PDF, cross-view figure, JSON verification & Claim must stay
+about consistency, not raw generator speed & Add CI gate and final paper polish. \\
+\bottomrule
+\end{tabular}
+\caption{Scenario matrix: what is runnable or visible now, why it is not yet a
+finished claim, and the smallest next measurement that would change the state.}
+\end{table}
+
+\begin{table}[!htbp]\centering\small
+\begin{tabular}{lrrp{0.42\linewidth}}
+\toprule
+Artifact family & Count & Where & Why it matters \\
+\midrule
+Checkpoints & 95 files & \nolinkurl{checkpoints/} & The learning lines are not
+only reports; there are stored policies/models for replay, rendering, and
+ablation. \\
+Rendered GIFs & 91 files & \nolinkurl{reports/gifs/} & The RL/control claims can
+be inspected behaviorally, not only through scalar metrics. \\
+Plans & 100+ dirs & \nolinkurl{docs/plans/} & The project has an explicit
+plan-first discipline; unfinished work should be judged against these gates. \\
+Reports & 345 md & \nolinkurl{reports/} & Most completed tasks have an
+acceptance note; the atlas samples the strongest, not all. \\
+\bottomrule
+\end{tabular}
+\caption{Accessible artifact inventory beyond the embedded figures. The missing
+work is mostly not lack of code; it is choosing the decisive measurement.}
+\end{table}
+
+\section{Publication and execution matrix}
+
+This matrix turns the figures into venue strategy. Different communities should
+see different leads: formal methods should see cross-view consistency; control
+should see topology and arity matching; ML architecture should see FSR plus its
+ablations; robotics collaborators should see BC, scenarios, and demo readiness.
+Keeping those leads separate prevents one weak line from diluting a stronger
+one.
+
+\begin{table}[!htbp]\centering\scriptsize
+\begin{tabular}{p{0.18\linewidth}p{0.30\linewidth}p{0.28\linewidth}p{0.16\linewidth}}
+\toprule
+Venue family & Lead claim & Evidence to show visually & Blocking next step \\
+\midrule
+IEEE T-SMC / SMC & Canonical hypergraph IR with machine-verified cross-view
+consistency & Cross-view grid, systems-engineering table, drift demo, proof
+bundle & Polish article and supplementary; keep claims centered on consistency. \\
+Formal methods / MDE & Model consistency becomes a machine-checked property,
+not a convention & Commuting-square diagram, extractor table, Z3 sat/unsat
+summary & Position against EMF/MLIR/global model management. \\
+Control / CPS & Matched topology and matched arity govern controller
+representation & Topology heatmap, arity matching plot, StructuralActor speed
+table & Closed-loop correlation on real control tasks. \\
+RL robotics collaboration & HyMeKo supplies declarative structural RL scenarios
+and fast pre-screening & Overnight RL figure, toy-world ablations, BC collapse
+plots & Repair PPO refinement with BC anchor and success-aligned reward. \\
+Graph ML / signed networks & Strict leakage-audited structural features are a
+methodological contribution & SOTA tables, shuffle gates, transfer grid,
+rotor-vs-MLP ablation & Finish strict baseline audit and avoid rotor-overclaim. \\
+ML architecture workshop & FSR mixer is a plausible attention alternative at
+tiny scale & FSR architecture, bpb plot, sparse speed plot & Scale beyond
+TinyShakespeare; ablate sign/rotor/spike/channel mix. \\
+Vision / neuro & Position-aware readout revives part of Soma/RicciStim, but
+holonomy is not the vision lever & Readout ladder, Ricci tree transfer, holonomy
+group ablation & Try stronger scalable readouts and brain-predictivity metrics. \\
+\bottomrule
+\end{tabular}
+\caption{Where each evidence block can go, and what is still missing.}
+\end{table}
+
+\section{Visual conclusion}
+
+The shortest path through the atlas is not chronological. It is a set of
+decision figures: one for the publishable framework kernel, one for the
+structure-matching law, one for the RL warning, one for readout, one for the LM
+bet, and one for holonomy. These are the figures to use when a collaborator has
+only a few minutes.
+
+\begin{table}[!htbp]\centering\small
+\begin{tabular}{p{0.30\linewidth}p{0.55\linewidth}}
+\toprule
+If you show one figure & Use the cross-view consistency figure: it is the
+publishable kernel. \\
+If you show one control result & Use topology map plus arity matching: structure
+helps when it matches the plant. \\
+If you show one RL warning & Use overnight RL: scalar return improvement can
+hide success collapse. \\
+If you show one vision result & Use the readout ladder: position-aware pooling
+is the lever. \\
+If you show one new architecture result & Use FSR bpb plus speed: quality is
+promising, speed needs fused kernels. \\
+If you show one holonomy result & Use the transport/additive/MLP table:
+holonomy is multiplicative. \\
+\bottomrule
+\end{tabular}
+\caption{The shortest visual route through the entire workspace.}
+\end{table}
+
+\end{document}

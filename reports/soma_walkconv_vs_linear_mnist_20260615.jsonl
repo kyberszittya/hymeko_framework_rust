@@ -1,0 +1,10 @@
+{"model": "gomb_soma", "seed": 0, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 2010, "test_acc": 0.538, "wall_s": 135.73052450013347}
+{"model": "gomb_soma", "seed": 1, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 2010, "test_acc": 0.511, "wall_s": 136.01719200005755}
+{"model": "gomb_soma", "seed": 2, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 2010, "test_acc": 0.495, "wall_s": 149.20423189993016}
+{"model": "gomb_soma", "seed": 3, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 2010, "test_acc": 0.502, "wall_s": 152.8918369000312}
+{"model": "gomb_soma", "seed": 4, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 2010, "test_acc": 0.547, "wall_s": 145.5258848001249}
+{"model": "linear", "seed": 0, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 7850, "test_acc": 0.911, "wall_s": 7.345598499989137}
+{"model": "linear", "seed": 1, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 7850, "test_acc": 0.91, "wall_s": 7.549274499993771}
+{"model": "linear", "seed": 2, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 7850, "test_acc": 0.91, "wall_s": 7.774378200061619}
+{"model": "linear", "seed": 3, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 7850, "test_acc": 0.907, "wall_s": 7.572498100111261}
+{"model": "linear", "seed": 4, "n_train": 5000, "n_test": 1000, "n_epochs": 5, "batch_size": 64, "lr": 0.003, "n_params": 7850, "test_acc": 0.89, "wall_s": 8.14894300000742}

@@ -18,7 +18,7 @@ check the audit roadmap has produced.
 | `docs/plans/2026-05-20-pgraph-nas-byproduct-filter/plan.{tex,pdf,mmd,tikz}` | new | 4-format plan (3 pp PDF) | Written before code |
 | `data/hsikan/sweep_msg_byproduct_dominated.hymeko` | **new** | 75 | HSIKAN sweep with by-products injected onto the empirically dominated `train_short` and `model_h32` units |
 | `hymeko_pgraph/tests/byproduct_filter_phase11.rs` | **new** | 100 | 5 Rust tests pinning MSG drops + ABB selections + Friedler certificate behaviour |
-| `signedkan_wip/tests/test_byproduct_filter_e2e.py` | **new** | 80 | 5 Python tests pinning the end-to-end pipeline |
+| `hymeko_neuro/tests/test_byproduct_filter_e2e.py` | **new** | 80 | 5 Python tests pinning the end-to-end pipeline |
 
 ## CORE.YAML items touched
 

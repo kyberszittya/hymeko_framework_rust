@@ -1,0 +1,56 @@
+{
+ "steps": 24000,
+ "seed": 0,
+ "n_ehandoff": 56,
+ "base": {
+  "grasp": 6,
+  "deliver": 0,
+  "n": 9
+ },
+ "best": {
+  "deliver": 0,
+  "retention": 6
+ },
+ "eval_history": [
+  {
+   "deliver": 0,
+   "grasp": 6,
+   "retention": 6
+  },
+  {
+   "deliver": 0,
+   "grasp": 6,
+   "retention": 9
+  },
+  {
+   "deliver": 0,
+   "grasp": 6,
+   "retention": 2
+  },
+  {
+   "deliver": 0,
+   "grasp": 6,
+   "retention": 5
+  },
+  {
+   "deliver": 0,
+   "grasp": 6,
+   "retention": 5
+  },
+  {
+   "deliver": 0,
+   "grasp": 6,
+   "retention": 5
+  },
+  {
+   "deliver": 0,
+   "grasp": 6,
+   "retention": 2
+  },
+  {
+   "deliver": 0,
+   "grasp": 6,
+   "retention": 2
+  }
+ ]
+}

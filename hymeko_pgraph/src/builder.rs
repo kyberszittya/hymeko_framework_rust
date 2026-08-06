@@ -28,7 +28,9 @@
 //! let msg = maximal_structure(&graph);
 //! let opts = AbbOptions::default();
 //! let sol = solve_with_options(&graph, &msg, opts).unwrap();
-//! assert!((sol.cost - 400.0).abs() < 1e-9);
+//! // Canonical optimum: Mixer + Reactor = 350 (Methane vented; the
+//! // Disposal sink reaches no product and is not in the maximal structure).
+//! assert!((sol.cost - 350.0).abs() < 1e-9);
 //! ```
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -200,40 +202,41 @@ impl PgraphBuilder {
             units_set.insert(d);
         }
 
-        // ─── 2. Build per-unit input/output sets and the edges map. ──
+        // ─── 2. Build the directed edge set (signed incidence). ──────
+        //       Per-unit input/output sets are derived from these edges
+        //       by the schema; they are not stored on the graph.
         let mut edges: BTreeMap<EdgeId, (DeclId, DeclId)> = BTreeMap::new();
-        let mut unit_inputs: BTreeMap<DeclId, BTreeSet<DeclId>> = BTreeMap::new();
-        let mut unit_outputs: BTreeMap<DeclId, BTreeSet<DeclId>> = BTreeMap::new();
         let mut costs: BTreeMap<DeclId, f64> = BTreeMap::new();
-        let mut per_unit_dim: BTreeMap<DeclId, BTreeMap<String, f64>> =
-            BTreeMap::new();
+        let mut per_unit_dim: BTreeMap<DeclId, BTreeMap<String, f64>> = BTreeMap::new();
         let mut dim_set: BTreeSet<String> = BTreeSet::new();
         let mut next_edge: usize = 0;
 
         for (uname, def) in &self.units {
             let u_decl = name_to_decl[uname];
-            unit_inputs.insert(u_decl, BTreeSet::new());
-            unit_outputs.insert(u_decl, BTreeSet::new());
             costs.insert(u_decl, def.cost);
             for inp in &def.inputs {
-                let m = *self.materials.get(inp).map(|_| name_to_decl.get(inp).unwrap())
+                let m = *self
+                    .materials
+                    .get(inp)
+                    .map(|_| name_to_decl.get(inp).unwrap())
                     .ok_or_else(|| BuilderError::UnknownMaterial {
                         unit: uname.clone(),
                         target: inp.clone(),
                     })?;
                 edges.insert(EdgeId::new(next_edge), (m, u_decl));
                 next_edge += 1;
-                unit_inputs.get_mut(&u_decl).unwrap().insert(m);
             }
             for out in &def.outputs {
-                let m = *self.materials.get(out).map(|_| name_to_decl.get(out).unwrap())
+                let m = *self
+                    .materials
+                    .get(out)
+                    .map(|_| name_to_decl.get(out).unwrap())
                     .ok_or_else(|| BuilderError::UnknownMaterial {
                         unit: uname.clone(),
                         target: out.clone(),
                     })?;
                 edges.insert(EdgeId::new(next_edge), (u_decl, m));
                 next_edge += 1;
-                unit_outputs.get_mut(&u_decl).unwrap().insert(m);
             }
             if !def.multi_cost.is_empty() {
                 let mut dims = BTreeMap::new();
@@ -253,9 +256,7 @@ impl PgraphBuilder {
 
         // ─── 4. Alphabetise dim names + build cost_vectors. ────────
         let cost_dimensions: Vec<String> = dim_set.iter().cloned().collect();
-        let cost_vectors: BTreeMap<DeclId, Vec<f64>> = if cost_dimensions
-            .is_empty()
-        {
+        let cost_vectors: BTreeMap<DeclId, Vec<f64>> = if cost_dimensions.is_empty() {
             BTreeMap::new()
         } else {
             per_unit_dim
@@ -281,8 +282,6 @@ impl PgraphBuilder {
             costs,
             cost_dimensions,
             cost_vectors,
-            unit_inputs,
-            unit_outputs,
         })
     }
 }

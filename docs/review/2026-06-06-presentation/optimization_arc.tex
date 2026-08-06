@@ -1,0 +1,38 @@
+% Pool-scatter backward optimisation arc — bar chart
+\begin{tikzpicture}
+\begin{axis}[
+  xbar,
+  width=11cm,
+  height=6.5cm,
+  bar width=4pt,
+  enlarge y limits=0.13,
+  xlabel={Component backward wall (ms)},
+  xmin=0, xmax=125,
+  ytick=data,
+  symbolic y coords={
+    {1. autograd-thru-PyTorch-ref (baseline)},
+    {2. + closed-form scatter\_add (12$\times$)},
+    {3. + packed scatter\_add (1.94$\times$)},
+    {4. + coeffs cache + ctx-save},
+    {5. + Triton CR-coef kernel (3.84$\times$)},
+    {6. + parallel-stream backward},
+  },
+  nodes near coords,
+  nodes near coords align={horizontal},
+  nodes near coords style={font=\scriptsize},
+  every axis plot/.append style={fill=blue!30, draw=blue!60!black},
+  tick label style={font=\scriptsize},
+  xlabel style={font=\scriptsize},
+]
+\addplot coordinates {
+  (114.0,{1. autograd-thru-PyTorch-ref (baseline)})
+  (9.6,  {2. + closed-form scatter\_add (12$\times$)})
+  (5.0,  {3. + packed scatter\_add (1.94$\times$)})
+  (4.5,  {4. + coeffs cache + ctx-save})
+  (2.78, {5. + Triton CR-coef kernel (3.84$\times$)})
+  (2.52, {6. + parallel-stream backward})
+};
+\end{axis}
+\node[font=\scriptsize\itshape] at (5.5, -0.6)
+  {Cumulative: 45$\times$ component speedup. Measured at IMDB shape ($B{=}64, L{=}128, K{=}8, h{=}8$).};
+\end{tikzpicture}

@@ -1,0 +1,49 @@
+{
+  "config": {
+    "difficulty": 0.3,
+    "steps": 250000,
+    "eval_every": 50000,
+    "reward": "4-core (nofinger removed)"
+  },
+  "seeds": {
+    "0": {
+      "bc_start": {
+        "delivery": 0.04,
+        "both_contact": 0.0675
+      },
+      "curve": [
+        {
+          "step": 50000,
+          "delivery": 0.06,
+          "both_contact": 0.0461,
+          "coin_toward_zone": 0.1345
+        },
+        {
+          "step": 100000,
+          "delivery": 0.1,
+          "both_contact": 0.0181,
+          "coin_toward_zone": 0.1267
+        },
+        {
+          "step": 150000,
+          "delivery": 0.2,
+          "both_contact": 0.0335,
+          "coin_toward_zone": 0.0979
+        },
+        {
+          "step": 200000,
+          "delivery": 0.32,
+          "both_contact": 0.0664,
+          "coin_toward_zone": 0.0758
+        },
+        {
+          "step": 250000,
+          "delivery": 0.08,
+          "both_contact": 0.104,
+          "coin_toward_zone": 0.1406
+        }
+      ],
+      "wall_s": 2108
+    }
+  }
+}

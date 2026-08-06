@@ -414,10 +414,12 @@ mod test_transform_ecosystem {
             let dot = DotTransform;
             let output = dot.emit(&ModelView::Kinematic(model), &config).unwrap();
 
-            // Joint labels should include axis letter
+            // Joint labels should include axis letter. The canonical anthropomorphic arm uses
+            // only local X and Z tokens (world Y comes from j1's 90° twist), so DOT shows (X)/(Z)
+            // and no (Y).
             assert!(output.contains("(Z)"), "DOT should show Z axis joints");
             assert!(output.contains("(X)"), "DOT should show X axis joints");
-            assert!(output.contains("(Y)"), "DOT should show Y axis joints");
+            assert!(!output.contains("(Y)"), "corrected arm has no local Y-axis joint label");
         }
 
         #[test]
@@ -702,6 +704,71 @@ mod test_transform_ecosystem {
             );
             // Drop the mutable one to silence unused-mut warning.
             map_baseline.clear();
+        }
+    }
+
+    // ============================================================
+    // SMC #5 — requirements-trace witness → SysML v2 + DOT
+    // (template-only transforms; no kinematic model, no core edit)
+    // ============================================================
+    mod requirements_trace {
+        use crate::test_helpers::load_and_lower;
+        use hymeko_query::transforms::TransformConfig;
+        use std::path::PathBuf;
+
+        const WITNESS: &str = "../data/paper/traceability_smc.hymeko";
+
+        fn transforms_root() -> PathBuf {
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("..")
+                .join("transforms")
+        }
+
+        fn render(name: &str) -> String {
+            let (store, compiled) = load_and_lower(WITNESS).expect("witness should compile");
+            let reg = hymeko_formats::default_registry();
+            let config = TransformConfig::default().with_name("pick_place_cell");
+            reg.render_from_templates(name, &compiled.ir, &store.it, &config, &transforms_root())
+                .expect("transform is registered")
+                .expect("template render succeeds")
+        }
+
+        #[test]
+        fn registry_has_requirements_transforms_without_regressing_others() {
+            let reg = hymeko_formats::default_registry();
+            let av = reg.available();
+            assert!(av.contains(&"requirements_sysml"), "missing requirements_sysml");
+            assert!(av.contains(&"requirements_dot"), "missing requirements_dot");
+            for f in ["urdf", "sdf", "mjcf", "dot", "mermaid", "sysml"] {
+                assert!(av.contains(&f), "registration regressed: missing {f}");
+            }
+        }
+
+        #[test]
+        fn sysml_emits_requirement_defs_satisfy_allocate_derive() {
+            let s = render("requirements_sysml");
+            assert!(s.contains("requirement def R1_safe_stop"), "requirement def\n{s}");
+            assert!(s.contains("part def SafetyController"), "block -> part def");
+            assert!(s.contains("satisfy R1_safe_stop by SafetyController;"), "satisfy");
+            // R2 has two realizers -> two satisfy statements (binary projection).
+            assert!(s.contains("satisfy R2_pos_accuracy by MotionPlanner;"));
+            assert!(s.contains("satisfy R2_pos_accuracy by Arm;"));
+            assert!(s.contains("allocate R2a_repeatability to Arm;"), "allocate");
+            assert!(s.contains("derive_der_rep"), "derive connection");
+        }
+
+        #[test]
+        fn dot_emits_trace_nodes_and_stereotyped_edges() {
+            let s = render("requirements_dot");
+            assert!(s.contains("digraph"), "dot graph header");
+            assert!(s.contains("\"R1_safe_stop\""), "requirement node");
+            assert!(
+                s.contains("\"SafetyController\" -> \"R1_safe_stop\""),
+                "satisfy edge direction"
+            );
+            assert!(s.contains("<<satisfy>>"), "satisfy label");
+            assert!(s.contains("<<allocate>>"), "allocate label");
+            assert!(s.contains("<<deriveReqt>>"), "derive label");
         }
     }
 }

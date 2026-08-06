@@ -1,0 +1,201 @@
+{
+ "contract": "LOCAL_ACTION_RANKING_FIDELITY_V2",
+ "date": "2026-07-23",
+ "no_new_campaign": true,
+ "smoke": false,
+ "method": {
+  "one_step_candidate": true,
+  "held_out_boundary_panel": true,
+  "eps_from_accepted_drift": {
+   "n_accepted": 17,
+   "p50": 0.0019,
+   "p90": 0.002,
+   "p99": 0.002,
+   "trust_cap_step_max": 0.01,
+   "source": "empirical-accepted-drift"
+  },
+  "certificate": "lexicographic K6 \u227b max_dwell \u227b -contain_exit(CENTER_TOL) \u227b -speed \u227b -dtz",
+  "hierarchical_bootstrap_seeds_x_states": true,
+  "critics": [
+   "A_markov",
+   "B_terminal_aligned"
+  ],
+  "horizon": 30
+ },
+ "panel": {
+  "n": 72,
+  "families": {
+   "settling_dwell": 72
+  },
+  "strict_hist": {
+   "3": 28,
+   "4": 23,
+   "5": 21
+  },
+  "all_held_out": true
+ },
+ "epsilons": [
+  0.0019,
+  0.002,
+  0.01
+ ],
+ "seeds": [
+  0,
+  1,
+  2
+ ],
+ "discrimination_A": {
+  "0.0019": {
+   "disc_frac": 0.944,
+   "dwell_moves_frac": 0.0,
+   "k6_moves_frac": 0.0,
+   "n": 216
+  },
+  "0.002": {
+   "disc_frac": 0.944,
+   "dwell_moves_frac": 0.0,
+   "k6_moves_frac": 0.0,
+   "n": 216
+  },
+  "0.01": {
+   "disc_frac": 0.972,
+   "dwell_moves_frac": 0.06,
+   "k6_moves_frac": 0.06,
+   "n": 216
+  }
+ },
+ "rho_lex_A": {
+  "0.0019": {
+   "stat": -0.263,
+   "lo": -0.429,
+   "hi": -0.167,
+   "n_seeds": 3,
+   "n_states": 204
+  },
+  "0.002": {
+   "stat": -0.294,
+   "lo": -0.43,
+   "hi": -0.126,
+   "n_seeds": 3,
+   "n_states": 204
+  },
+  "0.01": {
+   "stat": -0.313,
+   "lo": -0.4,
+   "hi": -0.191,
+   "n_seeds": 3,
+   "n_states": 210
+  }
+ },
+ "rho_lex_B": {
+  "0.0019": {
+   "stat": -0.322,
+   "lo": -0.418,
+   "hi": 0.017,
+   "n_seeds": 3,
+   "n_states": 204
+  },
+  "0.002": {
+   "stat": -0.317,
+   "lo": -0.427,
+   "hi": -0.046,
+   "n_seeds": 3,
+   "n_states": 204
+  },
+  "0.01": {
+   "stat": -0.3,
+   "lo": -0.367,
+   "hi": -0.1,
+   "n_seeds": 3,
+   "n_states": 210
+  }
+ },
+ "sign_agree_A": {
+  "0.0019": {
+   "stat": 0.391,
+   "lo": 0.35,
+   "hi": 0.438,
+   "n_seeds": 3,
+   "n_states": 204
+  },
+  "0.002": {
+   "stat": 0.394,
+   "lo": 0.356,
+   "hi": 0.439,
+   "n_seeds": 3,
+   "n_states": 204
+  },
+  "0.01": {
+   "stat": 0.42,
+   "lo": 0.383,
+   "hi": 0.458,
+   "n_seeds": 3,
+   "n_states": 210
+  }
+ },
+ "sign_agree_B": {
+  "0.0019": {
+   "stat": 0.422,
+   "lo": 0.361,
+   "hi": 0.48,
+   "n_seeds": 3,
+   "n_states": 204
+  },
+  "0.002": {
+   "stat": 0.424,
+   "lo": 0.361,
+   "hi": 0.482,
+   "n_seeds": 3,
+   "n_states": 204
+  },
+  "0.01": {
+   "stat": 0.448,
+   "lo": 0.401,
+   "hi": 0.496,
+   "n_seeds": 3,
+   "n_states": 210
+  }
+ },
+ "top1_beats_A": {
+  "0.0019": {
+   "stat": 0.255,
+   "lo": 0.093,
+   "hi": 0.402,
+   "n_seeds": 3,
+   "n_states": 204
+  },
+  "0.002": {
+   "stat": 0.255,
+   "lo": 0.093,
+   "hi": 0.402,
+   "n_seeds": 3,
+   "n_states": 204
+  },
+  "0.01": {
+   "stat": 0.31,
+   "lo": 0.21,
+   "hi": 0.424,
+   "n_seeds": 3,
+   "n_states": 210
+  }
+ },
+ "sensitivity_A_eps0": {
+  "rho_dwell": {
+   "stat": null,
+   "lo": null,
+   "hi": null,
+   "n_seeds": 0,
+   "n_states": 0
+  },
+  "rho_k6": {
+   "stat": null,
+   "lo": null,
+   "hi": null,
+   "n_seeds": 0,
+   "n_states": 0
+  }
+ },
+ "verdict": "PRIMARY_CERTIFIER_UNMOVED_LOCAL_TEST_INCONCLUSIVE_ON_K6",
+ "next_lever": "a single accepted-drift-scale action does not move K6/dwell (the certificate discriminates only via terminal-IRRELEVANT speed/dtz/exit tiebreakers); \u03c1\u22480 there is correct indifference, NOT infidelity. Before concluding on fidelity or building a ranking critic, need a probe where candidate actions actually change K6/dwell \u2014 e.g. a bounded multi-step candidate window, which is a different test.",
+ "figure": "experiments/2026_07_22_coin_v3_learning/rl_entry/local_ranking_fidelity_v2.svg"
+}

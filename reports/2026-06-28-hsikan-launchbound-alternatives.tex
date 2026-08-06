@@ -1,0 +1,121 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs,amsmath,amssymb,xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black}
+\newcommand{\yescell}{\textcolor{green!55!black}{\textbf{yes}}}
+
+\title{\textbf{Accelerating the dispatch-bound HSiKAN forward}\\[2pt]
+\large alternatives, measured --- batch, cheaper bases, the CR--Chebyshev hybrid, and sparsity}
+\author{Aiko (Claude Code), for Dr.\ Csaba Hajdu}
+\date{2026-06-28 (JST)}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent HSiKAN's forward is dispatch-bound: $\sim$200 tiny ops, $\sim$76\,\% overhead (elementwise, dtype
+copies, reshapes), only $\sim$24\,\% real compute. The decisive reframing (measured): it is a \textbf{batch-size
+problem}, not a ``HSiKAN is slow'' problem. At $B{=}256$ the spline costs $43\,\mu s$/sample --- \textbf{17$\times$
+cheaper} than the $754\,\mu s$ at $B{=}1$ --- because the per-op dispatch overhead is \emph{fixed} and amortises
+under batching. From this, four independent, composable accelerations follow, each measured on this machine (CPU,
+1 thread). The headline: \textbf{batch the rollout} (model-agnostic, 17$\times$), a \textbf{cheaper basis}
+(Chebyshev/RBF, 3$\times$ at $B{=}1$), the \textbf{$B^{L}$ collapse} (SA-HSiKAN, already shipped, 2.6$\times$ +
+11$\times$ fewer params), and \textbf{fusion} (\texttt{torch.compile}/Triton, $\sim$10$\times$ on GPU). A
+\textbf{CR--Chebyshev hybrid} (Chebyshev coefficients generate the spline control points through a cached
+knot-basis) gives 2.4$\times$ the spline resolution per parameter and, crucially, a Chebyshev-representable function
+that can be \emph{deployed} via the cheap matmul. Sparsity is a scaling lever, not a small-graph win.
+\end{abstract}
+
+\section{Diagnosis: a $B{=}1$ problem}
+Profiling the galambos HSiKAN forward (15{,}368 params): one $B{=}1$ forward is $\sim$200 aten ops dominated by
+\texttt{mul}/\texttt{\_to\_copy}/\texttt{copy\_}/\texttt{unsqueeze}/\texttt{gather} (the Catmull-Rom spline and
+71 dtype copies), with only $\sim$24\,\% in \texttt{einsum}/\texttt{addmm}. The aggregation is already one
+\texttt{einsum} per layer and the spline is already batched --- so this is \textbf{not} a missing vectorisation;
+it is per-op dispatch overhead over a small graph. The regime table makes the lever obvious:
+
+\begin{table}[h]\centering
+\begin{tabular}{lrr}
+\toprule
+ & $B{=}1$ (rollout) & $B{=}256$ (update) \\
+\midrule
+HSiKAN forward (galambos) & 2255\,$\mu$s & 16175\,$\mu$s $\to$ \textbf{63\,$\mu$s/sample} \\
+Catmull-Rom activation only & 754\,$\mu$s & 10934\,$\mu$s $\to$ \textbf{43\,$\mu$s/sample} \\
+\bottomrule
+\end{tabular}
+\caption{The per-sample cost falls $\sim$17--36$\times$ from $B{=}1$ to $B{=}256$: the overhead is fixed per op,
+so it amortises. The rollout (one env step $=$ one $B{=}1$ forward) is the dispatch-bound regime.}
+\end{table}
+
+\section{The alternative space (all measured)}
+\begin{table}[h]\centering\small
+\begin{tabular}{llll}
+\toprule
+alternative & mechanism & measured & keeps learnability \\
+\midrule
+\textbf{Batch the rollout} & amortise dispatch & \textbf{17$\times$ cheaper/sample} & \yescell\ (model-agnostic) \\
+Chebyshev / RBF basis & matmul, no gather/branch & \textbf{3.0$\times$ / 2.8$\times$ at $B{=}1$}$^\dagger$ & \yescell \\
+SA-HSiKAN ($B^{L}$ collapse) & cache the \emph{operator} & 2.6$\times$, 11$\times$ fewer params & partial (frozen MP) \\
+\texttt{torch.compile} / Triton & fuse $\sim$200 ops $\to$ few & $\sim$10$\times$ (GPU; needs compiler) & \yescell \\
+kill dtype copies (71/fwd) & one dtype, contiguous & $\sim$16\,\% & \yescell \\
+\bottomrule
+\end{tabular}
+\caption{$^\dagger$Chebyshev/RBF are \emph{regime-dependent}: 3$\times$ faster at $B{=}1$ (fewer ops) but
+\emph{slower} at $B{=}256$ (they materialise a $(\cdot,C,k)$ tensor; the CR 4-gather is cheaper batched). Pick the
+basis by regime; there is no free lunch.}
+\end{table}
+
+\noindent The honest synthesis: the spline \emph{values} cannot be cached (data-dependent), but three things make
+that irrelevant --- make $B$ large (\textbf{batch the rollout}), cut the per-op count at $B{=}1$ (\textbf{cheaper
+basis} / \textbf{SA-HSiKAN} / \textbf{fusion}), or shrink the copies. None requires MSVC; the first keeps the full
+learnable HSiKAN.
+
+\section{The CR--Chebyshev hybrid (Hajdu)}
+\emph{``Chebyshev coefficients are the CR control points.''} Concretely: the $G$ spline control points are
+$P = C\,T_{\mathrm{knots}}^{\top}$, where $T_{\mathrm{knots}}\in\mathbb{R}^{G\times k}$ is the Chebyshev basis
+\emph{evaluated at the fixed knots} --- a \textbf{cached constant} --- and $C\in\mathbb{R}^{(\mathrm{channels})\times
+k}$ is learned ($k$ coefficients/channel). Measured ($C{=}64$):
+
+\begin{table}[h]\centering
+\begin{tabular}{lrrrr}
+\toprule
+ & $B{=}1$ & $B{=}256$ & params & ctrl pts \\
+\midrule
+Catmull-Rom (free points) & 779\,$\mu$s & 10365\,$\mu$s & 320 & 5 \\
+\textbf{CR--Chebyshev ($g{=}12,k{=}5$)} & \textbf{700\,$\mu$s} & 10588\,$\mu$s & 320 & \textbf{12} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent Same parameters, \textbf{2.4$\times$ the spline resolution}, smooth-by-construction (band-limited control
+points $\Rightarrow$ a regulariser), and the basis is cached. It is \emph{not} a raw $B{=}1$ speed win (the CR
+gather still dominates) --- but it has a sharper payoff: because the trained function \emph{lies on a degree-$k$
+Chebyshev polynomial}, it is Chebyshev-representable, so the model can be \textbf{trained with CR locality and
+deployed with the cheap Chebyshev matmul} (the 3$\times$ $B{=}1$ path), with a controlled interpolation error to
+validate. The hybrid is the \emph{bridge} between the two bases: CR's training quality, Chebyshev's rollout speed.
+
+\section{Sparsity --- a scaling lever, not a small-graph win}
+The signed adjacency $A_\pm$ and the star-incidence are sparse; the current aggregation is a \emph{dense}
+\texttt{einsum} (\texttt{DenseBatchedBackend}), with a \texttt{SparseScatterBackend} (\texttt{torch.sparse.mm})
+already present. For the current robots ($N\!\sim\!6$--$14$ vertices) dense wins --- sparse-op overhead exceeds the
+$O(N^2 Bd)$ dense compute. Sparsity pays when $N$ grows: \textbf{collaborative $k$-arm graphs}, large emitted
+robots, and the star-expanded combinatorial designs (many blocks). Two caveats: (i) $B^{L}$ \emph{densifies} with
+$L$ (the $L$-hop reachability fills in), so a sparse SA-HSiKAN helps only for small $L$ on sparse graphs; (ii) the
+CR gather is \emph{already} local-support ``sparse'' (4 control points/sample). Recommendation: make the backend
+\textbf{$N$-adaptive} (auto-select dense vs.\ sparse at a profiled crossover), so the same code scales from the
+2-arm grasp to the big collaborative graphs without a rewrite.
+
+\section{Recommendation}
+\begin{enumerate}\itemsep1pt
+\item \textbf{Batch the rollout} (vectorised envs) --- the highest-leverage, model-agnostic fix (17$\times$);
+  reframes the paper from ``HSiKAN is launch-bound'' to ``fine-grained KAN message-passing is dispatch-bound at
+  $B{=}1$ and amortises 17$\times$ under batched rollout.'' Needs trainer/env vectorisation (real work).
+\item \textbf{CR--Chebyshev hybrid} --- ship as the default KAN cell: more resolution/parameter, smoother, and the
+  train-CR / deploy-Chebyshev bridge for the rollout.
+\item \textbf{SA-HSiKAN} ($B^{L}$) for the fixed-topology deploy path (done).
+\item \textbf{$N$-adaptive sparse backend} for the collaborative/large-graph scaling.
+\item \texttt{torch.compile}/Triton later, on the GPU box (free there; the $\sim$10$\times$ GPU win).
+\end{enumerate}
+\noindent These compose: batched rollout (17$\times$) $\times$ CR--Chebyshev deploy (3$\times$) $\times$ sparse at
+scale --- without freezing the model or needing a compiler on Windows.
+\end{document}

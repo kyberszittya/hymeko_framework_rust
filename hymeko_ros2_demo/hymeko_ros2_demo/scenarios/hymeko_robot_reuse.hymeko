@@ -1,0 +1,126 @@
+// hymeko_robot_reuse.hymeko — MDSD single-source-of-truth variant of
+// scenarios/hymeko_robot.hymeko.
+//
+// Same robot, same three context layers (grasping / maintenance / safety),
+// but the kinematic and context-state vocabularies are NOT re-declared
+// inline. They are imported from the canonical shared profiles:
+//   - data/robotics/meta_kinematics.hymeko  (link / joint / axis / sensor)
+//   - data/robotics/meta_context.hymeko     (context / signal / aggregation / ...)
+//
+// The paper-faithful baseline (scenarios/hymeko_robot.hymeko) re-declares all
+// of this with bare types and is kept as the comparison control. Two wins over
+// that baseline:
+//   1. Length: only the instance hypergraph is authored here; the vocabulary
+//      is amortised across every robot in the ecosystem (wam, drchubo, ...).
+//   2. Semantics: joints are typed `rev_joint` carrying real axis vectors and
+//      limits, so the kinematic extractor recovers them and URDF/SDF/MJCF emit
+//      valid <joint> elements. The baseline's bare `joint` type emits none.
+
+hymeko_robot_description {
+    @"../../../data/robotics/meta_kinematics.hymeko";
+    @"../../../data/robotics/meta_context.hymeko";
+
+    // Kinematic vocabulary.
+    using kinematics.elements as el;
+    using kinematics.axes as ax;
+    using kinematics.rev_joint as rj;
+
+    // Context-state vocabulary.
+    using context_model.states as st;
+    using context_model.grasp_modes as gm;
+    using context_model.interpretation as interp;
+    using context_model.aggregation as agg;
+    using context_model.constraint as con;
+}
+
+hymeko_robot: el, ax, rj, st, gm, interp, agg, con
+{
+    // ===================================================================
+    // Kinematic structure — 5 links, 4 revolute joints (typed, with axes).
+    // ===================================================================
+    base_link:     el.link {}
+    shoulder_link: el.link {}
+    elbow_link:    el.link {}
+    wrist_link:    el.link {}
+    flange_link:   el.link {}
+
+    @j1: rj { (+ base_link,     - shoulder_link, - ax.AXIS_Z); }
+    @j2: rj { (+ shoulder_link, - elbow_link,    - ax.AXIS_Y); }
+    @j3: rj { (+ elbow_link,    - wrist_link,    - ax.AXIS_Y); }
+    @j4: rj { (+ wrist_link,    - flange_link,   - ax.AXIS_Z); }
+
+    // Three sensors on j2.
+    @s_temp_j2:    el.sensor <temperature>   { (+ j2); }
+    @s_vibr_j2:    el.sensor <vibration>     { (+ j2); }
+    @s_current_j2: el.sensor <motor_current> { (+ j2); }
+
+    // ===================================================================
+    // Grasping context — 6 hyperedges (e_1 .. e_6).
+    // ===================================================================
+    grasping_context: st.context {
+        robot_pose:       st.signal {}
+        active_tool:      st.tool {}
+        active_payload:   st.payload {}
+        mode_parallel:    gm.parallel_mode {}
+        grip_force:       st.signal {}
+
+        tool_params:      st.signal {}
+        payload_params:   st.signal {}
+        loaded_state:     st.signal {}
+        configuration:    st.signal {}
+        force_vector:     st.signal {}
+        stability_margin: st.signal {}
+
+        @derive_tool:     interp { (+ active_tool, - tool_params); }
+        @derive_payload:  interp { (+ active_payload, - payload_params); }
+        @loading_state:   agg { (+ tool_params, + payload_params, - loaded_state); }
+        @grasp_config:    agg { (+ mode_parallel, + payload_params, - configuration); }
+        @load_force:      agg { (+ configuration, + robot_pose, - force_vector); }
+        @grasp_stability: agg { (+ force_vector, + grip_force, - stability_margin); }
+    }
+
+    // ===================================================================
+    // Maintenance context — 2 hyperedges (e_7, e_8).
+    // ===================================================================
+    maintenance_context: st.context {
+        joint_temp:        st.signal {}
+        vibration:         st.signal {}
+        motor_current:     st.signal {}
+        cycle_count:       st.counter {}
+        brake_response:    st.signal {}
+        degradation_level: st.signal {}
+        component_health:  st.signal {}
+
+        @wear_indicator: agg {
+            (+ joint_temp, + vibration, + motor_current, + cycle_count, - degradation_level);
+        }
+        @health_state: agg { (+ degradation_level, + brake_response, - component_health); }
+    }
+
+    // ===================================================================
+    // Safety context — 2 hyperedges (e_9, e_10); uses maintenance as D^3.
+    // ===================================================================
+    safety_context: st.context {
+        robot_speed:      st.signal {}
+        human_distance:   st.signal {}
+        operating_mode:   st.mode {}
+        braking_estimate: st.signal {}
+        risk_assessment:  st.signal {}
+
+        @braking_capability: agg {
+            (+ maintenance_context.component_health, + maintenance_context.brake_response, - braking_estimate);
+        }
+        @safety_state: agg {
+            (+ robot_speed, + human_distance, + operating_mode, + braking_estimate, - risk_assessment);
+        }
+    }
+
+    // ===================================================================
+    // Cross-context constraint (§5.1): S_perm = f_sc(C_h, M_o).
+    // ===================================================================
+    max_permissible_speed: st.signal {}
+
+    @speed_constraint: con <safety_cross_layer> {
+        (+ maintenance_context.component_health, + safety_context.operating_mode, - max_permissible_speed);
+    }
+}

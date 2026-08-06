@@ -1,0 +1,90 @@
+{
+  "name": "pick_place_dagger_hsikan",
+  "algorithm": "dagger",
+  "select": "place",
+  "profile": "data/robotics/pick_place_dagger.hymeko",
+  "label_sanity": {
+    "finite": true,
+    "in_bounds": true,
+    "deterministic": true,
+    "latch_coherent": true,
+    "max_over_box_ranges": 0.4,
+    "n_steps": 1118,
+    "committed_steps": 456,
+    "ok": true
+  },
+  "place_median": 0.875,
+  "place_per_seed": [
+    0.875
+  ],
+  "final_place_median": 0.875,
+  "budget": {
+    "seeds": [
+      1
+    ],
+    "n_demos": 18,
+    "bc_epochs": 80,
+    "dagger_iters": 4,
+    "rollouts_per_iter": 12,
+    "beta": 0.5,
+    "beta_decay": 0.5,
+    "expert_replay_ratio": 1.0,
+    "n_eval": 8
+  },
+  "seeds": [
+    {
+      "seed": 1,
+      "peak": {
+        "place": 0.875,
+        "round": 4,
+        "stage": "d4",
+        "agg_size": 34072,
+        "lift": 1.0
+      },
+      "final": {
+        "round": 4,
+        "stage": "d4",
+        "agg_size": 34072,
+        "lift": 1.0,
+        "place": 0.875
+      },
+      "curve": [
+        {
+          "round": 0,
+          "stage": "bc0",
+          "agg_size": 8404,
+          "lift": 0.75,
+          "place": 0.75
+        },
+        {
+          "round": 1,
+          "stage": "d1",
+          "agg_size": 14569,
+          "lift": 0.625,
+          "place": 0.375
+        },
+        {
+          "round": 2,
+          "stage": "d2",
+          "agg_size": 21314,
+          "lift": 0.625,
+          "place": 0.625
+        },
+        {
+          "round": 3,
+          "stage": "d3",
+          "agg_size": 27670,
+          "lift": 0.75,
+          "place": 0.75
+        },
+        {
+          "round": 4,
+          "stage": "d4",
+          "agg_size": 34072,
+          "lift": 1.0,
+          "place": 0.875
+        }
+      ]
+    }
+  ]
+}

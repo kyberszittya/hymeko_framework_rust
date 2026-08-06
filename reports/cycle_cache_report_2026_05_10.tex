@@ -99,7 +99,7 @@ amortisation factor at no algorithmic cost.
 \subsection*{Module layout}
 
 \begin{lstlisting}[language=Python]
-# signedkan_wip/src/cycle_cache.py
+# hymeko_neuro/graph/cycle_cache.py
 def cached_construct_k(g, k, max_cycles, model_seed=0):     ...
 def cached_construct_walks(g, walk_len, max_walks, ...):    ...
 def cached_construct_2(g):                                   ...
@@ -282,15 +282,15 @@ together for the first time.  Result lands in the morning.
 
 \begin{lstlisting}[language=bash]
 # Default behavior — un-cached path, identical to before this change.
-python -m signedkan_wip.src.run_final_cell --dataset epinions \
+python -m hymeko_neuro.run_final_cell --dataset epinions \
     --hidden 4 --n-epochs 80 --max-k4 100000 --seed 0
 
 # Cached path — identical AUC distribution, ~5x speedup across seeds.
-HYMEKO_CYCLE_CACHE=1 python -m signedkan_wip.src.run_final_cell \
+HYMEKO_CYCLE_CACHE=1 python -m hymeko_neuro.run_final_cell \
     --dataset epinions --hidden 4 --n-epochs 80 --max-k4 100000 --seed 0
 
 # Combined recipe (Epinions overnight push, queued behind in-flight runs):
-bash signedkan_wip/experiments/run_epinions_balance_5seed_2026_05_10.sh
+bash hymeko_neuro/experiments/run_epinions_balance_5seed_2026_05_10.sh
 
 # Override cache directory (default ~/.cache/hymeko/cycles_v1):
 HYMEKO_CYCLE_CACHE_DIR=/scratch/cycles bash ...

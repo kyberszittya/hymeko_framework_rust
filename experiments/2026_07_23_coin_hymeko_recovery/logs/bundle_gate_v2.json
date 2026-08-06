@@ -1,0 +1,68 @@
+{
+ "gate": "HYMEKO_COIN_SPEC_BUNDLE_RUNTIME",
+ "checks": {
+  "reward_load_bearing": true,
+  "k6_contract": true,
+  "control_contract_present": true,
+  "semantic_graph_six_node": true,
+  "physical_robot_v3_golden_structure": true,
+  "checkpoint_graph_compatible": true,
+  "all_checkpoints_compatible": true,
+  "discounted_alignment_pass": true,
+  "single_combined_hash": true,
+  "no_python_fallback": true
+ },
+ "combined_bundle_hash": "6664ac459cca8f62",
+ "resolved": {
+  "semantic_graph_fp": "sem:469094de1fba54b2ff481706ca2e09ce",
+  "semantic_vertices": [
+   "base_left",
+   "link1_left",
+   "link2_left",
+   "base_right",
+   "link1_right",
+   "link2_right"
+  ],
+  "actor_input_dim": 48,
+  "physical_nbody": 8,
+  "control_contract": {
+   "joint_range": 4.0,
+   "ctrl_range": 4.0,
+   "damping": 1.5,
+   "kp": 40.0,
+   "kv": 4.0
+  },
+  "gammas": {
+   "sac": 0.99,
+   "td3": 0.99
+  },
+  "bundle_hashes": {
+   "reward_spec": "d42c9cbfbe5e343e",
+   "robot_spec": "49ff35e91c3c8876",
+   "scene_spec": "8be8246bb2af1a3c",
+   "control_contract": {
+    "joint_range": 4.0,
+    "ctrl_range": 4.0,
+    "damping": 1.5,
+    "kp": 40.0,
+    "kv": 4.0
+   },
+   "held_dwell_steps": 6,
+   "center_tol": 0.02,
+   "settle_vel": 0.06,
+   "horizon": 120,
+   "reward_source": "hymeko_spec",
+   "success_contract": "canonical_k6",
+   "combined_bundle_hash": "5606c4345d8bb08f"
+  },
+  "checkpoint_verdicts": {
+   "e_approach": "CHECKPOINT_CANONICAL_V2_COMPATIBLE",
+   "handoff_transport": "CHECKPOINT_CANONICAL_V2_COMPATIBLE",
+   "frozen_transport": "CHECKPOINT_CANONICAL_V2_COMPATIBLE"
+  },
+  "e_approach_graph_fp": "sem:469094de1fba54b2ff481706ca2e09ce",
+  "alignment_verdict": "COIN_DISCOUNTED_REWARD_ALIGNMENT_PASS",
+  "alignment_bundle_hash": "5606c4345d8bb08f"
+ },
+ "verdict": "HYMEKO_COIN_SPEC_BUNDLE_RUNTIME_PASS"
+}

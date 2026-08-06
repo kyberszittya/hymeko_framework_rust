@@ -50,7 +50,7 @@
 
 # Research code
 
-- [signedkan_wip overview](./research/signedkan-overview.md)
+- [hymeko_neuro overview](./research/signedkan-overview.md)
 - [HSiKAN architecture](./research/hsikan.md)
 - [Orthogonal neural dimensions — HSiKAN · Clifford-FIR · Derivative Nodelets · CPML](./research/orthogonal-neural-dimensions.md)
 - [NN variants & layer geometry](./research/nn-architectures-and-layer-geometry.md)

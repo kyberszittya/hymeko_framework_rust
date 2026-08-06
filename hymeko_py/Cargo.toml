@@ -12,6 +12,9 @@ hymeko_query = { path = "../hymeko_query" }
 hymeko_formats = { path = "../hymeko_formats" }
 hymeko_graph = { path = "../hymeko_graph" }
 parser       = { path = "../parser" }
+# HOTARU / planner framework: the shared A* engine (akoire::astar). Non-core path crate; akoire
+# depends only on `parser`, so no dependency cycle. Approved §1 change (2026-08-06).
+akoire       = { path = "../akoire" }
 
 ciborium = {  workspace = true }
 arrow = { workspace = true, features = ["pyarrow", "ffi"] }

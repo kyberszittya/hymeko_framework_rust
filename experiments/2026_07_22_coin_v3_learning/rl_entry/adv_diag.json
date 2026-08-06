@@ -1,0 +1,6 @@
+{
+ "in_sample_corr": 0.996,
+ "held_out_corr": 0.111,
+ "dg_std_train": 7.044,
+ "interpretation": "OVERFIT_MARKOV_OK"
+}

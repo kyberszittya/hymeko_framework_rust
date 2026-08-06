@@ -10,6 +10,7 @@
 pub mod interface_python;
 pub mod cycles;
 pub mod hymeko_parse;
+pub mod planner;
 pub mod quadtree;
 
 use pyo3::prelude::*;
@@ -37,6 +38,9 @@ fn hymeko(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_k_cycles_color_coded_rs, m)?)?;
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_k_cycles_path_closure_rs, m)?)?;
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_k_walks_rs, m)?)?;
+    // Top-K signed-walk enumeration with admissible-UB DFS pruning
+    // (2026-06-03). Production runner for ABBWalkEnumerator.
+    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_walks_rs, m)?)?;
     // Unified entries (Strategy refactor 2026-05-11; CLAUDE.md §6.5 #1).
     // - enumerate_cycles_rs:           per-vertex (replaces 8 legacy)
     // - enumerate_top_k_cycles_rs:     top-K global, regular scorers (replaces 2 legacy)
@@ -50,6 +54,10 @@ fn hymeko(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // scoring stays on GPU in Python via a callback). See
     // docs/plans/2026-05-16-gomb-soma-quadtree-triton/plan.tex.
     m.add_function(wrap_pyfunction!(crate::quadtree::build_quadtree_rs, m)?)?;
+
+    // Shared A* planner engine (akoire::astar) — the same search HOTARU uses, bound for the
+    // Python footstep planner (scenarios/humanoid/footstep_planner.py). Approved §1 dep 2026-08-06.
+    m.add_function(wrap_pyfunction!(crate::planner::astar_plan, m)?)?;
 
     Ok(())
 }

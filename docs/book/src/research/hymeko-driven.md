@@ -18,7 +18,7 @@ Hand-coded Python smears these across env vars + CLI flags + scripts. A `.hymeko
 
 ## Walker pattern
 
-`signedkan_wip/src/hymeko_train_walker.py` parses training.hymeko into FlowEdges, topo-sorts on tensor I/O dependency, dispatches each kind to a registered handler:
+`hymeko_neuro/experiments/hymeko_train_walker.py` parses training.hymeko into FlowEdges, topo-sorts on tensor I/O dependency, dispatches each kind to a registered handler:
 
 ```python
 @register("dataset")
@@ -61,4 +61,4 @@ Today the walker's `epoch_loop` handler delegates the whole forward+loss+backwar
 
 - [Quickstart: HyMeKo-controlled training](../quickstart/09-hsikan-training.md)
 - [HSiKAN architecture](./hsikan.md)
-- `signedkan_wip/src/hymeko_train_walker.py` — implementation
+- `hymeko_neuro/experiments/hymeko_train_walker.py` — implementation

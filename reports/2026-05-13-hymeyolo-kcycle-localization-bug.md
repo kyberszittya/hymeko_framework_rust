@@ -23,7 +23,7 @@ which-class but the predicted boxes are *positioned wrong*.
 
 ## Root cause: `KCycleSignedAggregator` is not used for offset prediction
 
-`signedkan_wip/src/vision/hymeyolo_kcycle.py:281-291` — the
+`hymeko_neuro/experiments/vision/hymeyolo_kcycle.py:281-291` — the
 `_refine_corners` method:
 
 ```python
@@ -109,7 +109,7 @@ to be doing.
 ## Open items
 
 1. **Implement the fix** in a single-file edit and add a unit test in
-   `signedkan_wip/tests/test_circles_ricci.py` (or a new
+   `hymeko_neuro/tests/test_circles_ricci.py` (or a new
    `test_kcycle_localization.py`) asserting:
    - `KCycleSignedAggregator` parameters receive non-zero gradient
      after a loss on `out["box_corners"]` (proves the aggregator is
@@ -126,7 +126,7 @@ to be doing.
 ## Related work this session
 
 - 5-seed backfill for the silently-killed seeds 1, 2, 3:
-  `signedkan_wip/experiments/run_hymeyolo_ricci_seeds123_redo_2026_05_13.sh`
+  `hymeko_neuro/experiments/run_hymeyolo_ricci_seeds123_redo_2026_05_13.sh`
   — queued behind the Bitcoin 10-seed Optuna validation, uses
   `systemd-run --user -p MemoryMax=16G` (no `ulimit -v`,
   memory `feedback_ulimit_vs_cuda`).
@@ -135,4 +135,4 @@ to be doing.
 
 ## CORE.YAML items touched
 
-None. `signedkan_wip/src/vision/hymeyolo_kcycle.py` is non-core.
+None. `hymeko_neuro/experiments/vision/hymeyolo_kcycle.py` is non-core.

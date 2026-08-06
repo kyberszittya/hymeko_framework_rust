@@ -3,7 +3,7 @@
 ## Summary
 
 Shipped a self-contained pure-Python HTL monitoring framework at
-`signedkan_wip/src/htl/`.  Robust-STL semantics, recursive-descent parser
+`hymeko_neuro/eval/htl/`.  Robust-STL semantics, recursive-descent parser
 for a small temporal-logic language, online monitor with a bounded
 history, predicate registry for hypergraph-native signals, and a
 `--monitor` CLI flag on `run_gomb_smoke`.
@@ -55,14 +55,14 @@ fires on signed-cycle invariants as on scalar metrics*.
 
 | File | Status | LOC |
 | --- | --- | --- |
-| `signedkan_wip/src/htl/__init__.py` | new | 52 (re-exports) |
-| `signedkan_wip/src/htl/ast.py` | new | 76 (AST dataclasses, CmpOp enum) |
-| `signedkan_wip/src/htl/event.py` | new | 22 (HypergraphEvent) |
-| `signedkan_wip/src/htl/predicates.py` | new | 65 (registry + signal_value) |
-| `signedkan_wip/src/htl/parser.py` | new | 218 (tokeniser + recursive-descent) |
-| `signedkan_wip/src/htl/eval.py` | new | 174 (robustness + HtlMonitor) |
-| `signedkan_wip/tests/test_htl.py` | new | 199 (18 unit tests) |
-| `signedkan_wip/experiments/runs/run_gomb_smoke.py` | extended | +47 (--monitor CLI + per-epoch hook) |
+| `hymeko_neuro/eval/htl/__init__.py` | new | 52 (re-exports) |
+| `hymeko_neuro/eval/htl/ast.py` | new | 76 (AST dataclasses, CmpOp enum) |
+| `hymeko_neuro/eval/htl/event.py` | new | 22 (HypergraphEvent) |
+| `hymeko_neuro/eval/htl/predicates.py` | new | 65 (registry + signal_value) |
+| `hymeko_neuro/eval/htl/parser.py` | new | 218 (tokeniser + recursive-descent) |
+| `hymeko_neuro/eval/htl/eval.py` | new | 174 (robustness + HtlMonitor) |
+| `hymeko_neuro/tests/test_htl.py` | new | 199 (18 unit tests) |
+| `hymeko_neuro/experiments/runs/run_gomb_smoke.py` | extended | +47 (--monitor CLI + per-epoch hook) |
 | `docs/plans/2026-05-21-htl-python-impl/{plan.tex,plan.pdf,plan.tikz,plan_figure.pdf,plan.mmd}` | new | 4-format plan |
 | `reports/2026-05-21-hypergraph-temporal-logic-python.md` | new | this file |
 
@@ -137,7 +137,7 @@ to support the hypergraph-native predicates that index by cycle arity.
 
 | Suite | Result |
 | --- | --- |
-| `pytest signedkan_wip/tests/test_htl.py` | **18 / 18 pass** in 2.3 s |
+| `pytest hymeko_neuro/tests/test_htl.py` | **18 / 18 pass** in 2.3 s |
 
 Coverage:
 
@@ -254,7 +254,7 @@ What's deferred:
 2. **Until operator** `U_{[t1, t2]}`.  Robust-STL semantics is the
    sup-then-inf double quantifier; ~50 LOC.
 3. **Hypergraph predicate library** at
-   `signedkan_wip/src/htl/predicates/hypergraph.py` (balanced_fraction,
+   `hymeko_neuro/eval/htl/predicates/hypergraph.py` (balanced_fraction,
    alpha[ck], cycle_count[k], shell_dominance).
 4. **Wire the monitor into the rest of the runners**
    (`run_outer_hsikan_gomb`, `run_outer_hsikan_msg_abb_grid`,
@@ -265,9 +265,9 @@ What's deferred:
 ## Experiment provenance
 
 - **Git SHA:** uncommitted (branch `refactor/extract-hymeko-hre`).
-- **Tests:** `pytest signedkan_wip/tests/test_htl.py -q` →
+- **Tests:** `pytest hymeko_neuro/tests/test_htl.py -q` →
   `18 passed in 2.31s`.
-- **Demo:** `python -m signedkan_wip.experiments.runs.run_gomb_smoke
+- **Demo:** `python -m hymeko_neuro.experiments.runs.run_gomb_smoke
   --dataset bitcoin_alpha --seed 0 --n-epochs 6 --device cpu
   --d-embed 16 --M-outer 4 --d-outer 8 --d-middle 12 --d-core 16
   --n-tiers 3 --k 3 --topk 16 --monitor "F(val_auc > 0.55) AND G(loss < 1.0)"`.

@@ -3,7 +3,7 @@
 **Date:** 2026-05-12  
 **Git:** `0c55fa8` (short SHA at report time; working tree may differ)  
 **GPU:** NVIDIA GeForce RTX 2070 SUPER, 8192 MiB  
-**Tooling:** `python -m signedkan_wip.src.run_gomb_tune` with `--joint-mix`, `run_gomb_smoke` subprocess, edge split `80_10_10`, objective **max `test_auroc`**.
+**Tooling:** `python -m hymeko_neuro.run_gomb_tune` with `--joint-mix`, `run_gomb_smoke` subprocess, edge split `80_10_10`, objective **max `test_auroc`**.
 
 ---
 
@@ -22,7 +22,7 @@ Phase 2 saw **many OOMs** on the same 8GB card when `topk` was already capped to
 
 ## Tuner hardening (after phase 2)
 
-`signedkan_wip/src/run_gomb_tune.py` — `for_joint_mix_tuning(..., dataset=...)`:
+`hymeko_neuro/run_gomb_tune.py` — `for_joint_mix_tuning(..., dataset=...)`:
 
 1. **`topk` ≤ 64** for wide joint on `bitcoin_otc` / `bitcoin_alpha` (already planned after pilot).
 2. **`max_walks_w2` / `max_walks_w3` ≤ 32_000** on the same graphs (reduces tuple RAM vs 50k draws).
@@ -81,7 +81,7 @@ Topk was clamped to 64 for Bitcoin wide joint; walk caps were **not** yet clampe
 **Phase 1 (as run):**
 
 ```bash
-PYTHONPATH=. python -m signedkan_wip.src.run_gomb_tune \
+PYTHONPATH=. python -m hymeko_neuro.run_gomb_tune \
   --datasets bitcoin_otc --joint-mix --trials 3 --search-seed 0 --data-seed 0 \
   --edge-split 80_10_10 --n-epochs 25 --device cuda --timeout-s 3600 \
   --out reports/gomb_tune_joint_run.jsonl
@@ -90,7 +90,7 @@ PYTHONPATH=. python -m signedkan_wip.src.run_gomb_tune \
 **Phase 2 (as run):**
 
 ```bash
-PYTHONPATH=. python -m signedkan_wip.src.run_gomb_tune \
+PYTHONPATH=. python -m hymeko_neuro.run_gomb_tune \
   --datasets bitcoin_otc bitcoin_alpha --joint-mix --trials 5 --search-seed 1 \
   --data-seed 0 --edge-split 80_10_10 --n-epochs 30 --device cuda --timeout-s 3600 \
   --out reports/gomb_tune_joint_phase2.jsonl
@@ -99,7 +99,7 @@ PYTHONPATH=. python -m signedkan_wip.src.run_gomb_tune \
 **Suggested next run (post hardening):**
 
 ```bash
-PYTHONPATH=. python -m signedkan_wip.src.run_gomb_tune \
+PYTHONPATH=. python -m hymeko_neuro.run_gomb_tune \
   --datasets bitcoin_otc bitcoin_alpha --joint-mix --trials 12 --search-seed 2 \
   --data-seed 0 --edge-split 80_10_10 --n-epochs 40 --device cuda --timeout-s 7200 \
   --out reports/gomb_tune_joint_phase3.jsonl
@@ -123,9 +123,9 @@ PYTHONPATH=. python -m signedkan_wip.src.run_gomb_tune \
 | `reports/gomb_tune_joint_run.jsonl` | Phase 1 pilot (3 trials, `bitcoin_otc`) + phase summary line |
 | `reports/gomb_tune_joint_phase2.jsonl` | Phase 2 (5 trials × OTC + Alpha) + two summary lines |
 
-**Code landed after phase 2 (tuner VRAM):** `signedkan_wip/src/run_gomb_tune.py` — `for_joint_mix_tuning(..., dataset=ds)` clamps **wide** joint on `bitcoin_otc` / `bitcoin_alpha` to **`topk` ≤ 64** and **each walk cap ≤ 32_000**; Slashdot joint unchanged.
+**Code landed after phase 2 (tuner VRAM):** `hymeko_neuro/run_gomb_tune.py` — `for_joint_mix_tuning(..., dataset=ds)` clamps **wide** joint on `bitcoin_otc` / `bitcoin_alpha` to **`topk` ≤ 64** and **each walk cap ≤ 32_000**; Slashdot joint unchanged.
 
-**Regression tests:** `signedkan_wip/tests/test_hymeko_gomb.py` (tuner + Gömb suite) — **30** tests, including `test_for_joint_mix_clamps_topk_on_bitcoin_wide` and joint-mix `_build_cmd` checks.
+**Regression tests:** `hymeko_neuro/tests/test_hymeko_gomb.py` (tuner + Gömb suite) — **30** tests, including `test_for_joint_mix_clamps_topk_on_bitcoin_wide` and joint-mix `_build_cmd` checks.
 
 **Not run yet:** Phase 3 command in section “Suggested next run” above — run when you are back to continue tuning on a cooler GPU.
 

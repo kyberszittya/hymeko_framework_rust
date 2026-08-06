@@ -16,7 +16,9 @@ fn mix64(mut x: u64) -> u64 {
 pub trait SourceProvider {
     fn canonicalize(&self, p: &Path) -> Result<PathBuf, String>;
     fn read(&mut self, p: &Path) -> Result<std::sync::Arc<str>, String>;
-    fn cwd(&self) -> Option<PathBuf> { None }
+    fn cwd(&self) -> Option<PathBuf> {
+        None
+    }
     fn version(&self, path: &Path) -> Result<u64, String>;
 }
 
@@ -25,7 +27,11 @@ pub struct StdFsProvider {
 }
 
 impl StdFsProvider {
-    pub fn new() -> Self { Self { cache: Default::default() } }
+    pub fn new() -> Self {
+        Self {
+            cache: Default::default(),
+        }
+    }
 
     pub fn cwd(&self) -> Option<PathBuf> {
         std::env::current_dir().ok()
@@ -38,7 +44,9 @@ impl SourceProvider for StdFsProvider {
     }
 
     fn read(&mut self, p: &Path) -> Result<std::sync::Arc<str>, String> {
-        if let Some(s) = self.cache.get(p) { return Ok(s.clone()); }
+        if let Some(s) = self.cache.get(p) {
+            return Ok(s.clone());
+        }
         let s = std::fs::read_to_string(p).map_err(|e| e.to_string())?;
         let a: std::sync::Arc<str> = s.into();
         self.cache.insert(p.to_path_buf(), a.clone());
@@ -115,6 +123,8 @@ impl SourceProvider for MemProvider {
         // content-hash → u64 version
         let h = blake3::hash(s.as_bytes());
         let b = h.as_bytes();
-        Ok(u64::from_le_bytes([b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]]))
+        Ok(u64::from_le_bytes([
+            b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7],
+        ]))
     }
 }

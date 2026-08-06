@@ -1,0 +1,58 @@
+{
+  "gated_11term": {
+    "n_active": 9,
+    "n_edges": 20,
+    "neg_edges": 8,
+    "frustration_index": 2,
+    "frustration_frac": 0.1,
+    "balanced": false,
+    "conflicts": [
+      [
+        "arm_motion\u00d7joint_velocity",
+        -0.24
+      ],
+      [
+        "grasp_approach\u00d7arm_motion",
+        -0.2
+      ],
+      [
+        "grasp_approach\u00d7out_of_bounds",
+        -0.17
+      ],
+      [
+        "grasp_approach\u00d7arm_collision",
+        -0.14
+      ],
+      [
+        "arm_collision\u00d7joint_velocity",
+        -0.1
+      ],
+      [
+        "out_of_bounds\u00d7joint_velocity",
+        -0.1
+      ],
+      [
+        "reach_distance\u00d7arm_motion",
+        -0.05
+      ],
+      [
+        "reach_distance\u00d7joint_velocity",
+        -0.04
+      ]
+    ]
+  },
+  "simplified_4term": {
+    "n_active": 4,
+    "n_edges": 2,
+    "neg_edges": 1,
+    "frustration_index": 0,
+    "frustration_frac": 0.0,
+    "balanced": true,
+    "conflicts": [
+      [
+        "grasp_approach\u00d7out_of_bounds",
+        -0.17
+      ]
+    ]
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "frozen_zero_residual": {
+    "name": "frozen_zero_residual",
+    "pre": {
+      "delivery": 1.0,
+      "both_contact": 0.08971553610503283
+    },
+    "post": {
+      "delivery": 1.0,
+      "both_contact": 0.08971553610503283
+    },
+    "curve": [
+      1.0
+    ],
+    "config": {
+      "total_steps": 200,
+      "critic_warmup": 201,
+      "delta_scale": 0.03,
+      "noise_scale": 0.0,
+      "n_eval": 2,
+      "seed": 0,
+      "hidden": 16,
+      "n_envs": 2
+    }
+  },
+  "tiny_trained_residual": {
+    "name": "tiny_trained_residual",
+    "pre": {
+      "delivery": 1.0,
+      "both_contact": 0.08971553610503283
+    },
+    "post": {
+      "delivery": 1.0,
+      "both_contact": 0.08971553610503283
+    },
+    "curve": [
+      1.0
+    ],
+    "config": {
+      "total_steps": 200,
+      "critic_warmup": 50,
+      "delta_scale": 0.03,
+      "noise_scale": 0.05,
+      "n_eval": 2,
+      "seed": 0,
+      "hidden": 16,
+      "n_envs": 2
+    }
+  }
+}

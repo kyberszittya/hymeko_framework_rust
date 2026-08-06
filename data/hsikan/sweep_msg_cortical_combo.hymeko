@@ -11,7 +11,7 @@
 // composition (Phase 14) reproduce on the cortical pipeline? Same
 // engine, same Friedler mechanism, different workload.
 //
-// Mapping: signedkan_wip/src/cortical_pgraph_mapping.py (unchanged)
+// Mapping: hymeko_neuro/experiments/cortical_pgraph_mapping.py (unchanged)
 // Driver:  run_cortical_msg_sweep.py + --weights / --relaxed-msg
 
 Cortical_Sweep_Combo {}

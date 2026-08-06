@@ -1,0 +1,16 @@
+// runstop_refined.hymeko — the REFINED run-stop model: the abstract L-port split into a foot + arm port.
+// The detailed level the RL policy is warm-started INTO from the coarse model (hierarchical_runstop.py).
+runstop_refined_description {
+    @"port_hamiltonian.hymeko";
+    @"runstop_ports.hymeko";
+}
+
+runstop_refined: port_hamiltonian.ph.roles.meta_energy_element
+{
+    body:      port_hamiltonian.ph.roles.energy_storage              { mass 18.0; torso_inertia 1.6; }
+    l_damping: port_hamiltonian.ph.roles.dissipation                 { coefficient 1.5; }
+    // the abstract angular-momentum port REFINED into two concrete ports:
+    foot:      runstop_ports.rsp.port_kinds.foot_port                { effort 2.5; stance_only 1; }
+    arm:       runstop_ports.rsp.port_kinds.arm_reaction_wheel_port  { effort 1.6; arm_inertia 0.3; flight_capable 1; }
+    coupling:  port_hamiltonian.ph.roles.interconnection             {}
+}

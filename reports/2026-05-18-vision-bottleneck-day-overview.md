@@ -249,12 +249,12 @@ What **doesn't** ship:
 
 | Path | LOC | Purpose |
 |:---|---:|:---|
-| `signedkan_wip/src/vision/voc_person_dataset.py` | 110 | person-filtered VOC loader |
-| `signedkan_wip/src/vision/train_voc_person.py` | 175 | Stage H training entry |
-| `signedkan_wip/src/vision/nodelet_head.py` | 250 | Nodelet head + `hungarian_set_loss_gated` |
-| `signedkan_wip/src/rapport_ros2/voc_detector.py` | 190 | `VocPersonDetector` inference wrapper |
-| `signedkan_wip/tests/test_nodelet_head.py` | 220 | 7 tests; head/gate/matcher/inference |
-| `signedkan_wip/tests/test_voc_detector.py` | 130 | 6 tests; detector + coalition wiring |
+| `hymeko_neuro/experiments/vision/voc_person_dataset.py` | 110 | person-filtered VOC loader |
+| `hymeko_neuro/experiments/vision/train_voc_person.py` | 175 | Stage H training entry |
+| `hymeko_neuro/experiments/vision/nodelet_head.py` | 250 | Nodelet head + `hungarian_set_loss_gated` |
+| `hymeko_neuro/experiments/rapport_ros2/voc_detector.py` | 190 | `VocPersonDetector` inference wrapper |
+| `hymeko_neuro/tests/test_nodelet_head.py` | 220 | 7 tests; head/gate/matcher/inference |
+| `hymeko_neuro/tests/test_voc_detector.py` | 130 | 6 tests; detector + coalition wiring |
 | `docs/plans/2026-05-19-stage-h-voc-eyes-for-rapport/` | — | 4-format plan (Stage H) |
 | `docs/plans/2026-05-19-stage-d3-nodelet-head/` | — | 4-format plan (D-3) |
 | `reports/2026-05-19-stage-h-person-detector-and-rapport-integration.md` | — | Stage H report |
@@ -265,11 +265,11 @@ What **doesn't** ship:
 
 | Path | What |
 |:---|:---|
-| `signedkan_wip/src/vision/hymeyolo_circles_ricci.py` | `query_head_kind` kwarg + gate head + forward emits `box_gates` |
-| `signedkan_wip/src/vision/train_circles_ricci.py` | dispatch to gated loss + gate-aware eval + n_classes-from-shape bugfix |
-| `signedkan_wip/src/vision/train_voc_stagec.py` | `--query-head-kind` flag + `hsikan` backbone |
-| `signedkan_wip/src/rapport_ros2/vision_sidecar_node.py` | `vision_config` dispatch with HSV fallback |
-| `signedkan_wip/src/rapport/coalition.py` | `VisionConfig` dataclass + parser |
+| `hymeko_neuro/experiments/vision/hymeyolo_circles_ricci.py` | `query_head_kind` kwarg + gate head + forward emits `box_gates` |
+| `hymeko_neuro/experiments/vision/train_circles_ricci.py` | dispatch to gated loss + gate-aware eval + n_classes-from-shape bugfix |
+| `hymeko_neuro/experiments/vision/train_voc_stagec.py` | `--query-head-kind` flag + `hsikan` backbone |
+| `hymeko_neuro/experiments/rapport_ros2/vision_sidecar_node.py` | `vision_config` dispatch with HSV fallback |
+| `hymeko_neuro/experiments/rapport/coalition.py` | `VisionConfig` dataclass + parser |
 | `data/coalitions/triad_hri.hymeko` | `vision_r1` block (Stage H ckpt path) |
 | `data/coalitions/meta_hri.hymeko` | `vision_config` type in schema |
 

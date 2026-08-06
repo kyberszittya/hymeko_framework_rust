@@ -1,0 +1,61 @@
+{
+  "A": {
+    "tier": "WEAK_PASS",
+    "margin_exploit": 0.053,
+    "margin_one_fingertip": 1.279,
+    "ood_gap": 2.271,
+    "spearman_q_monitor": 0.657,
+    "spearman_q_mc": 0.371,
+    "perturbation_ok": true,
+    "tensor_contract_pass": true,
+    "policy_provenance_pass": true,
+    "reasons": [
+      "margin_exploit 0.05<3.0",
+      "margin_one_finger 1.28<3.0",
+      "ood_gap 2.27<5.0"
+    ]
+  },
+  "B": {
+    "tier": "WEAK_PASS",
+    "margin_exploit": 5.825,
+    "margin_one_fingertip": 2.879,
+    "ood_gap": 9.037,
+    "spearman_q_monitor": 0.657,
+    "spearman_q_mc": 0.371,
+    "perturbation_ok": true,
+    "tensor_contract_pass": true,
+    "policy_provenance_pass": true,
+    "reasons": [
+      "margin_one_finger 2.88<3.0"
+    ]
+  },
+  "C": {
+    "tier": "STRONG_PASS",
+    "margin_exploit": 11.574,
+    "margin_one_fingertip": 7.308,
+    "ood_gap": 16.77,
+    "spearman_q_monitor": 0.771,
+    "spearman_q_mc": 0.543,
+    "perturbation_ok": true,
+    "tensor_contract_pass": true,
+    "policy_provenance_pass": true,
+    "reasons": []
+  },
+  "E": {
+    "tier": "FAIL",
+    "margin_exploit": -0.492,
+    "margin_one_fingertip": 1.567,
+    "ood_gap": 0.392,
+    "spearman_q_monitor": 0.771,
+    "spearman_q_mc": 0.543,
+    "perturbation_ok": false,
+    "tensor_contract_pass": true,
+    "policy_provenance_pass": true,
+    "reasons": [
+      "Q_exploit>=Q_dagger",
+      "margin_one_finger 1.57<3.0",
+      "ood_gap 0.39<5.0",
+      "perturbation_rewards_drift"
+    ]
+  }
+}

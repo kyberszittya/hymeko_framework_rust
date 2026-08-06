@@ -1,0 +1,69 @@
+{
+  "config": {
+    "init_ckpt": "experiments/v2_dagger/FROZEN_selected/mlp_s1_selected_d3.pt",
+    "ckpt_md5": "edf4fe81f04bbda26393ca9f230828b9",
+    "seed": 1,
+    "total_steps": 6000,
+    "actor_lr": 0.0001,
+    "bc_coef": 2.5,
+    "bc_anchor": "frozen_dagger_actor",
+    "eval_n": 48,
+    "critic_huber": true,
+    "priv_dim": 5,
+    "reward": "galambos_task_deliver_v2b.hymeko"
+  },
+  "before": {
+    "raw_delivery": 0.667,
+    "fingertip_dominant_delivery": 0.625,
+    "zero_body_contact_delivery": 0.125,
+    "body_assisted_delivery": 0.042,
+    "body_driven_exploit_delivery": 0.0,
+    "total_reward": -134.35,
+    "final_dist": 0.0847,
+    "dist_delta": 0.0274,
+    "coin_vel_to_zone": 0.0117,
+    "fingertip_contact": 0.139,
+    "both_contact": 0.026,
+    "arm_body_contact_rate": 0.75,
+    "body_only_progress_to_target": 0.0009
+  },
+  "after": {
+    "raw_delivery": 0.188,
+    "fingertip_dominant_delivery": 0.062,
+    "zero_body_contact_delivery": 0.042,
+    "body_assisted_delivery": 0.042,
+    "body_driven_exploit_delivery": 0.083,
+    "total_reward": -338.89,
+    "final_dist": 0.1778,
+    "dist_delta": -0.0651,
+    "coin_vel_to_zone": -0.026,
+    "fingertip_contact": 0.026,
+    "both_contact": 0.003,
+    "arm_body_contact_rate": 0.917,
+    "body_only_progress_to_target": 0.0237
+  },
+  "verdict": {
+    "ft_dom_before": 0.625,
+    "ft_dom_after": 0.062,
+    "ft_dom_delta": -0.563,
+    "baseline_ftdom": 0.452,
+    "exploit_before": 0.0,
+    "exploit_after": 0.083,
+    "assisted_delta": 0.0,
+    "body_progress_delta": 0.023,
+    "reward_before": -134.35,
+    "reward_after": -338.89,
+    "action_drift_physical": 0.2469,
+    "action_drift_normalized": 0.0309,
+    "ft_dom_before_n24": 0.75,
+    "PASS": false
+  },
+  "eval_curve": [
+    0.75,
+    0.75,
+    0.083,
+    0.0,
+    0.083,
+    0.0
+  ]
+}

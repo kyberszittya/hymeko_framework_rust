@@ -1,0 +1,50 @@
+{
+ "gamma": 0.99,
+ "n_train_traj": 40,
+ "n_held_traj": 20,
+ "SAC": {
+  "calibration": {
+   "pearson": 0.509,
+   "spearman": 0.534,
+   "success_fail_sep": 17.47,
+   "rank_accuracy": 0.686,
+   "n_deliver_traj": 2,
+   "n_fail_traj": 18,
+   "mean_Q_deliver": -48.02,
+   "mean_Q_fail": -65.49
+  },
+  "ood_saturation": {
+   "frac_boundary_beats_actor": 0.038,
+   "frac_random_beats_actor": 0.3,
+   "mean_Q_actor": -64.09,
+   "mean_Q_boundary": -93.58,
+   "mean_Q_zero": -61.78,
+   "unsaturated_n": 5118,
+   "saturated_n": 1679
+  }
+ },
+ "TD3": {
+  "calibration": {
+   "pearson": 0.515,
+   "spearman": 0.55,
+   "success_fail_sep": 17.774,
+   "rank_accuracy": 0.693,
+   "n_deliver_traj": 2,
+   "n_fail_traj": 18,
+   "mean_Q_deliver": -48.33,
+   "mean_Q_fail": -66.1
+  },
+  "ood_saturation": {
+   "frac_boundary_beats_actor": 0.037,
+   "frac_random_beats_actor": 0.3,
+   "mean_Q_actor": -64.81,
+   "mean_Q_boundary": -85.78,
+   "mean_Q_zero": -62.54,
+   "unsaturated_n": 5118,
+   "saturated_n": 1679
+  }
+ },
+ "sac_pass": true,
+ "td3_pass": true,
+ "verdict": "CRITIC_CALIBRATION_PASS"
+}

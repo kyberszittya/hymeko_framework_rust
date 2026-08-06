@@ -1,0 +1,279 @@
+"""Tests for the MetaWorld Stage-B training-smoke setup — GATE + dry-run + plumbing. No training is launched here."""
+from __future__ import annotations
+
+import importlib.util
+
+import numpy as np
+import pytest
+
+from hymeko_rl.experiments.exp_metaworld_reward_stageb import (
+    StageBConfig,
+    StageBGateError,
+    _GaussianMLP,
+    _returns_to_go,
+    _validate_paths,
+    build_reward_profiles,
+    dry_run,
+    launch,
+)
+
+_HAS_METAWORLD = importlib.util.find_spec("metaworld") is not None
+
+
+def test_import_has_no_training_side_effects() -> None:
+    """A. importing the harness constructs no env and launches no training (module import is pure)."""
+    import hymeko_rl.experiments.exp_metaworld_reward_stageb as m
+    assert issubclass(m.StageBGateError, RuntimeError) and issubclass(m.StageBUncertifiedError, RuntimeError)
+
+
+def test_missing_launch_flag_blocks_training(tmp_path) -> None:
+    """B/C. launch without the explicit flag raises the gate error and never trains."""
+    cfg = StageBConfig(out_dir=tmp_path)
+    with pytest.raises(StageBGateError, match="launch_training=True"):
+        launch(cfg, launch_training=False)
+    assert not (tmp_path / "stage_b_train.json").exists()
+    for p in cfg.profiles:
+        assert not cfg.checkpoint_path(p).exists()          # no checkpoint written
+
+
+def test_both_profiles_loadable_and_distinct(tmp_path) -> None:
+    """D. original and mw_in_place_off profiles both load; the off profile zeros mw_in_place, original keeps it."""
+    cfg = StageBConfig(out_dir=tmp_path)
+    profiles = build_reward_profiles(cfg)
+    assert set(profiles) == {"original", "mw_in_place_off"}
+    orig = dict(profiles["original"].ablated)
+    off = dict(profiles["mw_in_place_off"].ablated)
+    assert orig["mw_in_place"] != 0.0 and off["mw_in_place"] == 0.0
+    assert off["mw_near"] == orig["mw_near"]                 # other terms untouched
+
+
+def test_output_paths_do_not_overwrite_stage_a(tmp_path) -> None:
+    """E. Stage-B logging paths are creatable and do not collide with the Stage-A cip_reward_ablation family."""
+    cfg = StageBConfig(out_dir=tmp_path / "metaworld_stageb_reward_ab")
+    paths = _validate_paths(cfg)
+    assert paths["collides_with_stage_a"] is False and paths["overwrites_existing"] is False
+    # a hypothetical Stage-A dir name WOULD be flagged
+    bad = StageBConfig(out_dir=tmp_path / "2026_07_09_cip_reward_ablation")
+    assert _validate_paths(bad)["collides_with_stage_a"] is True
+
+
+def test_post_eval_command_is_generated(tmp_path) -> None:
+    """F. a runnable monitor/CIP post-eval command is generated per profile."""
+    cfg = StageBConfig(out_dir=tmp_path)
+    cmd = cfg.eval_command("mw_in_place_off")
+    assert cmd.startswith("python -m hymeko_rl.experiments.exp_metaworld_reward_stageb --post-eval")
+    assert "--profile mw_in_place_off" in cmd and "--checkpoint" in cmd
+
+
+def test_returns_to_go_and_policy_update_plumbing() -> None:
+    """G. the REINFORCE plumbing (returns-to-go + a policy-gradient step) is correct on synthetic data — no env."""
+    import torch
+    assert np.allclose(_returns_to_go([1.0, 1.0, 1.0], 0.5), [1.75, 1.5, 1.0])
+    policy = _GaussianMLP(obs_dim=6, act_dim=2, hidden=8, act_scale=1.0, seed=0)
+    act, logp = policy.sample(np.zeros(6, dtype=np.float32))
+    assert act.shape == (2,) and np.all(np.abs(act) <= 1.0) and logp.requires_grad
+    before = policy.mean.weight.detach().clone()
+    opt = torch.optim.Adam(policy.parameters(), lr=0.1)
+    loss = -(logp * torch.tensor(1.0))                        # a single synthetic policy-gradient step
+    opt.zero_grad()
+    loss.backward()
+    opt.step()
+    assert not torch.allclose(before, policy.mean.weight)     # the optimizer updates the actor
+
+
+def test_obs_norm_standardizes_input() -> None:
+    """I. set_obs_norm makes _hidden standardize its input (obs == mean → the net sees ~0)."""
+    import torch
+    policy = _GaussianMLP(obs_dim=4, act_dim=2, hidden=8, act_scale=1.0, seed=0)
+    mean = np.array([10.0, -5.0, 0.0, 3.0], np.float32)
+    std = np.array([2.0, 4.0, 1.0, 0.5], np.float32)
+    policy.set_obs_norm(mean, std)
+    # the standardized input at obs=mean is 0 → equals the net's response to a literal zero vector
+    got = policy._hidden(mean)
+    want = policy.net(torch.zeros(4))
+    assert torch.allclose(got, want, atol=1e-5)
+
+
+def test_bc_clone_reduces_loss() -> None:
+    """J. behaviour cloning drives the MSE toward zero on a learnable synthetic obs→action map."""
+    from hymeko_rl.experiments.exp_metaworld_reward_stageb import bc_clone
+    rng = np.random.default_rng(0)
+    obs = rng.normal(0, 1, (200, 4)).astype(np.float32)
+    acts = np.tanh(obs[:, :2] * 0.5).astype(np.float32)          # a smooth, tanh-range target
+    policy = _GaussianMLP(obs_dim=4, act_dim=2, hidden=16, act_scale=1.0, seed=0)
+    policy.set_obs_norm(obs.mean(0), obs.std(0))
+    losses = bc_clone(policy, obs, acts, epochs=60, lr=1e-2, seed=0)
+    assert losses[-1] < 0.25 * losses[0] and losses[-1] < 0.02   # substantial reduction to a small residual
+
+
+def test_compare_profiles_deltas() -> None:
+    """K. compare_profiles reports the original→ablated behavioural deltas, and flags an incomplete panel."""
+    from hymeko_rl.experiments.stage_b_eval import compare_profiles
+    results = {
+        "original": {"eval": {"success_rate": 0.62, "grasp_fraction": 0.49, "progress_score": 0.58,
+                              "obj_to_target_delta": 0.16, "reward_monitor_disagreement": 0.14}},
+        "mw_in_place_off": {"eval": {"success_rate": 0.0, "grasp_fraction": 0.0, "progress_score": 0.17,
+                                     "obj_to_target_delta": 0.01, "reward_monitor_disagreement": 0.31}},
+    }
+    cmp = compare_profiles(results)
+    assert cmp["comparable"] is True
+    assert cmp["success_rate"]["delta"] == pytest.approx(-0.62)
+    assert cmp["grasp_fraction"]["delta"] == pytest.approx(-0.49)
+    assert compare_profiles({"original": results["original"]})["comparable"] is False
+
+
+def test_aggregate_stageb_medians_and_contrast() -> None:
+    """M. multi-seed aggregation yields per-profile medians, the per-seed contrast, and a robustness flag."""
+    from hymeko_rl.eval.cip.reward_ablation_metaworld import _median_iqr
+    from hymeko_rl.experiments.exp_metaworld_reward_stageb import _aggregate_stageb
+
+    def _mk(orig_succ: float, off_succ: float) -> dict:
+        ev_o = {"success_rate": orig_succ, "grasp_fraction": 0.5, "near_fraction": 0.5, "progress_score": 0.5,
+                "reward_monitor_disagreement": 0.14, "reward_under_original_mean": 700.0, "cross_view_agree": True}
+        ev_a = {"success_rate": off_succ, "grasp_fraction": 0.0, "near_fraction": 0.0, "progress_score": 0.1,
+                "reward_monitor_disagreement": 0.31, "reward_under_original_mean": -200.0, "cross_view_agree": True}
+        return {"profiles": {"original": {"eval": ev_o}, "mw_in_place_off": {"eval": ev_a}}}
+
+    per_seed = [_mk(0.6, 0.0), _mk(0.5, 0.05), _mk(0.7, 0.0)]
+    agg = _aggregate_stageb(per_seed, ("original", "mw_in_place_off"), _median_iqr)
+    assert agg["original"]["success_rate"]["median"] == 0.6
+    assert agg["mw_in_place_off"]["success_rate"]["median"] == 0.0
+    assert agg["original"]["cross_view_pass_rate"] == 1.0
+    assert agg["_contrast"]["all_seeds_original_gt_off"] is True
+    assert agg["_contrast"]["success_original_minus_off_per_seed"] == [0.6, 0.45, 0.7]
+
+
+def test_multiseed_gate_blocks_without_flag(tmp_path) -> None:
+    """N. the multi-seed entry is gated too — no flag, no training."""
+    from hymeko_rl.experiments.exp_metaworld_reward_stageb import run_stage_b_multiseed
+    with pytest.raises(StageBGateError):
+        run_stage_b_multiseed(StageBConfig(out_dir=tmp_path), seeds=[0, 1], launch_training=False)
+
+
+def test_diag_parse_and_reach_action() -> None:
+    """R. obs parsing extracts hand/object/goal, and the reach oracle drives toward the object."""
+    from hymeko_rl.experiments.stage_b_diag import _parse, reach_action
+    obs = np.zeros(39, np.float32)
+    obs[:3] = [0.0, 0.6, 0.2]           # hand
+    obs[4:7] = [0.2, 0.6, 0.2]          # object (to the +x of the hand)
+    obs[-3:] = [0.1, 0.9, 0.1]          # goal
+    hand, _g, obj, goal = _parse(obs)
+    assert np.allclose(hand, [0.0, 0.6, 0.2]) and np.allclose(obj, [0.2, 0.6, 0.2]) and np.allclose(goal, [0.1, 0.9, 0.1])
+    act = reach_action(obs)
+    assert act[0] > 0.5 and act[3] == -1.0    # move +x toward the object, gripper open
+
+
+def test_diagnose_categories() -> None:
+    """S. the A/B/C/D diagnosis follows the probe outcomes."""
+    from hymeko_rl.experiments.stage_b_diag import _diagnose
+    good_scr = {"frac_within_0.05": 1.0, "frac_ever_near": 1.0}
+    good_bc = {"success_rate": 0.94, "frac_ever_near": 0.97}
+    rnd = {"min_hand_obj_median": 0.16, "frac_ever_near": 0.02}
+    bad_reach = {"min_hand_obj_median": 0.15, "frac_ever_near": 0.0}
+    ok_reach = {"min_hand_obj_median": 0.05, "frac_ever_near": 0.5}
+    z: dict = {}
+    assert _diagnose(z, rnd, {"frac_within_0.05": 0.0, "frac_ever_near": 0.0}, good_bc, bad_reach, 0.0)[0] == "A"
+    assert _diagnose(z, rnd, good_scr, good_bc, bad_reach, 0.0)[0] == "B"
+    assert _diagnose(z, rnd, good_scr, good_bc, ok_reach, 0.0)[0] == "C"
+    assert _diagnose(z, rnd, good_scr, good_bc, ok_reach, 0.5)[0] == "D"
+
+
+def test_repair_gates_and_labels() -> None:
+    """T. the optimizer-repair gates (reach/reaches/pregrasp) and A/B/C/D labels follow the metrics."""
+    from hymeko_rl.experiments.stage_b_ppo_repair import _label, _pregrasp_pass, _reach_pass, _reaches
+    good = {"min_hand_obj_median": 0.04, "near_fraction": 0.35, "grasp_frac": 0.2}
+    reaches_only = {"min_hand_obj_median": 0.06, "near_fraction": 0.10, "grasp_frac": 0.0}
+    broken = {"min_hand_obj_median": 0.16, "near_fraction": 0.0, "grasp_frac": 0.0}
+    assert _reach_pass(good) and not _reach_pass(reaches_only)
+    assert _reaches(reaches_only) and not _reaches(broken)
+    assert _pregrasp_pass({"near_fraction": 0.2, "grasp_frac": 0.0, "min_hand_obj_median": 0.3})
+    assert not _pregrasp_pass(broken)
+    assert _label(False, None)[0] == "C"
+    assert _label(True, None)[0] == "B"
+    assert _label(True, {"eval": good})[0] == "A"
+
+
+def test_apply_std_control_fixed_and_anneal() -> None:
+    """U. std-control holds the std at 'fixed' and interpolates it under 'anneal'."""
+    import torch
+    from dataclasses import replace as _replace
+    from hymeko_rl.experiments.exp_metaworld_reward_stageb import _GaussianMLP
+    from hymeko_rl.experiments.stage_b_ppo import _apply_std_control
+    actor = _GaussianMLP(4, 2, 8, 1.0, seed=0)
+    _apply_std_control(_replace(StageBConfig(), ppo_std_mode="fixed", ppo_from_scratch_std=0.3), actor, 0.5, torch)
+    assert float(actor.log_std.exp().mean()) == pytest.approx(0.3, abs=1e-5)
+    cfg = _replace(StageBConfig(), ppo_std_mode="anneal", ppo_from_scratch_std=0.6, ppo_std_final=0.1)
+    _apply_std_control(cfg, actor, 1.0, torch)                       # fully annealed → std_final
+    assert float(actor.log_std.exp().mean()) == pytest.approx(0.1, abs=1e-5)
+
+
+def test_running_norm_matches_numpy() -> None:
+    """Q. streaming Welford obs-norm equals batch numpy mean/std (single and multi-batch), for from-scratch RL."""
+    from hymeko_rl.experiments.stage_b_ppo import _RunningNorm
+    rng = np.random.default_rng(0)
+    data = rng.normal(3.0, 2.0, (500, 4)).astype(np.float64)
+    rn = _RunningNorm(4)
+    for chunk in np.array_split(data, 7):                    # fed in uneven chunks
+        rn.update(chunk)
+    assert np.allclose(rn.mean, data.mean(0), atol=1e-9)
+    assert np.allclose(rn.std(), data.std(0), atol=1e-6)
+
+
+def test_gae_matches_monte_carlo_at_lambda_one() -> None:
+    """O. GAE at λ=γ=1 reduces to the Monte-Carlo advantage (return − value) — a closed-form check."""
+    from hymeko_rl.experiments.stage_b_ppo import _gae
+    buf = {"rew": np.array([1.0, 1.0]), "val": np.array([0.0, 0.0]), "done": np.array([0.0, 1.0]), "last_val": 0.0}
+    adv, ret = _gae(buf, gamma=1.0, lam=1.0)
+    assert np.allclose(adv, [2.0, 1.0]) and np.allclose(ret, [2.0, 1.0])   # ep return-to-go, episode ends at t=1
+
+
+@pytest.mark.skipif(not _HAS_METAWORLD, reason="metaworld package not installed")
+def test_ppo_optimizer_runs_and_preserves_schema(tmp_path) -> None:
+    """P. the PPO optimizer path runs end-to-end at tiny scale and returns the same result schema as REINFORCE."""
+    from dataclasses import replace as _replace
+
+    from hymeko_rl.experiments.exp_metaworld_reward_stageb import launch
+    cfg = StageBConfig(out_dir=tmp_path, optimizer="ppo", bc_demos=4, bc_epochs=15, ppo_rollout_steps=256,
+                       ppo_epochs=3, total_env_steps=512, eval_episodes=4, eval_episodes_post=8)
+    cfg = _replace(cfg, cert_rollouts=6)
+    s = launch(cfg, launch_training=True, allow_uncertified=True)
+    for name in cfg.profiles:
+        assert 0.0 <= s["results"][name]["eval"]["success_rate"] <= 1.0
+        assert s["results"][name]["episodes"] >= 1                        # at least one PPO iteration ran
+    assert s["comparison"]["comparable"] is True
+
+
+@pytest.mark.skipif(not _HAS_METAWORLD, reason="metaworld package not installed")
+def test_full_launch_warm_start_eval_and_gif(tmp_path) -> None:
+    """L. the real Stage-B path runs BC→fine-tune→post-eval→compare at tiny scale and emits GIFs + a comparison."""
+    from dataclasses import replace as _replace
+
+    from hymeko_rl.experiments.exp_metaworld_reward_stageb import launch, post_eval
+    cfg = StageBConfig(out_dir=tmp_path, bc_demos=4, bc_epochs=15, total_env_steps=400,
+                       eval_episodes=4, eval_episodes_post=8)     # >5 rollouts: DirectLiNGAM needs n_samples > n_vars
+    cfg = _replace(cfg, cert_rollouts=6)
+    s = launch(cfg, launch_training=True, allow_uncertified=True)   # tiny scale → cert may be non-discriminating
+    assert s["bc"]["demo_success_episodes"] >= 0 and "bc_success_rate" in s["bc"]
+    for name in cfg.profiles:
+        ev = s["results"][name]["eval"]
+        assert 0.0 <= ev["success_rate"] <= 1.0 and "loadings" in ev and ev["cross_view_agree"] in (True, False)
+        assert (tmp_path / name / "rollout.gif").exists()               # GIF emitted per profile
+    assert s["comparison"]["comparable"] is True
+    # post_eval reloads a checkpoint and reproduces the metric schema
+    ev2 = post_eval(cfg, "original", s["results"]["original"]["checkpoint"])
+    assert "success_rate" in ev2 and "reward_under_original_mean" in ev2
+
+
+@pytest.mark.skipif(not _HAS_METAWORLD, reason="metaworld package not installed")
+def test_dry_run_validates_without_training(tmp_path) -> None:
+    """H. dry-run validates profiles/env/reward/certification/paths and exits before the optimizer (no training)."""
+    cfg = StageBConfig(out_dir=tmp_path, seed=0)
+    report = dry_run(cfg, n_certify=4)
+    assert report["trained"] is False
+    assert set(report["profiles"]) == {"original", "mw_in_place_off"}
+    for pr in report["profiles"].values():
+        assert pr["reward_finite"] is True
+        assert "delivers" in pr["certification"]
+    assert (tmp_path / "stage_b_dry_run.json").exists()
+    for p in cfg.profiles:                                    # dry-run wrote NO checkpoint
+        assert not cfg.checkpoint_path(p).exists()

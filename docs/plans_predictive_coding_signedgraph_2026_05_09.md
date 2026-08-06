@@ -102,9 +102,9 @@ If Tier 1 fails at end of week 2, terminate the plan and write the negative resu
 
 ## Files this plan will touch
 
-- `signedkan_wip/src/predictive_coding.py` — new, ~300 LOC
-- `signedkan_wip/src/run_pc_train.py` — new, ~100 LOC
-- `signedkan_wip/src/mixed_arity_signedkan.py` — extend with PC hooks (generative path, error tensors)
+- `hymeko_neuro/predictive_coding.py` — new, ~300 LOC
+- `hymeko_neuro/run_pc_train.py` — new, ~100 LOC
+- `hymeko_neuro/models/mixed_arity_signedkan.py` — extend with PC hooks (generative path, error tensors)
 - `paper/predictive_coding_signedgraph/main.tex` — new venue submission
 - `docs/plans_predictive_coding_signedgraph_2026_05_09.md` — this file
 

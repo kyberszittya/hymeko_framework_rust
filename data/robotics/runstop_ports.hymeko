@@ -1,0 +1,26 @@
+// runstop_ports.hymeko — the DEEP port-refinement hierarchy for humanoid run-stop, as <isa> chains.
+//
+// Three levels of model refinement, each an <isa> step the RL policy is warm-started through
+// (scenarios/humanoid/hierarchical_runstop.py):
+//   L0  angular_momentum_port            — the coarse centroidal abstraction (one lumped control)
+//   L1  foot_port, arm_reaction_wheel_port — stance vs flight-capable ports
+//   L2  ankle/hip, shoulder/elbow        — the humanoid's actual actuated joints (embodied motion)
+runstop_ports
+{
+
+}
+rsp {
+    port_kinds {
+        // L0 — the coarse abstraction: ONE abstract angular-momentum control port
+        angular_momentum_port {}
+        // L1 — refined into two ports (stance vs flight)
+        foot_port:               + <isa> angular_momentum_port {}
+        arm_reaction_wheel_port: + <isa> angular_momentum_port {}
+        // L2 — refined into the humanoid's actual joints: the foot moment = ankle + hip torque; the arm reaction
+        //      wheel = shoulder + elbow. This is the deepest, embodied level of humanoid motion.
+        ankle_port:    + <isa> foot_port {}                 // fast, small range (centre-of-pressure)
+        hip_port:      + <isa> foot_port {}                 // slow, large range (accelerate the trunk/swing leg)
+        shoulder_port: + <isa> arm_reaction_wheel_port {}   // the large arm swing
+        elbow_port:    + <isa> arm_reaction_wheel_port {}   // the fine arm correction
+    }
+}

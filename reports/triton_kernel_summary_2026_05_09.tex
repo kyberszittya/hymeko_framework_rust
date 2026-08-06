@@ -369,17 +369,17 @@ $3\,\text{GiB}$ peak --- impossible on the development GPU.
 
 \begin{lstlisting}[language=bash]
 # Run the test suite (default OFF, then forced ON) — both must pass.
-python -m pytest signedkan_wip/tests/test_triton_kernels.py -v
-HSIKAN_TRITON_KERNEL=1 python -m pytest signedkan_wip/tests/test_triton_kernels.py -v
+python -m pytest hymeko_neuro/tests/test_triton_kernels.py -v
+HSIKAN_TRITON_KERNEL=1 python -m pytest hymeko_neuro/tests/test_triton_kernels.py -v
 
 # Reproduce the kernel-OFF Slashdot 5-seed (~90 min)
-bash signedkan_wip/experiments/run_slashdot_edge_cr_5seed_2026_05_09.sh
+bash hymeko_neuro/experiments/run_slashdot_edge_cr_5seed_2026_05_09.sh
 
 # Reproduce the kernel-ON Slashdot 5-seed (~66 min, this paper)
-bash signedkan_wip/experiments/run_slashdot_edge_cr_kernel_on_2026_05_09.sh
+bash hymeko_neuro/experiments/run_slashdot_edge_cr_kernel_on_2026_05_09.sh
 
 # Sensitivity sweep, parameter landscape (~2 min)
-python -m signedkan_wip.src.triton_kernels_sensitivity
+python -m hymeko_neuro.triton_kernels_sensitivity
 \end{lstlisting}
 
 \paragraph{Companion documents.}

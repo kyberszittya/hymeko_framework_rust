@@ -68,7 +68,7 @@ None.
 ## Files touched
 
 None new since `2026-05-11-hymeko-gomb-sphere.md`. All runs invoked
-the existing `signedkan_wip/src/run_gomb_smoke.py` from that report.
+the existing `hymeko_neuro/run_gomb_smoke.py` from that report.
 
 ## Test results
 
@@ -117,7 +117,7 @@ None.
 5. **Ablations on Slashdot** — single-seed Bitcoin OTC ablations were
    within σ; Slashdot's 4× tighter noise might let the per-shell Δ
    actually show.
-6. **`signedkan_wip/src/run_gomb_smoke.py`** is still untracked.
+6. **`hymeko_neuro/run_gomb_smoke.py`** is still untracked.
 
 ### Negative finding worth keeping
 

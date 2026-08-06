@@ -1,0 +1,36 @@
+{
+ "pi0_sha": "1902454c",
+ "headline": {
+  "n": 9,
+  "grasp": 9,
+  "deliver": 3,
+  "delivered": [
+   1011,
+   1447,
+   1568
+  ]
+ },
+ "validation": {
+  "n": 30,
+  "grasp": 30,
+  "deliver": 2,
+  "delivered": [
+   7016,
+   7024
+  ]
+ },
+ "gate_off_max_leakage": 0.0,
+ "late_start_bank_n": 5,
+ "reconstruction_verified": 5,
+ "reconstruction_ok": true,
+ "checks": {
+  "headline_grasp_9": true,
+  "headline_deliver_3": true,
+  "headline_delivered_set": true,
+  "validation_deliver_2": true,
+  "gate_off_leakage_zero": true,
+  "late_is_pi0_copy": true,
+  "reconstruction_exact": true
+ },
+ "verdict": "PHASE_SWITCHED_UPDATE0_REPRODUCED"
+}

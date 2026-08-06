@@ -1,0 +1,87 @@
+{
+  "campaign": "PHASE_SWITCHED_TD3_BASELINE_V1 / Stage-1b TRANSACTIONAL_TD3_ACTOR_UPDATE_V1",
+  "arm": "A (pi_late = exact pi_0 copy)",
+  "config_sha": "d4cf53aeb735294f",
+  "pi0_sha": "1902454c",
+  "exact_command": "python experiments/2026_07_22_coin_v3_learning/rl_entry/coin_td3_stage1b.py experiments/2026_07_22_coin_v3_learning/rl_entry/frozen/pi0_shared_clip_actor.pt experiments/2026_07_22_coin_v3_learning/rl_entry/td3_baseline_v1_config.json experiments/2026_07_22_coin_v3_learning/rl_entry/td3_stage1b_results.json",
+  "rng_seeds": {
+    "torch": 0,
+    "numpy_collect": 0,
+    "numpy_replay": 1
+  },
+  "bank_shas": {
+    "late_train": "422eb63f91eaa30a",
+    "late_dev": "da7a29fbbc697282"
+  },
+  "stage1": {
+    "families": [
+      "target_entry",
+      "braking",
+      "settling_dwell"
+    ],
+    "horizon": 30,
+    "n_step": 4,
+    "critic_warmup_steps": 2000,
+    "total_updates": 8000,
+    "checkpoints": [
+      0,
+      2000,
+      4000,
+      6000,
+      8000
+    ]
+  },
+  "transactional_config": {
+    "actor_lr": 1e-05,
+    "policy_delay": 4,
+    "lambda_bc": 0.1,
+    "trust_region": {
+      "step_median": 0.0025,
+      "step_p95": 0.005,
+      "step_max": 0.01,
+      "cum_p95": 0.03,
+      "cum_max": 0.06
+    },
+    "backtrack_scales": [
+      0.5,
+      0.25,
+      0.125,
+      0.0625
+    ],
+    "auth_gate": {
+      "boundary_pref_max": 0.5,
+      "twin_disagree_max": 0.5,
+      "perturb_order_min": 0.5,
+      "eps": 0.05
+    }
+  },
+  "target_smoothing": {
+    "std": 0.1,
+    "clip": 0.25,
+    "units": "full-action",
+    "note": "local critic regularization, NOT broad exploration"
+  },
+  "exploration_schedule": {
+    "type": "temporally_coherent",
+    "std_init": 0.15,
+    "std_max": 0.3,
+    "hold_steps": [
+      2,
+      4
+    ],
+    "note": "SEPARATE from target smoothing; frozen before training"
+  },
+  "stop_conditions": [
+    "two consecutive dev checkpoints BEAT OR MATCH pi_0 (\u0394strict\u22650, \u0394dwell\u2265\u22120.05); no contact degradation (\u0394contact\u2265\u22120.05); no exit rise (\u0394exit\u2264+0.05); critic authorized; cumulative trust region intact (anchor cum_max \u2264 0.060)",
+    "if critic never authorized \u2192 TD3_CRITIC_NOT_AUTHORIZED_FOR_ACTOR_UPDATE"
+  ],
+  "constraints": [
+    "no Stage 2",
+    "no neutral-reset composition",
+    "no Arm B",
+    "no SAC",
+    "no dev-bank widening",
+    "final-test bank unopened",
+    "reward/gate/pi_0 unchanged"
+  ]
+}

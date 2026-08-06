@@ -1,0 +1,112 @@
+{
+ "steps": 40000,
+ "seed": 0,
+ "bank_frac": 0.35,
+ "prefix_max": 110,
+ "base": {
+  "first_contact": 3,
+  "bilateral": 0,
+  "zone": 0,
+  "deliver": 0,
+  "n": 9,
+  "med_steps_cert": null
+ },
+ "best": {
+  "deliver": 0,
+  "first_contact": 4
+ },
+ "eval_history": [
+  {
+   "first_contact": 3,
+   "bilateral": 0,
+   "zone": 1,
+   "deliver": 0,
+   "n": 9,
+   "med_steps_cert": null
+  },
+  {
+   "first_contact": 3,
+   "bilateral": 0,
+   "zone": 0,
+   "deliver": 0,
+   "n": 9,
+   "med_steps_cert": null
+  },
+  {
+   "first_contact": 3,
+   "bilateral": 0,
+   "zone": 1,
+   "deliver": 0,
+   "n": 9,
+   "med_steps_cert": null
+  },
+  {
+   "first_contact": 4,
+   "bilateral": 0,
+   "zone": 1,
+   "deliver": 0,
+   "n": 9,
+   "med_steps_cert": null
+  },
+  {
+   "first_contact": 4,
+   "bilateral": 0,
+   "zone": 1,
+   "deliver": 0,
+   "n": 9,
+   "med_steps_cert": null
+  },
+  {
+   "first_contact": 3,
+   "bilateral": 0,
+   "zone": 1,
+   "deliver": 0,
+   "n": 9,
+   "med_steps_cert": null
+  },
+  {
+   "first_contact": 3,
+   "bilateral": 0,
+   "zone": 1,
+   "deliver": 0,
+   "n": 9,
+   "med_steps_cert": null
+  },
+  {
+   "first_contact": 3,
+   "bilateral": 0,
+   "zone": 0,
+   "deliver": 0,
+   "n": 9,
+   "med_steps_cert": null
+  },
+  {
+   "first_contact": 3,
+   "bilateral": 0,
+   "zone": 0,
+   "deliver": 0,
+   "n": 9,
+   "med_steps_cert": null
+  },
+  {
+   "first_contact": 3,
+   "bilateral": 0,
+   "zone": 0,
+   "deliver": 0,
+   "n": 9,
+   "med_steps_cert": null
+  }
+ ],
+ "curve": [
+  3.0,
+  3.0,
+  3.0,
+  4.0,
+  4.0,
+  3.0,
+  3.0,
+  3.0,
+  3.0,
+  3.0
+ ]
+}

@@ -1,0 +1,59 @@
+{
+ "name": "02_sac_success_k6",
+ "mp4": "reports/2026-07-24-sac-rollout-video/02_sac_success_k6.mp4",
+ "gif": "reports/2026-07-24-sac-rollout-video/02_sac_success_k6.gif",
+ "provenance": [
+  {
+   "controller": "sac",
+   "checkpoint": "carry_rlb_sac_seed3_selected.pt",
+   "checkpoint_sha256_16": "868775c4c8367d41",
+   "env_seed": 12201,
+   "prefix_steps": 66,
+   "family": "contact_retention",
+   "start_state_hash": "b226cd45f55a38c1f68a334381a9ce9214741816d7db8058374e4fc817df8fbf",
+   "search_seed": 8000,
+   "search_budget": 8,
+   "theta_center": [
+    -0.1572,
+    0.245,
+    0.6421,
+    -0.0756,
+    -0.3558,
+    0.1534,
+    0.5384,
+    0.0159,
+    0.8361,
+    -0.1543,
+    0.5403,
+    -0.4124,
+    7.8471,
+    11.3015,
+    7.28
+   ],
+   "theta_selected_provenance": [
+    -1.5674,
+    0.4015,
+    0.9212,
+    -0.2071,
+    0.4377,
+    -0.3218,
+    1.8348,
+    -0.5949,
+    0.6383,
+    -0.9184,
+    0.3161,
+    -0.8642,
+    9.5541,
+    10.7273,
+    7.5709
+   ],
+   "k6": 1,
+   "reached_handoff": 1,
+   "contain_exit_ct": 0,
+   "baseline": {
+    "tag": "executable-hymeko-option-rl-v1",
+    "commit": "772a11a4"
+   }
+  }
+ ]
+}

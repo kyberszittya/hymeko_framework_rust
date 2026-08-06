@@ -1,0 +1,7 @@
+Z3 cross-view consistency proof (shared-query dispatcher abstraction):
+
+  T1 positive  (shared query => agreement): negation is unsat  -> PROVED
+  T2 negative  (untethered view can drift): sat  -> drift witnessed (architecture is load-bearing)
+
+  => cross-view agreement is ENTAILED by the shared-query architecture (T1); it FAILS exactly when a view stops sharing the query (T2).
+  => the sole empirical obligation is per-view faithfulness, checked by cross_view.py. [True]

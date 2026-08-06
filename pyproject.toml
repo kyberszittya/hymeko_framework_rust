@@ -6,7 +6,10 @@ version = "0.0.0"
 description = "HyMeKo Rust workspace — uv-managed Python environment (members + tooling)"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "pygraphviz>=2.0",
+    "z3-solver>=4.16.0.0",
+]
 
 [dependency-groups]
 # Aligned with `tools.yaml` Python toolchain (major ranges; lockfile pins).
@@ -23,34 +26,68 @@ dev = [
     "cbor2>=5,<6",
 ]
 # Matches `CORE.YAML` `dependencies.pinned.python` for reproducible ML smoke.
+# Upgraded 2026-05-27 for CUDA 13.2 (cu132). APPROVED-CORE-EDIT: torch-cuda13.
+# numpy moved to >=2 as a required cascade (torch 2.12 wheels target NumPy 2).
 ml = [
-    "numpy>=1.26,<2",
-    "torch==2.4.1",
-    "torchvision>=0.19.1,<0.20",
+    "numpy>=2,<3",
+    "torch==2.12.0",
+    "torchvision==0.27.0",
+    # Windows-only: torch's Linux wheels pull `triton` transitively, but the
+    # Windows wheels do not. The HSiKAN kernel package imports `triton` at
+    # module load; without it the model can't even be unpickled. The CPU
+    # forward never invokes a kernel (gated on `x.is_cuda`), so CPU parity is
+    # unchanged; GPU fused kernels execute on CUDA. APPROVED-CORE-EDIT:
+    # triton-windows-import-unblock (2026-06-10, user chat).
+    "triton-windows==3.7.0.post26 ; sys_platform == 'win32'",
 ]
-# `demo` powers `signedkan_wip/src/demo/gui.py` (Gradio GUI + matplotlib +
-# NetworkX subgraph rendering). Opt-in: `uv sync --group ml --group demo`.
+# `demo` powers `hymeko_neuro/experiments/demo/gui.py` (Gradio GUI + matplotlib +
+# NetworkX subgraph rendering) and the `hymeko_rl` rollout video encoder.
+# Opt-in: `uv sync --group ml --group demo`.
 demo = [
     "gradio>=4,<6",
     "matplotlib>=3.8,<4",
     "networkx>=3,<4",
     "pandas>=2,<3",
+    # MP4 (H.264) encoding for hymeko_rl/render_reach.py.
+    # APPROVED-CORE-EDIT: imageio-mp4-render (2026-06-19, user chat).
+    "imageio>=2,<3",
+    "imageio-ffmpeg>=0.5,<1",
+]
+# `rl` powers `hymeko_rl` (MuJoCo physics + Gymnasium env API for the reaching/grasping
+# demos and the interactive viewer). PPO/BC are in-repo — no stable-baselines3. Opt-in:
+# `uv sync --group ml --group rl` (ml supplies torch for the HSiKAN policy).
+# APPROVED-CORE-EDIT: rl-deps-group (2026-06-19, user chat).
+rl = [
+    "mujoco>=3,<4",
+    "gymnasium>=1,<2",
 ]
 
 [tool.uv.workspace]
 # `ehk_torch_stub` is omitted here: it depends on `torch` and would pull the full
 # CUDA wheel stack into every `uv sync --all-packages`. Install it ad hoc when
 # needed: `uv pip install -e python/ehk_torch_stub` (after `uv sync --group ml`).
-members = ["hymeko_py", "signedkan_wip/signedkan_native"]
+members = ["hymeko_py", "hymeko_neuro/assets/signedkan_native"]
 
 [tool.uv]
 package = false
 default-groups = ["dev"]
 
+# CUDA 13.2 wheel source for torch/torchvision (APPROVED-CORE-EDIT: torch-cuda13,
+# 2026-05-27). `explicit = true` keeps this index scoped to the packages routed
+# below; everything else still resolves from PyPI.
+[[tool.uv.index]]
+name = "pytorch-cu132"
+url = "https://download.pytorch.org/whl/cu132"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu132" }
+torchvision = { index = "pytorch-cu132" }
+
 # Keeps `pytest` runs scoped to real tests; avoids collecting `hymeko_py/smoke_test.py`
 # as a test module and reduces interference from unrelated global pytest plugins.
 [tool.pytest.ini_options]
-testpaths = ["signedkan_wip/tests"]
+testpaths = ["hymeko_neuro/tests"]
 python_files = ["test_*.py"]
 addopts = ["-p", "no:randomly"]
 markers = [

@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-18
 **Audience:** Jean Pimentel (Pannonia, P-graph / PSE community)
-**Source threads:** [pgraph_hymeko_brief.tex](./pgraph_hymeko_brief.tex), [topk_cycles_brief](./topk_cycles_brief.tex), [meeting_pimentel_outline](../docs/meeting_pimentel_outline.md), reports `2026-05-10-abb-global-topk`, `2026-05-11-abb-global-fullness`, `2026-05-12-gomb-msg-ssg-driver`, `2026-05-12-gomb-cycle-abb-compare-driver`, [signedkan_wip/docs/gomb_cycle_abb_optimization.md](../signedkan_wip/docs/gomb_cycle_abb_optimization.md), and Rust source at [hymeko_pgraph/src/abb.rs](../hymeko_pgraph/src/abb.rs) and [hymeko_graph/src/topk_cycles.rs](../hymeko_graph/src/topk_cycles.rs).
+**Source threads:** [pgraph_hymeko_brief.tex](./pgraph_hymeko_brief.tex), [topk_cycles_brief](./topk_cycles_brief.tex), [meeting_pimentel_outline](../docs/meeting_pimentel_outline.md), reports `2026-05-10-abb-global-topk`, `2026-05-11-abb-global-fullness`, `2026-05-12-gomb-msg-ssg-driver`, `2026-05-12-gomb-cycle-abb-compare-driver`, [hymeko_neuro/assets/docs/gomb_cycle_abb_optimization.md](../hymeko_neuro/assets/docs/gomb_cycle_abb_optimization.md), and Rust source at [hymeko_pgraph/src/abb.rs](../hymeko_pgraph/src/abb.rs) and [hymeko_graph/src/topk_cycles.rs](../hymeko_graph/src/topk_cycles.rs).
 
 Pimentel's three asks:
 
@@ -271,6 +271,6 @@ The empirical contribution — "the optimal pruner is dataset-conditional, deriv
 | 4-page formal brief on MSG/SSG/ABB | [reports/pgraph_hymeko_brief.tex](pgraph_hymeko_brief.tex) (PDF compiled) |
 | 4-page brief on axiom-pruning for cycles | reports/topk_cycles_brief.tex |
 | HSiKAN architecture brief | reports/hsikan_hymeko_brief.tex |
-| Live driver | `python -m signedkan_wip.src.hymeko_driver --backend gomb`<br/>`python -m signedkan_wip.src.run_gomb_msg_sweep --algorithm {msg,ssg,abb}` |
+| Live driver | `python -m hymeko_neuro.hymeko.hymeko_driver --backend gomb`<br/>`python -m hymeko_neuro.run_gomb_msg_sweep --algorithm {msg,ssg,abb}` |
 | 25× speedup report | [reports/2026-05-10-abb-global-topk.md](2026-05-10-abb-global-topk.md) |
 | Original meeting outline (2026-05-05) | [docs/meeting_pimentel_outline.md](../docs/meeting_pimentel_outline.md) |

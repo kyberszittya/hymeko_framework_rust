@@ -1,0 +1,11 @@
+  fano_graph.hymeko              hash-invariant 200/200  (snapshot-also 0/200)  blake3:b88715ed80e62
+  generic_hypergraph.hymeko      hash-invariant 200/200  (snapshot-also 0/200)  blake3:6a0c09d8cf24f
+  k4_3uniform.hymeko             hash-invariant 200/200  (snapshot-also 0/200)  blake3:0a8a903e3f896
+  sunflower_delta_system.hymeko  hash-invariant 200/200  (snapshot-also 0/200)  blake3:194c71e4164a7
+
+P1 (alias / sibling-reorder invariance) vs the REAL compiler - 800 reorderings, 4 fixtures:
+  canonical_hash invariant : 800/800   <- the Proposition 1 claim (the content-address)
+  snapshot_json also equal : 0/800   (stricter; 800 had equal hash but a reordered JSON view)
+  NO hash violations: Proposition 1 holds on every tested instance against the real compiler.
+  The snapshot diffs are a serialization artifact - the JSON view keeps source order; only the
+  Blake3 canonical hash (which IS the content-address Prop.1 is about) is order-canonicalised.

@@ -1,0 +1,77 @@
+{
+ "sweep": "RESIDUAL_HOLD_HORIZON_LEVERAGE_SWEEP_V1",
+ "date": "2026-07-23",
+ "terminal_token": "RESIDUAL_SIGNAL_INCREASES_WITH_HOLD_HORIZON",
+ "preregistered_commit": "8d85923",
+ "deterministic_x2": true,
+ "state_manifest_sha": "c9ea1bea147746a4",
+ "candidate_manifest_sha": "9fd0d09316d89220",
+ "leverage_gate_pass": {
+  "1": {
+   "mean_paired_diff": 0.0,
+   "ci95": [
+    0.0,
+    0.0
+   ],
+   "ci_low_gt_0": false
+  },
+  "2": {
+   "mean_paired_diff": 1.903,
+   "ci95": [
+    0.174,
+    5.149
+   ],
+   "ci_low_gt_0": true
+  },
+  "4": {
+   "mean_paired_diff": 2.115,
+   "ci95": [
+    0.316,
+    5.462
+   ],
+   "ci_low_gt_0": true
+  },
+  "8": {
+   "mean_paired_diff": 2.657,
+   "ci95": [
+    0.486,
+    6.296
+   ],
+   "ci_low_gt_0": true
+  },
+  "16": {
+   "mean_paired_diff": 3.405,
+   "ci95": [
+    0.891,
+    7.215
+   ],
+   "ci_low_gt_0": true
+  }
+ },
+ "eligible_K": [
+  2,
+  4,
+  8,
+  16
+ ],
+ "claims": [
+  "Counterfactual return signal |dG| increases monotonically with hold horizon K; paired-CI significant at every K>=2 (preregistered, deterministic x2).",
+  "Effect is heavy-tailed and predominantly destabilizing: harmful>beneficial at every K; strict-success gain negative (-0.027 -> -0.072).",
+  "An eligible K for ADVANTAGE_COMPOSITE_CRITIC_V3 exists under the frozen leverage gate (K in {2,4,8,16}; K=16 strongest)."
+ ],
+ "non_claims": [
+  "NOT that holding residuals improves delivery (net strict-success gain negative).",
+  "NOT that a V3 critic will authorize improving actor updates (may only reject harmful) - untested.",
+  "NOT a sealed/actor result; per-group CIs wide (10/family, heavy tail)."
+ ],
+ "gated_stops": {
+  "critic_trained": false,
+  "actor_updated": false,
+  "SAC": false,
+  "residual_bound_changed": false,
+  "gate_changed": false,
+  "sealed_panels_opened": false
+ },
+ "next_experiment": "ADVANTAGE_COMPOSITE_CRITIC_V3 at K=16 (or K=2): within-group K-hold dG regression, held-out; report harm-rejection vs beneficial-ranking separately.",
+ "detail_results": "experiments/2026_07_22_coin_v3_learning/rl_entry/hold_sweep_v1_results.json"
+}

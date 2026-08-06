@@ -1,11 +1,10 @@
 #![cfg(test)]
-mod test_traversal
-{
-    use std::collections::HashSet;
-    use std::time::Instant;
+mod test_traversal {
+    use crate::test_helpers::{log_test_footer, log_test_header};
+    use crate::traversal::constants::*;
     use hymeko::common::pathkey::PathKey;
     use hymeko::ir::lower::lower_to_ir;
-    use hymeko::resolution::intern_pass::{intern_ast, Interned};
+    use hymeko::resolution::intern_pass::{Interned, intern_ast};
     use hymeko::resolution::resolve::build_index_sym;
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko_hnn::traversal::graph_traversal::dfs_preorder;
@@ -13,8 +12,8 @@ mod test_traversal
     use log::info;
     use parser::ast::AstStr;
     use parser::parse_description;
-    use crate::test_helpers::{log_test_footer, log_test_header};
-    use crate::traversal::constants::*;
+    use std::collections::HashSet;
+    use std::time::Instant;
 
     fn start(name: &str, desc: &str) -> Instant {
         log_test_header(name, desc);
@@ -44,9 +43,18 @@ mod test_traversal
         let sid_root = interner.intern(ROOT_NAME);
         let sid_e = interner.intern(EDGE_E);
 
-        let did_a = *idx.by_path.get(&PathKey(vec![sid_d, sid_a])).expect("D.A missing");
-        let did_b = *idx.by_path.get(&PathKey(vec![sid_d, sid_b])).expect("D.B missing");
-        let did_e = *idx.by_path.get(&PathKey(vec![sid_d, sid_root, sid_e])).expect("D.Root.E missing");
+        let did_a = *idx
+            .by_path
+            .get(&PathKey(vec![sid_d, sid_a]))
+            .expect("D.A missing");
+        let did_b = *idx
+            .by_path
+            .get(&PathKey(vec![sid_d, sid_b]))
+            .expect("D.B missing");
+        let did_e = *idx
+            .by_path
+            .get(&PathKey(vec![sid_d, sid_root, sid_e]))
+            .expect("D.Root.E missing");
 
         // --- Decl -> NodeId / EdgeId
         let nid_a = ir.decl_to_node[did_a.0 as usize].expect("A not lowered as node");
@@ -77,14 +85,29 @@ mod test_traversal
 
         let got_set: HashSet<BergeState> = got.into_iter().collect();
 
-        assert!(got_set.contains(&BergeState::Node(nid_a)), "DFS should include start node A");
-        assert!(got_set.contains(&BergeState::Edge(eid_e)), "DFS should include edge E");
-        assert!(got_set.contains(&BergeState::Node(nid_b)), "DFS should reach node B");
+        assert!(
+            got_set.contains(&BergeState::Node(nid_a)),
+            "DFS should include start node A"
+        );
+        assert!(
+            got_set.contains(&BergeState::Edge(eid_e)),
+            "DFS should include edge E"
+        );
+        assert!(
+            got_set.contains(&BergeState::Node(nid_b)),
+            "DFS should reach node B"
+        );
         info!(
             "Berge DFS visited {} states (nodes={}, edges={})",
             got_set.len(),
-            got_set.iter().filter(|s| matches!(s, BergeState::Node(_))).count(),
-            got_set.iter().filter(|s| matches!(s, BergeState::Edge(_))).count()
+            got_set
+                .iter()
+                .filter(|s| matches!(s, BergeState::Node(_)))
+                .count(),
+            got_set
+                .iter()
+                .filter(|s| matches!(s, BergeState::Edge(_)))
+                .count()
         );
         finish(
             "berge_dfs_reaches_other_node",

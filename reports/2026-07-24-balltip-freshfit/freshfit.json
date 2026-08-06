@@ -1,0 +1,35 @@
+{
+ "contract": "BALLTIP_FRESH_REFIT",
+ "date": "2026-07-24",
+ "smoke": false,
+ "n_labels": 131,
+ "K": 6,
+ "fit": {
+  "clf_ce": 0.23338839411735535,
+  "res_mse": 0.5648865103721619,
+  "cluster_sizes": [
+   23,
+   20,
+   17,
+   43,
+   18,
+   10
+  ]
+ },
+ "fresh_proposal_ckpt": "carry_proposal_balltip_fresh_v1.pt",
+ "eval_distribution": "fresh_reconstruct_canonical_ball",
+ "fresh_proposal": {
+  "n": 24,
+  "b0": 2,
+  "b0_rate": 0.083,
+  "b8": 2,
+  "b8_rate": 0.083
+ },
+ "old_transplant_proposal_on_fresh_eval": {
+  "n": 24,
+  "b0": 0,
+  "b0_rate": 0.0,
+  "b8": 0,
+  "b8_rate": 0.0
+ }
+}

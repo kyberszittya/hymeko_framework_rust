@@ -1,0 +1,170 @@
+{
+ "steps": 24000,
+ "seed": 0,
+ "obs_dim": 41,
+ "act_dim": 6,
+ "n_demos": 3283,
+ "train_states": [
+  1017,
+  1024,
+  1033,
+  1073,
+  1125,
+  1142,
+  1160,
+  1170,
+  1193,
+  1233,
+  1269,
+  1271,
+  1345,
+  1379,
+  1383,
+  1410,
+  1445,
+  1464,
+  1557,
+  1576,
+  1595,
+  1608,
+  1613,
+  1646,
+  1699
+ ],
+ "headline": [
+  1011,
+  1045,
+  1164,
+  1174,
+  1202,
+  1278,
+  1358,
+  1447,
+  1568
+ ],
+ "bc_curve": [
+  0.10054971277713776,
+  0.008907750248908997,
+  0.006707853637635708,
+  0.005748877767473459,
+  0.004350627772510052,
+  0.0028590327128767967,
+  0.0019327648915350437,
+  0.0013686938909813762,
+  0.0010065073147416115
+ ],
+ "bc_eval": {
+  "n": 9,
+  "delivery_rate": 0.2222222222222222,
+  "delivery_count": 2,
+  "best_dwell": 6,
+  "grasp_count": 0
+ },
+ "curve": [
+  0.2222222222222222,
+  0.2222222222222222,
+  0.2222222222222222,
+  0.2222222222222222,
+  0.2222222222222222,
+  0.2222222222222222,
+  0.2222222222222222,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0
+ ],
+ "best": {
+  "n": 9,
+  "delivery_rate": 0.2222222222222222,
+  "delivery_count": 2,
+  "best_dwell": 6,
+  "grasp_count": 0
+ },
+ "eval_history": [
+  {
+   "n": 9,
+   "delivery_rate": 0.2222222222222222,
+   "delivery_count": 2,
+   "best_dwell": 6,
+   "grasp_count": 0
+  },
+  {
+   "n": 9,
+   "delivery_rate": 0.2222222222222222,
+   "delivery_count": 2,
+   "best_dwell": 6,
+   "grasp_count": 0
+  },
+  {
+   "n": 9,
+   "delivery_rate": 0.2222222222222222,
+   "delivery_count": 2,
+   "best_dwell": 6,
+   "grasp_count": 0
+  },
+  {
+   "n": 9,
+   "delivery_rate": 0.2222222222222222,
+   "delivery_count": 2,
+   "best_dwell": 6,
+   "grasp_count": 0
+  },
+  {
+   "n": 9,
+   "delivery_rate": 0.2222222222222222,
+   "delivery_count": 2,
+   "best_dwell": 6,
+   "grasp_count": 0
+  },
+  {
+   "n": 9,
+   "delivery_rate": 0.2222222222222222,
+   "delivery_count": 2,
+   "best_dwell": 6,
+   "grasp_count": 0
+  },
+  {
+   "n": 9,
+   "delivery_rate": 0.2222222222222222,
+   "delivery_count": 2,
+   "best_dwell": 6,
+   "grasp_count": 0
+  },
+  {
+   "n": 9,
+   "delivery_rate": 0.0,
+   "delivery_count": 0,
+   "best_dwell": 2,
+   "grasp_count": 0
+  },
+  {
+   "n": 9,
+   "delivery_rate": 0.0,
+   "delivery_count": 0,
+   "best_dwell": 0,
+   "grasp_count": 0
+  },
+  {
+   "n": 9,
+   "delivery_rate": 0.0,
+   "delivery_count": 0,
+   "best_dwell": 2,
+   "grasp_count": 0
+  },
+  {
+   "n": 9,
+   "delivery_rate": 0.0,
+   "delivery_count": 0,
+   "best_dwell": 2,
+   "grasp_count": 0
+  },
+  {
+   "n": 9,
+   "delivery_rate": 0.0,
+   "delivery_count": 0,
+   "best_dwell": 2,
+   "grasp_count": 0
+  }
+ ]
+}

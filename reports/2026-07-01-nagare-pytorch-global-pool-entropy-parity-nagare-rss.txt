@@ -1,0 +1,3 @@
+moons max_abs=8.941e-8 median_us=92.80 alloc_bytes=4812672
+rings max_abs=1.043e-7 median_us=99.00 alloc_bytes=4812672
+xor max_abs=1.043e-7 median_us=91.72 alloc_bytes=4812672

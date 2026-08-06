@@ -1,0 +1,107 @@
+% Experiment Runner Framework -- UML class diagram (TikZ)
+% Compile via the wrapper plan.tex (uses tikz + positioning + shapes).
+
+\begin{tikzpicture}[
+    every node/.style={font=\small\ttfamily, align=left},
+    abstract/.style={rectangle, draw, very thick, fill=blue!10,
+                     minimum width=42mm, minimum height=12mm,
+                     rounded corners=2pt},
+    concrete/.style={rectangle, draw, fill=green!10,
+                     minimum width=42mm, minimum height=12mm,
+                     rounded corners=2pt},
+    iface/.style={rectangle, draw, dashed, fill=yellow!15,
+                  minimum width=42mm, minimum height=10mm,
+                  rounded corners=2pt},
+    config/.style={rectangle, draw, fill=orange!10,
+                   minimum width=38mm, minimum height=10mm,
+                   rounded corners=2pt},
+    result/.style={rectangle, draw, fill=purple!10,
+                   minimum width=38mm, minimum height=10mm,
+                   rounded corners=2pt},
+    inh/.style={->, >=open triangle 60, thick},   % inheritance
+    impl/.style={->, >=open triangle 60, dashed, thick},   % implements
+    use/.style={->, >=stealth, dotted, thick},    % uses / delegates
+    comp/.style={->, >=diamond, thick},           % composition
+]
+
+% Experiment hierarchy (top)
+\node[abstract] (exp) at (0, 8) {\itshape Experiment\\(ABC)};
+\node[concrete] (sce) at (-5.5, 5) {SingleCell\\Experiment};
+\node[concrete] (swe) at (0, 5) {Sweep\\Experiment};
+\node[concrete] (kae) at (5.5, 5) {KomondorArray\\Experiment};
+
+\draw[inh] (sce) -- (exp);
+\draw[inh] (swe) -- (exp);
+\draw[inh] (kae) -- (exp);
+
+% Sweep delegates to SingleCell
+\draw[use] (swe.south west) to[bend right=15]
+    node[above, sloped, font=\tiny] {per-cell} (sce.east);
+
+% Config (composition root)
+\node[config] (cfg) at (0, 2.5) {ExperimentConfig};
+\node[config] (cell) at (-5.5, 0.8) {CellSpec};
+\node[config] (mod) at (-2.2, 0.8) {ModelConfig};
+\node[config] (top) at ( 1.2, 0.8) {TopKConfig};
+\node[config] (ker) at ( 4.5, 0.8) {KernelConfig};
+\node[config] (cc)  at (-5.5, -0.8) {CycleCacheConfig};
+\node[config] (out) at (-2.2, -0.8) {OutputConfig};
+
+\draw[comp] (cell) -- (cfg);
+\draw[comp] (mod) -- (cfg);
+\draw[comp] (top) -- (cfg);
+\draw[comp] (ker) -- (cfg);
+\draw[comp] (cc) to[bend left=10] (cfg);
+\draw[comp] (out) to[bend right=10] (cfg);
+
+% Monitor side (right column)
+\node[iface] (mon) at (10, 8) {\itshape Monitor\\(Protocol)};
+\node[concrete] (wm) at (10, 6.5) {WallMonitor};
+\node[concrete] (mm) at (10, 5.3) {MemoryMonitor};
+\node[concrete] (am) at (10, 4.1) {AUCMonitor};
+\node[concrete] (je) at (10, 2.9) {JSONLEmitter};
+
+\draw[impl] (wm.north) -- (mon.south west);
+\draw[impl] (mm.north) -- (mon.south);
+\draw[impl] (am.north east) -- (mon.south east);
+\draw[impl] (je.north east) to[bend right=15] (mon.east);
+
+% Experiment uses Monitor
+\draw[use, very thick] (exp.east) -- node[above, font=\tiny] {observes}
+    (mon.west);
+
+% Config -> Experiment
+\draw[use] (cfg.north) -- node[right, font=\tiny] {drives} (exp.south);
+
+% Result types (bottom right)
+\node[result] (res) at (10, 1.0) {ExperimentResult};
+\node[result] (sum) at (10, -0.5) {SweepSummary};
+
+\draw[use] (sce.south east) to[bend right=10] (res.west);
+\draw[use] (swe.south east) to[bend right=20] (sum.west);
+
+% Registry (bottom)
+\node[concrete] (reg) at (0, -2.5) {ExperimentRegistry\\\textit{(singleton)}};
+\draw[use] (reg.north) -- node[right, font=\tiny] {YAML name $\to$ class} (cfg.south);
+
+% Legend
+\matrix[draw, fill=white, anchor=south west, font=\tiny,
+        column sep=1ex, row sep=0.4ex, inner sep=4pt]
+    at (-6.8, -3.5) {
+    \node[abstract, minimum width=8mm, minimum height=5mm]{}; & \node{abstract / ABC}; \\
+    \node[concrete, minimum width=8mm, minimum height=5mm]{}; & \node{concrete}; \\
+    \node[iface, minimum width=8mm, minimum height=5mm]{}; & \node{Protocol / interface}; \\
+    \node[config, minimum width=8mm, minimum height=5mm]{}; & \node{config dataclass}; \\
+    \node[result, minimum width=8mm, minimum height=5mm]{}; & \node{result type}; \\
+};
+
+\matrix[draw, fill=white, anchor=south west, font=\tiny,
+        column sep=1ex, row sep=0.4ex, inner sep=4pt]
+    at (-1.5, -3.5) {
+    \draw[inh] (0, 0) -- (0.8, 0); & \node{inheritance};   \\
+    \draw[impl] (0, 0) -- (0.8, 0); & \node{implements};   \\
+    \draw[use] (0, 0) -- (0.8, 0); & \node{uses / delegates}; \\
+    \draw[comp] (0, 0) -- (0.8, 0); & \node{composition};  \\
+};
+
+\end{tikzpicture}

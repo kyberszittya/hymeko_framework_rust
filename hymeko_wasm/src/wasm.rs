@@ -13,7 +13,7 @@
 
 use wasm_bindgen::prelude::*;
 
-use crate::compile::{compile_source, CompiledDoc};
+use crate::compile::{CompiledDoc, compile_source, compile_sources};
 use crate::session::EditorSession as NativeSession;
 
 #[wasm_bindgen(start)]
@@ -110,18 +110,40 @@ pub fn parse_and_compile(source: &str) -> Result<CompiledIR, JsValue> {
     Ok(CompiledIR { inner: doc })
 }
 
+/// Compile a multi-file `.hymeko` "space" and return the IR for the file at
+/// `root`. `files_json` is a JSON object mapping virtual filename → source; a
+/// `@"name"` include in any file resolves against it. Lets the editor keep meta
+/// vocabularies (profiles) in separate files. Throws on bad JSON or any
+/// compile / unresolved-include error.
+#[wasm_bindgen]
+pub fn parse_and_compile_files(root: &str, files_json: &str) -> Result<CompiledIR, JsValue> {
+    let map: std::collections::HashMap<String, String> = serde_json::from_str(files_json)
+        .map_err(|e| JsValue::from_str(&format!("files JSON: {e}")))?;
+    let files: Vec<(&str, &str)> = map.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
+    let doc = compile_sources(root, &files).map_err(|e| JsValue::from_str(&e))?;
+    Ok(CompiledIR { inner: doc })
+}
+
 #[wasm_bindgen]
 impl CompiledIR {
     #[wasm_bindgen(getter)]
-    pub fn node_count(&self) -> usize { self.inner.node_count() }
+    pub fn node_count(&self) -> usize {
+        self.inner.node_count()
+    }
     #[wasm_bindgen(getter)]
-    pub fn edge_count(&self) -> usize { self.inner.edge_count() }
+    pub fn edge_count(&self) -> usize {
+        self.inner.edge_count()
+    }
     #[wasm_bindgen(getter)]
-    pub fn arc_count(&self) -> usize { self.inner.arc_count() }
+    pub fn arc_count(&self) -> usize {
+        self.inner.arc_count()
+    }
 
     #[wasm_bindgen]
     pub fn snapshot_json(&self) -> Result<String, JsValue> {
-        self.inner.snapshot_json().map_err(|e| JsValue::from_str(&e))
+        self.inner
+            .snapshot_json()
+            .map_err(|e| JsValue::from_str(&e))
     }
 
     #[wasm_bindgen]
@@ -148,4 +170,100 @@ impl CompiledIR {
     pub fn to_dot(&self, graph_name: &str) -> String {
         self.inner.to_dot(graph_name)
     }
+
+    #[wasm_bindgen]
+    pub fn to_sysml(&self, model_name: &str) -> String {
+        self.inner.to_sysml(model_name)
+    }
+}
+
+// --------------------------------------------------------------------- //
+// P-graph — browser surface for the P-graph engine.
+// --------------------------------------------------------------------- //
+//
+//   pgraph_solve(instance, meta)  →  MSG/SSG/ABB analysis JSON
+//   pgraph_dot(instance, meta)    →  Graphviz DOT
+//
+// `instance` is a meta-model `.hymeko` source (with `@"meta_pgraph.hymeko"`
+// include + `<isa>` typing); `meta` is the meta-model source. A literal-tag
+// instance solves with an empty `meta` (fallback). Both return strings the JS
+// side deserialises, keeping the native core (`crate::pgraph`) unit-testable.
+// --------------------------------------------------------------------- //
+
+/// Solve a P-graph; returns the MSG/SSG/ABB analysis as a JSON string.
+#[wasm_bindgen]
+pub fn pgraph_solve(instance: &str, meta: &str) -> Result<String, JsValue> {
+    crate::pgraph::solve_json(instance, meta).map_err(|e| JsValue::from_str(&e))
+}
+
+/// Render a P-graph as Graphviz DOT.
+#[wasm_bindgen]
+pub fn pgraph_dot(instance: &str, meta: &str) -> Result<String, JsValue> {
+    crate::pgraph::dot(instance, meta).map_err(|e| JsValue::from_str(&e))
+}
+
+/// Render the bipartite P-graph (M/O partition + signed incidence) as text.
+#[wasm_bindgen]
+pub fn pgraph_transform(instance: &str, meta: &str) -> Result<String, JsValue> {
+    crate::pgraph::transform_text(instance, meta).map_err(|e| JsValue::from_str(&e))
+}
+
+/// Solve the 4x4 grid game and return the gated representation as JSON.
+#[wasm_bindgen]
+pub fn solved_grid_game_json() -> Result<String, JsValue> {
+    crate::game::solved_grid_game_json().map_err(|e| JsValue::from_str(&e))
+}
+
+/// Solve a named grid/hex world and return the gated representation as JSON.
+#[wasm_bindgen]
+pub fn solved_world_json(world_id: &str) -> Result<String, JsValue> {
+    crate::game::solved_world_json(world_id).map_err(|e| JsValue::from_str(&e))
+}
+
+/// Solve a named grid/hex world with a seeded random EGO start.
+#[wasm_bindgen]
+pub fn randomized_world_json(world_id: &str, seed: u32) -> Result<String, JsValue> {
+    crate::game::randomized_world_json(world_id, seed).map_err(|e| JsValue::from_str(&e))
+}
+
+/// Solve a generated world with caller-provided dimensions.
+#[wasm_bindgen]
+pub fn generated_world_json(topology: &str, width: i32, height: i32) -> Result<String, JsValue> {
+    crate::game::generated_world_json(topology, width, height).map_err(|e| JsValue::from_str(&e))
+}
+
+/// Solve a generated world with caller-provided dimensions and random EGO start.
+#[wasm_bindgen]
+pub fn generated_random_world_json(
+    topology: &str,
+    width: i32,
+    height: i32,
+    seed: u32,
+) -> Result<String, JsValue> {
+    crate::game::generated_random_world_json(topology, width, height, seed)
+        .map_err(|e| JsValue::from_str(&e))
+}
+
+/// Solve the adversarial Hikari-vs-Kage cellular-automaton arena.
+#[wasm_bindgen]
+pub fn adversarial_world_json() -> Result<String, JsValue> {
+    crate::game::adversarial_world_json().map_err(|e| JsValue::from_str(&e))
+}
+
+/// Solve a seeded adversarial Hikari-vs-Kage cellular-automaton arena.
+#[wasm_bindgen]
+pub fn adversarial_world_seed_json(seed: u32) -> Result<String, JsValue> {
+    crate::game::adversarial_world_seed_json(seed).map_err(|e| JsValue::from_str(&e))
+}
+
+/// Solve the virus cellular-automaton gameplay arena.
+#[wasm_bindgen]
+pub fn virus_world_json() -> Result<String, JsValue> {
+    crate::game::virus_world_json().map_err(|e| JsValue::from_str(&e))
+}
+
+/// Solve a seeded virus cellular-automaton gameplay arena.
+#[wasm_bindgen]
+pub fn virus_world_seed_json(seed: u32) -> Result<String, JsValue> {
+    crate::game::virus_world_seed_json(seed).map_err(|e| JsValue::from_str(&e))
 }

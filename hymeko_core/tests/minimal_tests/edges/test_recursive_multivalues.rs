@@ -3,7 +3,6 @@
 //! Place in: hymeko_core/tests/test_edge_values.rs
 //! Data files: hymeko_core/data/
 
-
 use hymeko::common::ids::DeclId;
 use hymeko::ir::ir::{DeclKind, Ir, SignedRefR, ValueR};
 use hymeko::resolution::interner::Interner;
@@ -53,8 +52,8 @@ fn count_kind(ir: &Ir, kind: DeclKind) -> usize {
 
 #[cfg(test)]
 mod linear_edges {
-    use crate::test_helpers::{find_decl, load_and_lower};
     use super::*;
+    use crate::test_helpers::{find_decl, load_and_lower};
     const PATH: &str = "../data/minimal_examples/testing_edges/linear_edge_values.hymeko";
 
     #[test]
@@ -91,8 +90,8 @@ mod linear_edges {
 
 #[cfg(test)]
 mod multivalue_edges {
-    use crate::test_helpers::{find_decl, load_and_lower};
     use super::*;
+    use crate::test_helpers::{find_decl, load_and_lower};
     const PATH: &str = "../data/minimal_examples/testing_edges/edge_example_multivalue.hymeko";
 
     #[test]
@@ -115,8 +114,8 @@ mod multivalue_edges {
 
 #[cfg(test)]
 mod hierarchy_edges {
-    use crate::test_helpers::{find_decl, load_and_lower};
     use super::*;
+    use crate::test_helpers::{find_decl, load_and_lower};
     const PATH: &str = "../data/minimal_examples/testing_edges/minimal_example_with_hierarchy_ref_edges_with_values.hymeko";
 
     #[test]
@@ -151,9 +150,10 @@ mod hierarchy_edges {
 
 #[cfg(test)]
 mod minimal_2n1e {
-    use crate::test_helpers::{find_decl, load_and_lower};
     use super::*;
-    const PATH: &str = "../data/minimal_examples/testing_edges/minimal_test_tensor_values_2nodes_1_edge.hymeko";
+    use crate::test_helpers::{find_decl, load_and_lower};
+    const PATH: &str =
+        "../data/minimal_examples/testing_edges/minimal_test_tensor_values_2nodes_1_edge.hymeko";
 
     #[test]
     fn parses_and_has_one_edge() {

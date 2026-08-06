@@ -1,0 +1,169 @@
+classDiagram
+    %% Experiment Runner Framework -- class diagram
+    %% docs/architecture/experiments_runner/runner_architecture.md
+
+    class Experiment {
+        <<abstract>>
+        +list~Monitor~ monitors
+        +run(config: ExperimentConfig) ExperimentResult*
+        +add_monitor(m: Monitor) None
+        #_notify_cell_start(cell)
+        #_notify_cell_end(cell, result)
+    }
+
+    class SingleCellExperiment {
+        +run(config) ExperimentResult
+        -_invoke_run_final_cell(args_namespace)
+    }
+
+    class SweepExperiment {
+        +cells: list~CellSpec~
+        +run(config) SweepResult
+        +aggregate(results) SweepSummary
+    }
+
+    class KomondorArrayExperiment {
+        +run(config) JobIdList
+        -_emit_sbatch_invocation(config)
+    }
+
+    Experiment <|-- SingleCellExperiment
+    Experiment <|-- SweepExperiment
+    Experiment <|-- KomondorArrayExperiment
+
+    SweepExperiment ..> SingleCellExperiment : delegates per cell
+    KomondorArrayExperiment ..> "scripts/estimate_slurm_time.py" : computes --time
+
+    %% Config side --------------------------------------------------
+
+    class ExperimentConfig {
+        +name: str
+        +description: str
+        +cells: list~CellSpec~
+        +model: ModelConfig
+        +topk: TopKConfig
+        +kernel: KernelConfig
+        +cycle_cache: CycleCacheConfig
+        +env: dict~str,str~
+        +output: OutputConfig
+        +monitor_names: list~str~
+        +from_yaml(path: Path) ExperimentConfig$
+    }
+
+    class CellSpec {
+        +dataset: str
+        +mode: str
+        +seed: int
+    }
+
+    class ModelConfig {
+        +family: str
+        +hidden: int
+        +n_epochs: int
+        +mixed_tuples: list~str~
+        +attention_m_e: str
+        +attention_highway: bool
+        +attention_highway_kind: str
+    }
+
+    class TopKConfig {
+        +mode: str
+        +k: int
+        +pruner: str
+        +scorer: str
+    }
+
+    class KernelConfig {
+        +triton: bool
+        +triton_backward: bool
+    }
+
+    class CycleCacheConfig {
+        +enabled: bool
+        +dir: str
+    }
+
+    class OutputConfig {
+        +jsonl: str
+        +summary: str
+    }
+
+    ExperimentConfig "1" *-- "many" CellSpec
+    ExperimentConfig *-- ModelConfig
+    ExperimentConfig *-- TopKConfig
+    ExperimentConfig *-- KernelConfig
+    ExperimentConfig *-- CycleCacheConfig
+    ExperimentConfig *-- OutputConfig
+
+    %% Monitor side -------------------------------------------------
+
+    class Monitor {
+        <<interface>>
+        +on_cell_start(cell: CellSpec)
+        +on_cell_end(cell: CellSpec, result: ExperimentResult)
+        +on_sweep_end(summary: SweepSummary)
+    }
+
+    class WallMonitor {
+        -_cell_starts: dict
+        +on_cell_start(cell)
+        +on_cell_end(cell, result)
+    }
+
+    class MemoryMonitor {
+        -_peak_rss_mb: float
+        +on_cell_start(cell)
+        +on_cell_end(cell, result)
+    }
+
+    class AUCMonitor {
+        -_aucs: dict
+        +on_cell_end(cell, result)
+        +on_sweep_end(summary)
+    }
+
+    class JSONLEmitter {
+        +path: Path
+        +on_cell_end(cell, result)
+    }
+
+    Monitor <|.. WallMonitor
+    Monitor <|.. MemoryMonitor
+    Monitor <|.. AUCMonitor
+    Monitor <|.. JSONLEmitter
+
+    Experiment o-- Monitor : observes
+
+    %% Registry -----------------------------------------------------
+
+    class ExperimentRegistry {
+        <<singleton>>
+        -_classes: dict~str, type~
+        +register(name: str, cls: type)
+        +lookup(name: str) type
+        +list_all() list~str~
+    }
+
+    ExperimentRegistry --> Experiment : resolves YAML name
+
+    %% Result types -------------------------------------------------
+
+    class ExperimentResult {
+        +auc: float
+        +f1m: float
+        +wall_s: float
+        +peak_rss_mb: float
+        +n_params: int
+        +config_echo: dict
+        +raw_jsonl_row: dict
+    }
+
+    class SweepSummary {
+        +per_cell: list~ExperimentResult~
+        +mean_auc: float
+        +std_auc: float
+        +total_wall_s: float
+    }
+
+    SingleCellExperiment ..> ExperimentResult : returns
+    SweepExperiment ..> SweepSummary : returns

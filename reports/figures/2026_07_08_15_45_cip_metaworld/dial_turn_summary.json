@@ -1,0 +1,135 @@
+{
+  "task": "dial_turn",
+  "scope": "template-level method validation (synthetic; NOT a real MetaWorld policy)",
+  "story": "engage_error \u2192 rotation_fraction \u2192 progress_score (dial toward target angle)",
+  "n": 120,
+  "seed": 0,
+  "monitor_pass_rate": 0.075,
+  "continuous_kept": [
+    "progress_score",
+    "engage_error",
+    "rotation_fraction",
+    "reward_proxy"
+  ],
+  "continuous_dropped": {
+    "stagnation_duration": "all_missing",
+    "forbidden_contact_count": "all_missing",
+    "clearance_min": "all_missing",
+    "reward_progress_disagreement": "all_missing"
+  },
+  "diagnosis": {
+    "causal_order": [
+      "engage_error",
+      "rotation_fraction",
+      "progress_score",
+      "reward_proxy"
+    ],
+    "strongest_edges": [
+      [
+        "rotation_fraction",
+        "progress_score",
+        0.984608
+      ],
+      [
+        "engage_error",
+        "rotation_fraction",
+        -0.898363
+      ],
+      [
+        "rotation_fraction",
+        "reward_proxy",
+        0.522548
+      ],
+      [
+        "progress_score",
+        "reward_proxy",
+        0.28275
+      ],
+      [
+        "engage_error",
+        "reward_proxy",
+        -0.197357
+      ]
+    ],
+    "failure_ranking": [],
+    "next_intervention": "Reward and monitor agree \u2014 no dominant disagreement; prioritize the causal ordering's outcome leaf and its strongest proposed parent.",
+    "ablation_plan": [
+      "Decider: Ablate the strongest proposed parent edge and measure the outcome leaf (controlled A/B).",
+      "Ablate/intervene on 'rotation_fraction'; LiNGAM proposes it increases 'progress_score' (w=+0.985) \u2014 controlled A/B decides if the edge is real.",
+      "Ablate/intervene on 'engage_error'; LiNGAM proposes it decreases 'rotation_fraction' (w=-0.898) \u2014 controlled A/B decides if the edge is real.",
+      "Ablate/intervene on 'rotation_fraction'; LiNGAM proposes it increases 'reward_proxy' (w=+0.523) \u2014 controlled A/B decides if the edge is real.",
+      "Ablate/intervene on 'progress_score'; LiNGAM proposes it increases 'reward_proxy' (w=+0.283) \u2014 controlled A/B decides if the edge is real.",
+      "Ablate/intervene on 'engage_error'; LiNGAM proposes it decreases 'reward_proxy' (w=-0.197) \u2014 controlled A/B decides if the edge is real."
+    ],
+    "provenance": {
+      "n_rollouts": 120,
+      "continuous_used": [
+        "progress_score",
+        "engage_error",
+        "rotation_fraction",
+        "reward_proxy"
+      ],
+      "continuous_dropped": {
+        "stagnation_duration": "all_missing",
+        "forbidden_contact_count": "all_missing",
+        "clearance_min": "all_missing",
+        "reward_progress_disagreement": "all_missing"
+      },
+      "categorical_strata": [
+        "success_monitor_pass",
+        "stagnated",
+        "phase_transition_failure",
+        "task"
+      ],
+      "lingam": "fit: n=120, d=4"
+    },
+    "_disclaimer": "DirectLiNGAM PROPOSES structure; controlled ablations DECIDE. Not proof of causality."
+  },
+  "_disclaimer": "PROPOSED structure over synthetic template rollouts; the .hymeko cross-view proves declared \u2261 engine tensor view, not causal truth. Real-env rollouts need the metaworld dep.",
+  "causal_order": [
+    "engage_error",
+    "rotation_fraction",
+    "progress_score",
+    "reward_proxy"
+  ],
+  "strongest_edges": [
+    [
+      "rotation_fraction",
+      "progress_score",
+      0.984608
+    ],
+    [
+      "engage_error",
+      "rotation_fraction",
+      -0.898363
+    ],
+    [
+      "rotation_fraction",
+      "reward_proxy",
+      0.522548
+    ],
+    [
+      "progress_score",
+      "reward_proxy",
+      0.28275
+    ],
+    [
+      "engage_error",
+      "reward_proxy",
+      -0.197357
+    ]
+  ],
+  "cross_view": {
+    "agree": true,
+    "backend": "engine",
+    "canonical_hash": "blake3:ec7e2172ad3fc96a452322734fcdac8e29075722c30ceacb817c535e75d38ff3",
+    "n_edges_declared": 5,
+    "n_edges_engine": 5,
+    "star_nnz": 10,
+    "clique_nnz": 8,
+    "sum_arities": 10,
+    "edges_match": true,
+    "counts_match": true,
+    "notes": []
+  }
+}

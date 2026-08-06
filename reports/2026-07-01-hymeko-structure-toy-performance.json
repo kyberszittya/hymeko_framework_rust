@@ -1,0 +1,51 @@
+{
+  "hot_all_forwards": {
+    "max_us": 30248.4,
+    "mean_us": 14536.1767,
+    "median_us": 14213.95,
+    "min_us": 10998.9
+  },
+  "mode": "eager",
+  "per_adapter": {
+    "fixed_gomb": {
+      "max_us": 6933.3,
+      "mean_us": 3965.161,
+      "median_us": 3910.1,
+      "min_us": 2896.1
+    },
+    "fsr": {
+      "max_us": 1801.4,
+      "mean_us": 958.6494,
+      "median_us": 940.1,
+      "min_us": 707.1
+    },
+    "gomb": {
+      "max_us": 11604.0,
+      "mean_us": 5117.3896,
+      "median_us": 4966.450000000001,
+      "min_us": 3892.2
+    },
+    "gomb_soma": {
+      "max_us": 1867.5,
+      "mean_us": 470.5265,
+      "median_us": 442.45,
+      "min_us": 328.0
+    },
+    "hsikan": {
+      "max_us": 5581.8,
+      "mean_us": 1794.3134,
+      "median_us": 1760.8000000000002,
+      "min_us": 1314.6
+    },
+    "sa_hsikan": {
+      "max_us": 1182.1,
+      "mean_us": 632.3849,
+      "median_us": 616.0,
+      "min_us": 391.1
+    }
+  },
+  "repeats": 1000,
+  "source": "D:\\hakiko_ai_ws\\03_implementation\\hymeko_framework_rust\\scripts\\dev\\hymeko_structure_toy.hymeko",
+  "threads": 1,
+  "warmup": 50
+}

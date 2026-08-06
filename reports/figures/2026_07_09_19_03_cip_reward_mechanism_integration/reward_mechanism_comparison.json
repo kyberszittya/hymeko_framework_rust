@@ -1,0 +1,105 @@
+{
+  "variables": [
+    "near_fraction",
+    "total_reward",
+    "action_noise",
+    "progress_score"
+  ],
+  "edges": [
+    [
+      "near_fraction",
+      "total_reward",
+      0.9726
+    ],
+    [
+      "action_noise",
+      "total_reward",
+      -0.1119
+    ],
+    [
+      "near_fraction",
+      "progress_score",
+      0.8695
+    ],
+    [
+      "near_fraction",
+      "action_noise",
+      0.0813
+    ]
+  ],
+  "spec": "data/robotics/metaworld_reward.hymeko",
+  "reward_mechanism": {
+    "tail": [
+      "progress_score",
+      "near_fraction"
+    ],
+    "head": [
+      "total_reward"
+    ],
+    "strength": 4.5,
+    "sign": 1
+  },
+  "scores": {
+    "none": {
+      "n_mechanisms": 0,
+      "n_parameters": 0,
+      "fro_error": 1.311912,
+      "explained_energy": 0.0,
+      "relative_error": 1.0
+    },
+    "raw_pairwise": {
+      "n_mechanisms": 4,
+      "n_parameters": 4,
+      "fro_error": 0.0,
+      "explained_energy": 1.0,
+      "relative_error": 0.0
+    },
+    "common_child": {
+      "n_mechanisms": 1,
+      "n_parameters": 1,
+      "fro_error": 1.162201,
+      "explained_energy": 0.215211,
+      "relative_error": 0.885883
+    },
+    "hymeko_reward": {
+      "n_mechanisms": 1,
+      "n_parameters": 1,
+      "fro_error": 1.1172,
+      "explained_energy": 0.274808,
+      "relative_error": 0.851582
+    },
+    "hymeko_reward_weighted": {
+      "n_mechanisms": 1,
+      "n_parameters": 2,
+      "fro_error": 0.880433,
+      "explained_energy": 0.549616,
+      "relative_error": 0.671107
+    }
+  },
+  "common_child_proposals": [
+    {
+      "tail": [
+        "action_noise",
+        "near_fraction"
+      ],
+      "head": [
+        "total_reward"
+      ]
+    }
+  ],
+  "cross_view": {
+    "acyclic": true,
+    "agree": true,
+    "backend": "engine",
+    "canonical_hash": "blake3:e2b993329f4fdc9a9410ef3334dc7e823ca0a96af5ee9a9754f04dd799f4a97d",
+    "n_edges_declared": 3,
+    "n_edges_engine": 3,
+    "star_nnz": 6,
+    "clique_nnz": 6,
+    "sum_arities": 6,
+    "edges_match": true,
+    "counts_match": true,
+    "notes": []
+  },
+  "_disclaimer": "Compares reconstruction of the pairwise B; does NOT claim causal truth from grouping. The HyMeKo reward mechanism is grounded in reward fidelity (R2), not in B."
+}

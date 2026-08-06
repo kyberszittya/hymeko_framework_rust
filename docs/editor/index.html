@@ -4,8 +4,11 @@
   <meta charset="UTF-8" />
   <title>HyMeKo Editor — visual hypergraph design</title>
   <link rel="stylesheet" href="editor.css" />
-  <!-- Cytoscape.js for the canvas (vanilla JS, no build step) -->
+  <!-- Cytoscape.js for the 2D graph canvas (vanilla JS, no build step) -->
   <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
+  <!-- three.js r128 (global THREE) for the 3D views; same version as the
+       demo_web star-expansion viewer. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
@@ -19,23 +22,42 @@
       <option value="urdf">URDF</option>
       <option value="sdf">SDF</option>
       <option value="dot">DOT</option>
+      <option value="sysml">SysML</option>
     </select>
     <button id="btnExport" title="Download in selected format">Download</button>
     <span class="spacer"></span>
     <button id="btnLoad"   title="Load a .hymeko file">Load…</button>
-    <button id="btnExample" title="Reset to a small example">Example</button>
+    <label class="example-pick" title="Vocabulary profile (imports its meta files)">Profile
+      <select id="profileSelect"></select>
+    </label>
+    <label class="example-pick" title="Load a built-in example">Examples
+      <select id="exampleSelect">
+        <option value="" disabled selected>choose…</option>
+      </select>
+    </label>
     <input type="file" id="fileInput" accept=".hymeko" style="display: none" />
   </div>
 </header>
 
 <main>
   <aside class="palette">
+    <div class="palette-tabs">
+      <button class="palette-tab active" data-tab="outline" type="button">Outline</button>
+      <button class="palette-tab" data-tab="tools" type="button">Tools</button>
+    </div>
+
+    <!-- Tab: outline — multi-file MDP projects as a collapsible tree (editor.js). A project =
+         robot + env + reward + strategy sharing a meta vocabulary; click a file to edit it as the
+         compile root. -->
+    <div class="palette-tabpane active" id="tab-outline">
+      <div id="projectTree" class="project-tree"></div>
+    </div>
+
+    <!-- Tab: tools — element palette, selection, stats, view options, query. -->
+    <div class="palette-tabpane" id="tab-tools">
     <h3>Add</h3>
-    <button class="palette-btn" data-add="link">+ Link</button>
-    <button class="palette-btn" data-add="rev_joint">+ Revolute joint</button>
-    <button class="palette-btn" data-add="conti_joint">+ Continuous joint</button>
-    <button class="palette-btn" data-add="prismatic_joint">+ Prismatic joint</button>
-    <button class="palette-btn" data-add="fixed_joint">+ Fixed joint</button>
+    <!-- Palette buttons are built from the active profile (editor.js). -->
+    <div id="paletteAdd"></div>
 
     <h3>Selection</h3>
     <div id="selectionPanel">
@@ -49,24 +71,51 @@
       <li>Arcs:  <span id="arcCount">–</span></li>
     </ul>
 
+    <h3>View</h3>
+    <label class="vrow"><input type="checkbox" id="toggleIsa" checked> show &lt;isa&gt; (meta) lines</label>
+    <label class="vrow">Graph layout
+      <select id="graphLayout">
+        <option value="cose">Force</option>
+        <option value="concentric">Composite (roots centred)</option>
+      </select>
+    </label>
+
     <h3>Query</h3>
     <input type="text" id="predicate" value="INHERITS(link)" />
     <button id="btnQuery">Run</button>
     <div id="queryResult"></div>
+    </div>
   </aside>
 
   <section class="canvas-pane">
-    <div id="cy"></div>
-    <div id="errorBox" class="error-box" style="display: none"></div>
+    <div class="view-tabs">
+      <button class="view-tab active" data-view="graph" title="Cytoscape topology graph">Graph</button>
+      <button class="view-tab" data-view="hyper3d" title="three.js star/clique hypergraph">Hypergraph 3D</button>
+      <button class="view-tab" data-view="kinematic" title="robot render + αₖ regime">Kinematic</button>
+      <button class="view-tab" data-view="sysml" title="live SysML 2 textual concrete syntax">SysML</button>
+      <button class="view-tab" data-view="generate" title="generate classic hypergraphs (Steiner systems, sunflowers, …)">Generate</button>
+    </div>
+    <div class="view-stack">
+      <div id="view-graph" class="view-pane active"><div id="cy"></div></div>
+      <div id="view-hyper3d" class="view-pane"></div>
+      <div id="view-kinematic" class="view-pane"></div>
+      <div id="view-sysml" class="view-pane"></div>
+      <div id="view-generate" class="view-pane"></div>
+      <div id="errorBox" class="error-box" style="display: none"></div>
+    </div>
+    <!-- Floating source panel — draggable (by the header), resizable, collapsible. -->
+    <div id="sourcePanel" class="source-float">
+      <div class="source-head" id="sourceHead">
+        <button id="sourceToggle" class="source-toggle" title="Collapse / expand">▾</button>
+        <span class="source-title">Source (.hymeko) — drag to move</span>
+      </div>
+      <div class="source-wrap">
+        <pre id="sourceHL" class="source-hl" aria-hidden="true"></pre>
+        <textarea id="source" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+      </div>
+    </div>
   </section>
 </main>
-
-<footer>
-  <details open>
-    <summary>Source (.hymeko) — single source of truth, edits update this directly</summary>
-    <textarea id="source" spellcheck="false"></textarea>
-  </details>
-</footer>
 
 <!-- Modal for adding link/joint -->
 <div id="modal" class="modal" style="display: none">
@@ -80,6 +129,6 @@
   </div>
 </div>
 
-<script type="module" src="editor.js"></script>
+<script type="module" src="editor.js?v=27"></script>
 </body>
 </html>

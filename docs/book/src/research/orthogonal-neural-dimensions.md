@@ -86,10 +86,10 @@ architecture.
 
 ### Implementation pointer
 
-[`signedkan_wip/src/signedkan.py`](../../../signedkan_wip/src/signedkan.py)
+[`hymeko_neuro/signedkan.py`](../../../hymeko_neuro/signedkan.py)
 (`SignedKAN`, `MultiLayerSignedKAN`,
 `build_vertex_triad_incidence`),
-[`signedkan_wip/src/mixed_arity_signedkan/`](../../../signedkan_wip/src/mixed_arity_signedkan/)
+[`hymeko_neuro/models/mixed_arity_signedkan/`](../../../hymeko_neuro/models/mixed_arity_signedkan/)
 (`MixedAritySignedKAN`).
 
 ---
@@ -144,7 +144,7 @@ kernel has a fixed local receptive field on the cycle pool.
 
 ### Implementation pointer
 
-[`signedkan_wip/src/hymeko_gomb/shells.py`](../../../signedkan_wip/src/hymeko_gomb/shells.py)
+[`hymeko_neuro/models/hymeko_gomb/shells.py`](../../../hymeko_neuro/models/hymeko_gomb/shells.py)
 — `OuterFIRShell`. The class wraps M parallel linear kernels with a
 graded-multivector aggregation; `M_outer` is the kernel-bank size
 hyperparameter.
@@ -235,9 +235,9 @@ Formal connections (open):
 
 ### Implementation pointer
 
-[`signedkan_wip/src/demo/cliques_contract.py`](../../../signedkan_wip/src/demo/cliques_contract.py)
+[`hymeko_neuro/experiments/demo/cliques_contract.py`](../../../hymeko_neuro/experiments/demo/cliques_contract.py)
 — `contract_balanced_cliques`, `multiscale_hierarchy`, `ContractedBundle`.
-[`signedkan_wip/tests/test_demo_cliques_contract.py`](../../../signedkan_wip/tests/test_demo_cliques_contract.py)
+[`hymeko_neuro/tests/test_demo_cliques_contract.py`](../../../hymeko_neuro/tests/test_demo_cliques_contract.py)
 — 16 invariant tests including the canonical 4-clique 2-2-split
 balance check.
 
@@ -310,7 +310,7 @@ a small classification head.
 
 ### Implementation pointer
 
-[`signedkan_wip/src/cpml.py`](../../../signedkan_wip/src/cpml.py)
+[`hymeko_neuro/cpml.py`](../../../hymeko_neuro/cpml.py)
 — the `CPML` module with `cpml_topology ∈ {route, …}` and
 `cpml_tier_organization ∈ {structural, degree-rank, eigenvector,
 …}` axes. The Gömb cascade's `InnerCPMLCore` wraps this for the
@@ -332,7 +332,7 @@ function*:
 
 A consequence of this orthogonality: **each axis can be ablated
 independently**, and Gömb's
-[`GombNoOuter`, `GombNoMiddle`, `GombNoInner`](../../../signedkan_wip/src/hymeko_gomb/__init__.py)
+[`GombNoOuter`, `GombNoMiddle`, `GombNoInner`](../../../hymeko_neuro/models/hymeko_gomb/__init__.py)
 ablations let us measure the contribution of each shell in isolation.
 The 2026-05-14 strict-protocol benchmark uses the full cascade; the
 ablation matrix is open work.

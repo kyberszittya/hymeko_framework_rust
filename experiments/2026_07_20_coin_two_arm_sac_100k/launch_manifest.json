@@ -1,0 +1,13 @@
+{
+  "campaign": "COIN-DELIVERY-RL two-arm (Phase B)",
+  "baseline_commit": "1c704f72977ede79e828d6f29852617a90edda22",
+  "refactored_commit": "e8d0b7349c3a4562534128bc2c90dfcec0de0a9f",
+  "repair_branch": "repair/coin-delivery-canonical-path",
+  "command": "PYTHONUNBUFFERED=1 python -m hymeko_rl.experiments.coin_two_arm_sac --steps 100000 --eval-every 5000 --seed 0",
+  "pid": 19268,
+  "device": "cpu",
+  "reward": "galambos_task_deliver_v2b.hymeko (certified delivers=True, optimal_return 25.40)",
+  "splits": {"train_seeds": "64000-64055", "val_seeds": "64100-64113", "demo_seeds": "64200-64203"},
+  "mechanisms": ["competence-gated bc_coef", "phase-stratified demo seed", "canonical-rollout eval", "checkpoint ranking by strict"],
+  "run_dir": "experiments/2026_07_20_coin_two_arm_sac_100k"
+}

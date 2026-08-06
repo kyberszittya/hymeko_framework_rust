@@ -1,0 +1,24 @@
+{
+ "gate": "COIN_REWARD_EVALUATION_ALIGNMENT_PASS",
+ "result": "FAIL",
+ "reward": "v2b hymeko_spec (now LOAD-BEARING, sentinel-proven)",
+ "returns_full_horizon": {
+  "strict_delivery": -57.415,
+  "grasp_and_stall": -49.195,
+  "zero_action": -84.404,
+  "oscillation": -94.252,
+  "away": -145.707
+ },
+ "delivery_gt_stall": false,
+ "per_term_on_delivery_seed1011": {
+  "grasp_approach": -42.89,
+  "both_approach": -45.02,
+  "out_of_bounds": 0.0,
+  "terminal_deliver_graded": 30.0,
+  "zone_progress": 0.49,
+  "body_progress_penalty": 0.0,
+  "reached_center": true
+ },
+ "mechanism": "terminal_deliver_graded DOES fire (+30) but the DENSE per-step grasp_approach(-42.9)+both_approach(-45.0) accumulate over the full 160-step horizon and swamp it. v2b's dense approach penalties are calibrated for a TERMINATE-AT-SUCCESS episode (PlanarGraspEnv ends at 5-step held-in-zone success); the full-action env REMOVES the center-terminal so the 6-step strict dwell can accumulate -> penalties over-accumulate.",
+ "contradiction": "THREE incompatible success definitions: v2b success_steps (5-step held dwell -> terminal bonus) vs env terminal (center-reach, 1 step) vs strict certificate (6-step dwell)"
+}

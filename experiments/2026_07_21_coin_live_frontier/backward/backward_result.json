@@ -1,0 +1,14 @@
+{
+ "seed": 0,
+ "steps": 30000,
+ "basin": 39,
+ "earlier": 68,
+ "frozen_strong": 10,
+ "frozen_earlier_solvable": 0,
+ "expanded_strong": 0,
+ "expanded_earlier_solvable": 6,
+ "retained_original": false,
+ "gained_earlier": false,
+ "accepted": false,
+ "classification": "NO_EARLY_FRONTIER"
+}

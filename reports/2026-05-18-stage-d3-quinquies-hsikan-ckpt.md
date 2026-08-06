@@ -33,13 +33,13 @@ Single optional kwarg threaded through three files, plus a
 
 ### Modified
 
-- [`signedkan_wip/src/vision/hymeyolo_backbones.py`](../signedkan_wip/src/vision/hymeyolo_backbones.py) — `HSiKANConvBackbone.__init__` accepts `use_checkpoint: bool = False`. Both `forward` and `multi_scale_features` route each layer through `torch.utils.checkpoint.checkpoint(..., use_reentrant=False)` when `use_checkpoint and self.training and h.requires_grad`. `build_backbone()` accepts `use_checkpoint` and forwards it only to the `"hsikan"` branch (other backbones silently ignore it).
-- [`signedkan_wip/src/vision/hymeyolo_circles_ricci.py`](../signedkan_wip/src/vision/hymeyolo_circles_ricci.py) — `RicciHyMeYOLOMulti.__init__` accepts `backbone_use_checkpoint: bool = False` and forwards to `build_backbone`.
-- [`signedkan_wip/src/vision/train_voc_stagec.py`](../signedkan_wip/src/vision/train_voc_stagec.py) — added `--backbone-checkpoint` CLI flag.
+- [`hymeko_neuro/experiments/vision/hymeyolo_backbones.py`](../hymeko_neuro/experiments/vision/hymeyolo_backbones.py) — `HSiKANConvBackbone.__init__` accepts `use_checkpoint: bool = False`. Both `forward` and `multi_scale_features` route each layer through `torch.utils.checkpoint.checkpoint(..., use_reentrant=False)` when `use_checkpoint and self.training and h.requires_grad`. `build_backbone()` accepts `use_checkpoint` and forwards it only to the `"hsikan"` branch (other backbones silently ignore it).
+- [`hymeko_neuro/experiments/vision/hymeyolo_circles_ricci.py`](../hymeko_neuro/experiments/vision/hymeyolo_circles_ricci.py) — `RicciHyMeYOLOMulti.__init__` accepts `backbone_use_checkpoint: bool = False` and forwards to `build_backbone`.
+- [`hymeko_neuro/experiments/vision/train_voc_stagec.py`](../hymeko_neuro/experiments/vision/train_voc_stagec.py) — added `--backbone-checkpoint` CLI flag.
 
 ### New
 
-- [`signedkan_wip/tests/test_backbone_checkpoint.py`](../signedkan_wip/tests/test_backbone_checkpoint.py) (~125 LOC, 9 tests) — forward parity (eval and train), backward parity (input + param grads, atol 1e-5), eval-mode bypass, no-requires-grad bypass, `build_backbone` threading, non-hsikan silent-ignore.
+- [`hymeko_neuro/tests/test_backbone_checkpoint.py`](../hymeko_neuro/tests/test_backbone_checkpoint.py) (~125 LOC, 9 tests) — forward parity (eval and train), backward parity (input + param grads, atol 1e-5), eval-mode bypass, no-requires-grad bypass, `build_backbone` threading, non-hsikan silent-ignore.
 
 ### CORE.YAML items touched
 

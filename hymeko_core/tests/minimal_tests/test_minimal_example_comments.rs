@@ -1,9 +1,9 @@
-use parser::{ast::HyperItem, parse_description};
-use log::info;
-use std::time::Instant;
-use crate::test_helpers::{log_test_header, log_test_footer};
 use super::constants::*;
 use super::helpers::assert_expected_fields;
+use crate::test_helpers::{log_test_footer, log_test_header};
+use log::info;
+use parser::{ast::HyperItem, parse_description};
+use std::time::Instant;
 
 #[test]
 fn parses_minimal_example_context_fields_with_comments() {
@@ -52,7 +52,6 @@ fn parses_minimal_example_context_fields_with_bad_comments() {
         Some(start.elapsed()),
         "Malformed file correctly failed to parse.",
     );
-
 }
 
 #[test]
@@ -70,8 +69,6 @@ fn parses_minimal_example_context_fields_with_bad_comments_inline() {
         Some(start.elapsed()),
         "Inline parse correctly errored on bad comments.",
     );
-
-
 }
 
 fn run_comment_fixture(title: &str, path: &str, details: &str) {
@@ -88,8 +85,15 @@ fn run_comment_fixture(title: &str, path: &str, details: &str) {
     };
     assert_eq!(context.inner.name, CONTEXT_NODE_NAME);
 
-    let ctx_body = context.inner.body.as_ref().expect("context must have a body");
-    assert_expected_fields(ctx_body.as_slice(), MINIMAL_WITH_FIELDS_COMMENTS_EXPECTATIONS);
+    let ctx_body = context
+        .inner
+        .body
+        .as_ref()
+        .expect("context must have a body");
+    assert_expected_fields(
+        ctx_body.as_slice(),
+        MINIMAL_WITH_FIELDS_COMMENTS_EXPECTATIONS,
+    );
     info!("Validated comment fixture {}", path);
     log_test_footer(
         title,

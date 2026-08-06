@@ -26,4 +26,7 @@
 
 pub mod algebra;
 
-pub use algebra::{blade_product, canonical_reorder_sign, Multivector, Signature};
+pub use algebra::{
+    Multivector, Signature, blade_product, canonical_reorder_sign, cayley_to_unit_quat,
+    quat_conjugate, quat_mul, quat_rotate,
+};

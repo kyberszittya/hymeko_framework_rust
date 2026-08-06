@@ -1,0 +1,414 @@
+{
+ "verdict": "HOLD_SETTLE_BLOCKED",
+ "e3_variants": {
+  "A": {
+   "strict030": 0,
+   "bands": {
+    "+0.018-0.030": {
+     "n": 0,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {},
+     "first_fail": {}
+    },
+    "+0.030-0.045": {
+     "n": 4,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "TRANSPORT_FAILURE": 4
+     },
+     "first_fail": {
+      "NONE": 4
+     }
+    },
+    "+0.045-0.060": {
+     "n": 5,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "TRANSPORT_FAILURE": 5
+     },
+     "first_fail": {
+      "NONE": 5
+     }
+    },
+    "+0.060-0.080": {
+     "n": 3,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 0.0908,
+     "fails": {
+      "HOLD_SETTLE_FAILURE": 1,
+      "TRANSPORT_FAILURE": 2
+     },
+     "first_fail": {
+      "settle_velocity": 1,
+      "NONE": 2
+     }
+    }
+   }
+  },
+  "B": {
+   "strict030": 0,
+   "bands": {
+    "+0.018-0.030": {
+     "n": 0,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {},
+     "first_fail": {}
+    },
+    "+0.030-0.045": {
+     "n": 4,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "TRANSPORT_FAILURE": 4
+     },
+     "first_fail": {
+      "NONE": 4
+     }
+    },
+    "+0.045-0.060": {
+     "n": 5,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "TRANSPORT_FAILURE": 5
+     },
+     "first_fail": {
+      "NONE": 5
+     }
+    },
+    "+0.060-0.080": {
+     "n": 3,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 0.0908,
+     "fails": {
+      "HOLD_SETTLE_FAILURE": 1,
+      "TRANSPORT_FAILURE": 2
+     },
+     "first_fail": {
+      "settle_velocity": 1,
+      "NONE": 2
+     }
+    }
+   }
+  },
+  "C": {
+   "strict030": 0,
+   "bands": {
+    "+0.018-0.030": {
+     "n": 0,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {},
+     "first_fail": {}
+    },
+    "+0.030-0.045": {
+     "n": 4,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "TRANSPORT_FAILURE": 4
+     },
+     "first_fail": {
+      "NONE": 4
+     }
+    },
+    "+0.045-0.060": {
+     "n": 5,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "TRANSPORT_FAILURE": 5
+     },
+     "first_fail": {
+      "NONE": 5
+     }
+    },
+    "+0.060-0.080": {
+     "n": 3,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 0.0908,
+     "fails": {
+      "HOLD_SETTLE_FAILURE": 1,
+      "TRANSPORT_FAILURE": 2
+     },
+     "first_fail": {
+      "settle_velocity": 1,
+      "NONE": 2
+     }
+    }
+   }
+  },
+  "D": {
+   "strict030": 0,
+   "bands": {
+    "+0.018-0.030": {
+     "n": 0,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {},
+     "first_fail": {}
+    },
+    "+0.030-0.045": {
+     "n": 4,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "TRANSPORT_FAILURE": 4
+     },
+     "first_fail": {
+      "NONE": 4
+     }
+    },
+    "+0.045-0.060": {
+     "n": 5,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "TRANSPORT_FAILURE": 5
+     },
+     "first_fail": {
+      "NONE": 5
+     }
+    },
+    "+0.060-0.080": {
+     "n": 3,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "HOLD_SETTLE_FAILURE": 1,
+      "TRANSPORT_FAILURE": 2
+     },
+     "first_fail": {
+      "NONE": 3
+     }
+    }
+   }
+  }
+ },
+ "dof_A": {
+  "E0": {
+   "strict030": 1,
+   "bands": {
+    "+0.018-0.030": {
+     "n": 0,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {},
+     "first_fail": {}
+    },
+    "+0.030-0.045": {
+     "n": 4,
+     "strict": 1,
+     "best_dwell": 6,
+     "min_vel": 0.0349,
+     "fails": {
+      "STRICT_SUCCESS": 1,
+      "GRASP_FAILURE": 3
+     },
+     "first_fail": {
+      "NONE": 4
+     }
+    },
+    "+0.045-0.060": {
+     "n": 6,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "GRASP_FAILURE": 6
+     },
+     "first_fail": {
+      "NONE": 6
+     }
+    },
+    "+0.060-0.080": {
+     "n": 6,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "GRASP_FAILURE": 6
+     },
+     "first_fail": {
+      "NONE": 6
+     }
+    }
+   }
+  },
+  "E1": {
+   "strict030": 0,
+   "bands": {
+    "+0.018-0.030": {
+     "n": 1,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "GRASP_FAILURE": 1
+     },
+     "first_fail": {
+      "NONE": 1
+     }
+    },
+    "+0.030-0.045": {
+     "n": 0,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {},
+     "first_fail": {}
+    },
+    "+0.045-0.060": {
+     "n": 7,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "GRASP_FAILURE": 7
+     },
+     "first_fail": {
+      "NONE": 7
+     }
+    },
+    "+0.060-0.080": {
+     "n": 4,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "GRASP_FAILURE": 4
+     },
+     "first_fail": {
+      "NONE": 4
+     }
+    }
+   }
+  },
+  "E2": {
+   "strict030": 0,
+   "bands": {
+    "+0.018-0.030": {
+     "n": 2,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "TRANSPORT_FAILURE": 2
+     },
+     "first_fail": {
+      "NONE": 2
+     }
+    },
+    "+0.030-0.045": {
+     "n": 4,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "TRANSPORT_FAILURE": 2,
+      "HOLD_SETTLE_FAILURE": 2
+     },
+     "first_fail": {
+      "NONE": 4
+     }
+    },
+    "+0.045-0.060": {
+     "n": 6,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "HOLD_SETTLE_FAILURE": 4,
+      "TRANSPORT_FAILURE": 2
+     },
+     "first_fail": {
+      "NONE": 6
+     }
+    },
+    "+0.060-0.080": {
+     "n": 0,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {},
+     "first_fail": {}
+    }
+   }
+  },
+  "E3": {
+   "strict030": 0,
+   "bands": {
+    "+0.018-0.030": {
+     "n": 0,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {},
+     "first_fail": {}
+    },
+    "+0.030-0.045": {
+     "n": 4,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "TRANSPORT_FAILURE": 4
+     },
+     "first_fail": {
+      "NONE": 4
+     }
+    },
+    "+0.045-0.060": {
+     "n": 5,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 9.9,
+     "fails": {
+      "TRANSPORT_FAILURE": 5
+     },
+     "first_fail": {
+      "NONE": 5
+     }
+    },
+    "+0.060-0.080": {
+     "n": 3,
+     "strict": 0,
+     "best_dwell": 0,
+     "min_vel": 0.0908,
+     "fails": {
+      "HOLD_SETTLE_FAILURE": 1,
+      "TRANSPORT_FAILURE": 2
+     },
+     "first_fail": {
+      "settle_velocity": 1,
+      "NONE": 2
+     }
+    }
+   }
+  }
+ },
+ "e3_A_best_dwell": 0,
+ "e3_A_min_vel": 0.0908,
+ "dwell_required": 6
+}

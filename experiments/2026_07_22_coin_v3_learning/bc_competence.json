@@ -1,0 +1,17 @@
+{
+ "gate": "FULL_ACTION_BC_COMPETENCE",
+ "bundle_hash": "6664ac459cca8f62",
+ "sha16": "5b20869d69fdec78",
+ "expert_headline": 3,
+ "bc_dagger_headline": 1,
+ "headline_contact": 9,
+ "val_deliver": 2,
+ "val_n": 40,
+ "heldout_deliver": 5,
+ "heldout_n": 30,
+ "headline_seeds": [
+  1174
+ ],
+ "competence_ratio": 0.333,
+ "verdict": "FULL_ACTION_BC_NOT_ESTABLISHED"
+}

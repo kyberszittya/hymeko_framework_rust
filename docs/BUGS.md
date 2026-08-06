@@ -1,12 +1,140 @@
 # Known issues
 
-**Last updated:** 2026-04-21
+**Last updated:** 2026-06-18
 
 A working list of real bugs and gaps we've identified, with reproducers and current understanding. Issues land here when they are concrete enough to act on and not yet fixed; when they're fixed, they move to the changelog (`docs/changelog/`) with the commit reference.
 
 ---
 
 ## Open
+
+> B-003/004/005 surfaced 2026-06-18 while building the `hymeko_rl` robot-RL line (the
+> Kato collaboration). All three are in the **hymeko → mjcf → obs** path — the pipeline
+> that turns a `.hymeko` robot into a usable simulation. None block Phase 1/2 (worked
+> around via the articulated `arm_world` MJCF), but all three must be fixed for the scene
+> and the observation hypergraph to come *canonically* from one `.hymeko` source.
+
+### B-005: MJCF emitter drops the per-joint axis (all joints emitted on Z)
+
+**Component:** `hymeko_formats/src/transforms.rs` — MJCF emitter, joint-axis emission (likely shared with the URDF/SDF emitters — check).
+**Severity:** High — emitted robots are kinematically **degenerate**: all joints colinear on Z, so the end-effector has zero workspace and *cannot perform any reaching/manipulation task*.
+**First observed:** 2026-06-18, `hymeko_rl` Phase-1 reaching (the emitted arm's EE would not move).
+
+**Symptom.** Every joint in the emitted MJCF has `axis = [0 0 1]` regardless of the source axis; EE position is invariant to joint angles (workspace spread = 0).
+
+**Root cause (PINNED 2026-06-19 — the template path, NOT the model extractor).** There
+are *two* emit paths: (a) the **model path** `hymeko_query::kinematics::extract_kinematic_model`
+→ `hymeko_formats` `emit_mjcf`/`generate_urdf`/`generate_sdf`, and (b) the **template path**
+the CLI uses (`emit`/`compile`/`transform` → `render_from_templates` over `transforms/<name>/`).
+The **model path is CORRECT** — it reads each joint's `AXIS_*` arc; the new regression test
+`hymeko_query/tests/test_anthropomorphic_generation.rs::per_joint_axes_match_the_source_b005`
+**passes** (j0=Z, j1=X, j2=Z, j3=X, j4=Y, jtool=Z). The bug is entirely in the **template
+path**: `transforms/urdf/template.urdf.xml`, `transforms/sdf/template.sdf.xml` literally
+hardcode `<axis xyz="0 0 1"/>`, and `transforms/mjcf/template.mjcf.xml` is worse — it emits
+flat bodies with **no `<joint>` elements at all** (which is also B-004). So the CLI's static
+templates never read the joint axis. (The earlier "`*_faithful.mjcf` is all-Z" was the
+template path too.)
+
+**Fix (recommended).** Route the CLI `emit -f {mjcf,urdf,sdf}` to the **model-based**
+emitters (`hymeko_formats::{emit_mjcf, generate_urdf, generate_sdf}`), which already extract
+axes correctly — retiring the static templates for these formats. Alternatively make the
+templates dynamic (a per-joint loop binding the axis query), but the model emitters already
+exist and are correct, so routing is cleaner. Both are **non-CORE** (CLI + `hymeko_formats`
++ template data). The model extractor (`hymeko_query`, CORE) needs **no change** — confirmed
+byte-unchanged + the regression test guards it.
+
+**Reproducer.**
+```bash
+python -c "
+import mujoco, numpy as np
+m = mujoco.MjModel.from_xml_path('demos/hero/out/anthropomorphic_arm_faithful.mjcf')
+print('emitted axes', m.jnt_axis.round(0).tolist())          # all [0,0,1]
+d=mujoco.MjData(m); ee=mujoco.mj_name2id(m,mujoco.mjtObj.mjOBJ_BODY,'tool'); pts=[]
+for s in range(4):
+    r=np.random.default_rng(s); d.qpos[:]=r.uniform(m.jnt_range[:,0],m.jnt_range[:,1])
+    mujoco.mj_forward(m,d); pts.append(d.xpos[ee].copy())
+print('EE spread', (np.array(pts).max(0)-np.array(pts).min(0)).round(3).tolist())  # [0,0,0]
+"
+grep AXIS_ data/robotics/anthropomorphic_arm.hymeko          # source: AXIS_Z/X/Z/X/Y/Z
+```
+
+**Workaround (no longer needed for emit).** `hymeko_rl` Phase-1 used the hand-authored `hymeko_rl/env/arm_world.py` arm (mixed Z/Y/Y/Z, EE spread ~0.64 m).
+
+**✅ RESOLVED 2026-06-19.** The model extractor was *never* wrong — it reads each joint's
+`AXIS_*` arc correctly (regression test `per_joint_axes_match_the_source_b005` passes). The bug
+was the **CLI dispatch** (non-CORE): `emit`/`compile` routed kinematic formats through the static
+`transforms/<fmt>/` templates, which **hardcode** `<axis xyz="0 0 1"/>`. Fix: `emit -f {mjcf,urdf,sdf}`
+now routes kinematic formats to the model-based emitter (`hymeko_cli/src/main.rs`). `emit -f urdf|sdf`
+now emit the source's mixed axes (Z/X/Z/X/Y/Z). MJCF needed two further `emit_mjcf` fixes to *load*:
+the root `world` frame now maps to MuJoCo's implicit `<worldbody>` (was a duplicate-name collision),
+and `<inertial>` now carries the required `pos`. Net: `hymeko emit -f mjcf <arm>` yields a loadable,
+articulated arm (nq=6, EE workspace ~1.2×0.9×0.8 m). Report:
+`reports/2026-06-19-hymeko-emit-kinematic-rerouting.md`.
+
+**Follow-up (minor, open).** The emitted joints are **unlimited** — `extract_joint_limits` looks for
+direct `limit_lower`/`limit_upper` children, but the fixture declares `limit -> joint_rev_limit` (a
+*ref* to a shared limit node), which the extractor does not follow. The arm articulates fine without
+ranges; following the ref would add joint limits to the emitted scene. Low priority.
+
+---
+
+### B-004: default `emit -f mjcf` actuator references a non-existent joint target
+
+**Component:** `hymeko_formats/src/transforms.rs` — MJCF emitter, actuator block (default `emit -f mjcf` path; the `*_faithful` transform path is correct).
+**Severity:** High — the emitted MJCF fails to load in MuJoCo (hard error at model compile).
+**First observed:** 2026-06-18, `HypergraphState.from_hymeko` (CLI emit → MuJoCo).
+
+**Symptom.**
+```bash
+python -c "import mujoco; mujoco.MjModel.from_xml_path('demos/hero/out/anthropomorphic_arm.mjcf')"
+# ValueError: Error: unknown transmission target 'j0' for actuator id = 0
+```
+The `*_faithful.mjcf` variant loads cleanly (6-DOF).
+
+**Reproducer.**
+```bash
+./target/debug/hymeko.exe emit -f mjcf data/robotics/anthropomorphic_arm.hymeko -n robot > /tmp/arm.mjcf
+python -c "import mujoco; mujoco.MjModel.from_xml_string(open('/tmp/arm.mjcf').read())"   # same error
+```
+
+**Root cause (hypothesis).** The default emitter's `<motor … joint="j0">` actuators reference a joint name not present as a `<joint name="…">` in the emitted body — an actuator↔joint name/binding mismatch, or `j0` maps to a *fixed* joint (no DOF, not a valid transmission target). `data/robotics/anthropomorphic_arm.hymeko` has `@j_fix` (fixed) plus `@j0..@jtool` (rev); the actuator emit likely binds to a name the body section did not emit as a free joint.
+
+**✅ RESOLVED 2026-06-19 (same root cause and fix as B-005).** The mismatched actuators were the
+**static MJCF template** `transforms/mjcf/template.mjcf.xml`: it emitted flat bodies with **no
+`<joint>` elements** plus motors referencing joint names that were never declared. The CLI now
+routes `emit -f mjcf` to the model-based `emit_mjcf` (`hymeko_cli/src/main.rs`), which emits nested
+bodies with matched `<joint name>` and `<motor joint=…>` pairs and skips the fixed joint. Guarded by
+`mjcf_emit_is_loadable_and_articulable_b004_b005` (asserts the 6 hinge joints are present and the
+scene is well-formed). The legacy `transforms/mjcf/` template is now unused by the CLI for robots.
+
+---
+
+### B-003: PyO3 `load_file` import resolver fails on `@"…"` imports
+
+**Component:** `hymeko_py` PyO3 binding — `PyHypergraphEngine.load_file` import resolution (the `hymeko` CLI resolver is unaffected).
+**Severity:** Medium — blocks obtaining the canonical `.hymeko` star-expansion (`compile_star_expansion`) from Python for any robot file that uses `@"…";` imports; CLI-based emit (MJCF/URDF/…) is unaffected.
+**First observed:** 2026-06-18, wiring `hymeko_rl.HypergraphState` (the RL obs-hypergraph bridge).
+
+**Symptom.** Loading a robot `.hymeko` that imports a sibling meta fails with an IO "file not found" for a file that *exists*.
+
+**Reproducer.**
+```bash
+python -c "import hymeko; hymeko.PyHypergraphEngine().load_file('data/robotics/anthropomorphic_arm.hymeko')"
+# SyntaxError: Compile error: Io(IoDiag { op:"read", path:"data\\robotics\\meta_kinematics.hymeko", err: file not found })
+ls data/robotics/meta_kinematics.hymeko                                  # the file IS there
+./target/debug/hymeko.exe inspect data/robotics/anthropomorphic_arm.hymeko   # CLI resolves the same import fine
+```
+`chdir` to the source dir does not help (it then reports the bare name not found), so it is not a simple cwd issue.
+
+**Root cause (hypothesis).** The binding's `load_file` passes the wrong base directory to the import resolver; the CLI `compile`/`inspect` path constructs correct absolute import paths (its `inspect` prints `Imports (namespace -> file)` with absolute `\\?\…` paths). The defect is in the binding's import-base wiring, not the resolver core.
+
+**Workaround.** Route through the CLI (`hymeko emit -f mjcf …`) and derive the structure from the emitted artifact — `hymeko_rl.HypergraphState.from_mjcf` does exactly this — or use self-contained `.hymeko` files with no imports.
+
+**Investigation plan.** Compare the resolver root passed in the PyO3 `load_file` vs the CLI `compile` path; set it to the source file's parent directory in the binding. Add a Python smoke test loading an imported robot file once fixed.
+
+**Why not yet fixed.** The RL bridge is unblocked via the MJCF path; the canonical star-expansion route is a refinement, not a Phase 1/2 blocker.
+
+---
 
 ### B-002: `Verdict::t` semantics ambiguous (settled time, not observation time)
 

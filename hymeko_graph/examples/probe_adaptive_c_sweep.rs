@@ -16,7 +16,7 @@
 //! Usage:
 //! ```bash
 //! cargo run --release --example probe_adaptive_c_sweep -p hymeko_graph -- \
-//!     signedkan_wip/data/epinions.txt 4 128 0.25 0.5 1.0 2.0 4.0 8.0
+//!     hymeko_neuro/assets/data/epinions.txt 4 128 0.25 0.5 1.0 2.0 4.0 8.0
 //! ```
 //!
 //! Args: `<edge-file> <k_len> <m_max> <c_1> <c_2> ...`

@@ -1,0 +1,63 @@
+{
+  "task": "pick-place",
+  "n": 60,
+  "seed": 0,
+  "reward_fidelity_r2": 0.9265,
+  "fitted_weights": {
+    "mw_in_place": 8.9552,
+    "mw_grasp": 0.6676,
+    "mw_near": -0.2135,
+    "mw_dist": 4.7739
+  },
+  "monitor": "success",
+  "variants": {
+    "original": {
+      "reward_monitor_disagreement": 0.0,
+      "corr_delivery": 0.834,
+      "corr_progress": 0.9986,
+      "corr_contact_proximity": 0.7753,
+      "reward_farming_candidate": -0.0587,
+      "loadings": {
+        "progress_score": 1989.0684,
+        "grasp_fraction": -24.4003,
+        "near_fraction": -21.0082,
+        "obj_to_target_delta": -31.1396
+      },
+      "strongest_incoming_edge": "progress_score",
+      "reward_std": 471.516,
+      "cross_view_agree": true
+    },
+    "mw_in_place_off": {
+      "reward_monitor_disagreement": 0.00113,
+      "corr_delivery": 0.777,
+      "corr_progress": 0.9561,
+      "corr_contact_proximity": 0.7007,
+      "reward_farming_candidate": -0.0763,
+      "loadings": {
+        "progress_score": 377.1265,
+        "grasp_fraction": -24.4003,
+        "near_fraction": -21.0082,
+        "obj_to_target_delta": -31.1396
+      },
+      "strongest_incoming_edge": "progress_score",
+      "reward_std": 84.4288,
+      "cross_view_agree": true
+    },
+    "monitor_aligned": {
+      "reward_monitor_disagreement": 0.0,
+      "corr_delivery": 0.8053,
+      "corr_progress": 0.9826,
+      "corr_contact_proximity": 0.7587,
+      "reward_farming_candidate": -0.0466,
+      "loadings": {
+        "progress_score": 10960.6188,
+        "grasp_fraction": -155.8997,
+        "near_fraction": 389.9364,
+        "obj_to_target_delta": -1469.5171
+      },
+      "strongest_incoming_edge": "progress_score",
+      "reward_std": 2566.2207,
+      "cross_view_agree": true
+    }
+  }
+}

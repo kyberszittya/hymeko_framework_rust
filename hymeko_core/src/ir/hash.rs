@@ -1,17 +1,20 @@
-use serde::{Deserialize, Serialize};
 use crate::common::ids::SymId;
 use crate::common::pathkey::PathKey;
 use crate::ir::ir::DeclKind;
 use crate::resolution::interner::Interner;
 use crate::resolution::resolve::Index;
+use serde::{Deserialize, Serialize};
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug,
-    Serialize, Deserialize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Serialize, Deserialize)]
 pub struct HashId(pub [u8; 32]);
 
 fn path_bytes(path: &[SymId], it: &Interner) -> Vec<u8> {
     // pl: "fano.n0" UTF-8
-    let s = path.iter().map(|&x| it.resolve(x)).collect::<Vec<_>>().join(".");
+    let s = path
+        .iter()
+        .map(|&x| it.resolve(x))
+        .collect::<Vec<_>>()
+        .join(".");
     s.into_bytes()
 }
 
@@ -53,7 +56,12 @@ pub fn hash_decl(doc: HashId, kind: DeclKind, path: &PathKey, it: &Interner) -> 
         DeclKind::Edge => b"E",
         DeclKind::HyperArc => b"A",
     });
-    let pb = path.0.iter().map(|&x| it.resolve(x)).collect::<Vec<_>>().join(".");
+    let pb = path
+        .0
+        .iter()
+        .map(|&x| it.resolve(x))
+        .collect::<Vec<_>>()
+        .join(".");
     h.update(pb.as_bytes());
     HashId(*h.finalize().as_bytes())
 }

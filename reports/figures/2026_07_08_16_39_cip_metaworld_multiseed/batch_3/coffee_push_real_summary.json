@@ -1,0 +1,127 @@
+{
+  "task": "coffee_push",
+  "source": "real-env (metaworld scripted policy + action noise)",
+  "scope": "real MetaWorld rollouts through the HyMeKo monitor \u2014 the Phase-2 analog",
+  "n": 80,
+  "seed": 3000,
+  "monitor_pass_rate": 0.55,
+  "mw_success_rate": 0.8875,
+  "reward_monitor_disagreement": 0.298734,
+  "continuous_kept": [
+    "progress_score",
+    "action_noise",
+    "near_fraction",
+    "total_reward"
+  ],
+  "continuous_dropped": {
+    "stagnation_duration": "all_missing",
+    "forbidden_contact_count": "all_missing",
+    "clearance_min": "all_missing",
+    "reward_progress_disagreement": "all_missing"
+  },
+  "diagnosis": {
+    "causal_order": [
+      "near_fraction",
+      "action_noise",
+      "total_reward",
+      "progress_score"
+    ],
+    "strongest_edges": [
+      [
+        "near_fraction",
+        "total_reward",
+        0.94892
+      ],
+      [
+        "near_fraction",
+        "progress_score",
+        0.879929
+      ],
+      [
+        "near_fraction",
+        "action_noise",
+        -0.320003
+      ],
+      [
+        "action_noise",
+        "total_reward",
+        -0.111879
+      ]
+    ],
+    "failure_ranking": [],
+    "next_intervention": "Reward and monitor agree \u2014 no dominant disagreement; prioritize the causal ordering's outcome leaf and its strongest proposed parent.",
+    "ablation_plan": [
+      "Decider: Ablate the strongest proposed parent edge and measure the outcome leaf (controlled A/B).",
+      "Ablate/intervene on 'near_fraction'; LiNGAM proposes it increases 'total_reward' (w=+0.949) \u2014 controlled A/B decides if the edge is real.",
+      "Ablate/intervene on 'near_fraction'; LiNGAM proposes it increases 'progress_score' (w=+0.880) \u2014 controlled A/B decides if the edge is real.",
+      "Ablate/intervene on 'near_fraction'; LiNGAM proposes it decreases 'action_noise' (w=-0.320) \u2014 controlled A/B decides if the edge is real.",
+      "Ablate/intervene on 'action_noise'; LiNGAM proposes it decreases 'total_reward' (w=-0.112) \u2014 controlled A/B decides if the edge is real."
+    ],
+    "provenance": {
+      "n_rollouts": 80,
+      "continuous_used": [
+        "progress_score",
+        "action_noise",
+        "near_fraction",
+        "total_reward"
+      ],
+      "continuous_dropped": {
+        "stagnation_duration": "all_missing",
+        "forbidden_contact_count": "all_missing",
+        "clearance_min": "all_missing",
+        "reward_progress_disagreement": "all_missing"
+      },
+      "categorical_strata": [
+        "success_monitor_pass",
+        "stagnated",
+        "phase_transition_failure",
+        "task",
+        "mw_success"
+      ],
+      "lingam": "fit: n=80, d=4"
+    },
+    "_disclaimer": "DirectLiNGAM PROPOSES structure; controlled ablations DECIDE. Not proof of causality."
+  },
+  "_disclaimer": "PROPOSED structure over real rollouts; controlled ablation decides. Cross-view proves declared \u2261 engine tensor view, not causal truth.",
+  "causal_order": [
+    "near_fraction",
+    "action_noise",
+    "total_reward",
+    "progress_score"
+  ],
+  "strongest_edges": [
+    [
+      "near_fraction",
+      "total_reward",
+      0.94892
+    ],
+    [
+      "near_fraction",
+      "progress_score",
+      0.879929
+    ],
+    [
+      "near_fraction",
+      "action_noise",
+      -0.320003
+    ],
+    [
+      "action_noise",
+      "total_reward",
+      -0.111879
+    ]
+  ],
+  "cross_view": {
+    "agree": true,
+    "backend": "engine",
+    "canonical_hash": "blake3:6f1c0d5502400250568f1035ddd5f4d4f1c0a1ecd5328b42d90d0cfd83154602",
+    "n_edges_declared": 4,
+    "n_edges_engine": 4,
+    "star_nnz": 8,
+    "clique_nnz": 6,
+    "sum_arities": 8,
+    "edges_match": true,
+    "counts_match": true,
+    "notes": []
+  }
+}

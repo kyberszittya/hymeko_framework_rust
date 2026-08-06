@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-18
 **Plan:** [`docs/plans/2026-05-17-sequential-hsikan-imdb-benchmark/`](../docs/plans/2026-05-17-sequential-hsikan-imdb-benchmark/)
-**Run dir:** `signedkan_wip/experiments/results/imdb_arch_fairness_20260518T012024Z/`
+**Run dir:** `hymeko_neuro/experiments/results/imdb_arch_fairness_20260518T012024Z/`
 **Git SHA:** `2ccaa4d12fae1ff9cd533bd91cd84b28f11c3dab`
 **Wall:** 03:20 → 04:48 local = 88 min total (came in at 35 % of the
 plan's 4 h budget — IMDB unsup pretrain finished much faster than
@@ -140,18 +140,18 @@ What **not** to claim:
 ## 7. Files touched
 
 ### New (this run)
-- `signedkan_wip/src/sequence/iso_param_transformer.py` (145 LOC)
-- `signedkan_wip/src/sequence/imdb_pretrain.py` (200 LOC)
-- `signedkan_wip/src/sequence/run_imdb_mlm_pretrain.py` (130 LOC)
-- `signedkan_wip/src/sequence/train_imdb_transformer.py` (175 LOC)
-- `signedkan_wip/experiments/run_imdb_arch_fairness_2026_05_18.sh` (175 LOC)
+- `hymeko_neuro/experiments/sequence/iso_param_transformer.py` (145 LOC)
+- `hymeko_neuro/experiments/sequence/imdb_pretrain.py` (200 LOC)
+- `hymeko_neuro/experiments/sequence/run_imdb_mlm_pretrain.py` (130 LOC)
+- `hymeko_neuro/experiments/sequence/train_imdb_transformer.py` (175 LOC)
+- `hymeko_neuro/experiments/run_imdb_arch_fairness_2026_05_18.sh` (175 LOC)
 
 ### Modified
-- `signedkan_wip/src/sequence/train_imdb_classifier.py` — added
+- `hymeko_neuro/experiments/sequence/train_imdb_classifier.py` — added
   `--pretrained-state-dict` flag for the MLM → fine-tune path.
 
 ### CORE.YAML items touched
-None. Reuses the existing `signedkan_wip` Python env.
+None. Reuses the existing `hymeko_neuro` Python env.
 
 ## 8. Open items
 

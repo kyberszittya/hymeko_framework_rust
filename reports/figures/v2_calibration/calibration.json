@@ -1,0 +1,65 @@
+{
+  "scripted_2f": {
+    "raw_delivery": 0.75,
+    "fingertip_dominant_delivery": 0.75,
+    "zero_body_contact_delivery": 0.083,
+    "body_assisted_delivery": 0.0,
+    "body_driven_exploit_delivery": 0.0,
+    "arm_body_contact_rate": 0.917,
+    "body_progress": 0.0006,
+    "fingertip_contact": 0.17,
+    "both_contact": 0.02,
+    "dist_delta": 0.0171,
+    "coin_vel_to_zone": 0.0071,
+    "_base_reward": -106.647,
+    "_body_only_steps": 37.08,
+    "mean_reward_by_weight": {
+      "0.5": -125.189,
+      "1.0": -143.731,
+      "2.0": -180.814,
+      "4.0": -254.981
+    }
+  },
+  "one_fingertip": {
+    "raw_delivery": 0.0,
+    "fingertip_dominant_delivery": 0.0,
+    "zero_body_contact_delivery": 0.0,
+    "body_assisted_delivery": 0.0,
+    "body_driven_exploit_delivery": 0.0,
+    "arm_body_contact_rate": 0.583,
+    "body_progress": 0.0017,
+    "fingertip_contact": 0.054,
+    "both_contact": 0.0,
+    "dist_delta": -0.014,
+    "coin_vel_to_zone": -0.005,
+    "_base_reward": -334.991,
+    "_body_only_steps": 79.08,
+    "mean_reward_by_weight": {
+      "0.5": -374.533,
+      "1.0": -414.074,
+      "2.0": -493.158,
+      "4.0": -651.324
+    }
+  },
+  "body_shove": {
+    "raw_delivery": 0.583,
+    "fingertip_dominant_delivery": 0.083,
+    "zero_body_contact_delivery": 0.0,
+    "body_assisted_delivery": 0.083,
+    "body_driven_exploit_delivery": 0.417,
+    "arm_body_contact_rate": 0.917,
+    "body_progress": 0.0337,
+    "fingertip_contact": 0.021,
+    "both_contact": 0.01,
+    "dist_delta": 0.0037,
+    "coin_vel_to_zone": 0.0023,
+    "_base_reward": -84.464,
+    "_body_only_steps": 16.67,
+    "mean_reward_by_weight": {
+      "0.5": -92.797,
+      "1.0": -101.13,
+      "2.0": -117.797,
+      "4.0": -151.13
+    }
+  }
+}

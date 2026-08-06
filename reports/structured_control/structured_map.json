@@ -1,0 +1,144 @@
+{
+  "n_nodes": 9,
+  "names": [
+    "chain",
+    "ring",
+    "star",
+    "tree",
+    "grid",
+    "small_world",
+    "random",
+    "complete"
+  ],
+  "edges": {
+    "chain": 8,
+    "ring": 9,
+    "star": 8,
+    "tree": 8,
+    "grid": 12,
+    "small_world": 12,
+    "random": 13,
+    "complete": 36
+  },
+  "jstar": {
+    "chain": 4.55627,
+    "ring": 4.53734,
+    "star": 4.22377,
+    "tree": 4.44145,
+    "grid": 4.71666,
+    "small_world": 4.5685,
+    "random": 4.31986,
+    "complete": 4.29992
+  },
+  "rho": {
+    "chain": {
+      "chain": 1.0031,
+      "ring": 1.0031,
+      "star": 1.041,
+      "tree": 1.0381,
+      "grid": 1.0132,
+      "small_world": 1.003,
+      "random": 1.0029,
+      "complete": 1.0
+    },
+    "ring": {
+      "chain": 1.0109,
+      "ring": 1.004,
+      "star": 1.034,
+      "tree": 1.0394,
+      "grid": 1.0199,
+      "small_world": 1.0038,
+      "random": 1.0107,
+      "complete": 1.0
+    },
+    "star": {
+      "chain": 1.0226,
+      "ring": 1.0193,
+      "star": 1.0005,
+      "tree": 1.0186,
+      "grid": 1.0178,
+      "small_world": 1.0189,
+      "random": 1.0215,
+      "complete": 1.0
+    },
+    "tree": {
+      "chain": 1.035,
+      "ring": 1.035,
+      "star": 1.0325,
+      "tree": 1.0023,
+      "grid": 1.0246,
+      "small_world": 1.0335,
+      "random": 1.0245,
+      "complete": 1.0
+    },
+    "grid": {
+      "chain": 1.038,
+      "ring": 1.038,
+      "star": 1.0471,
+      "tree": 1.044,
+      "grid": 1.0052,
+      "small_world": 1.029,
+      "random": 1.025,
+      "complete": 1.0
+    },
+    "small_world": {
+      "chain": 1.0246,
+      "ring": 1.0189,
+      "star": 1.0372,
+      "tree": 1.0396,
+      "grid": 1.0232,
+      "small_world": 1.0038,
+      "random": 1.0235,
+      "complete": 1.0
+    },
+    "random": {
+      "chain": 1.0171,
+      "ring": 1.017,
+      "star": 1.036,
+      "tree": 1.0242,
+      "grid": 1.0136,
+      "small_world": 1.016,
+      "random": 1.0029,
+      "complete": 1.0
+    },
+    "complete": {
+      "chain": 1.0211,
+      "ring": 1.0206,
+      "star": 1.0242,
+      "tree": 1.0243,
+      "grid": 1.016,
+      "small_world": 1.0143,
+      "random": 1.0158,
+      "complete": 1.0
+    }
+  },
+  "best_sparse": {
+    "chain": "random",
+    "ring": "small_world",
+    "star": "star",
+    "tree": "tree",
+    "grid": "grid",
+    "small_world": "small_world",
+    "random": "random",
+    "complete": "small_world"
+  },
+  "matched_is_best": {
+    "chain": true,
+    "ring": true,
+    "star": true,
+    "tree": true,
+    "grid": true,
+    "small_world": true,
+    "random": true
+  },
+  "worst_penalty": {
+    "chain": 0.041,
+    "ring": 0.0394,
+    "star": 0.0226,
+    "tree": 0.035,
+    "grid": 0.0471,
+    "small_world": 0.0396,
+    "random": 0.036,
+    "complete": 0.0243
+  }
+}

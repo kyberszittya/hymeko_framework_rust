@@ -3,7 +3,7 @@
 A 15-minute tour of the CV pipeline: run the demo, train your
 first model, climb the Stage A → D ladder.
 
-> **Prereqs:** the [miniconda3 env](../signedkan_wip/) with
+> **Prereqs:** the [miniconda3 env](../hymeko_neuro/) with
 > `torch`, `torchvision`, `tkinter`, `matplotlib`. Repo root must
 > be on `PYTHONPATH`. All paths below are relative to repo root.
 >
@@ -22,7 +22,7 @@ script — it auto-detects any saved checkpoint and falls back to
 quick-training a small model if none exist:
 
 ```bash
-bash signedkan_wip/src/vision/launch_demo.sh
+bash hymeko_neuro/experiments/vision/launch_demo.sh
 ```
 
 A Tk window opens with two panels:
@@ -38,13 +38,13 @@ the **seed** spinbox to jump to specific stimuli.
 ### Launcher modes
 
 ```bash
-bash signedkan_wip/src/vision/launch_demo.sh list      # what ckpts exist
-bash signedkan_wip/src/vision/launch_demo.sh quick     # force quick-train (no save)
-bash signedkan_wip/src/vision/launch_demo.sh auto      # detect or quick-train (default)
-bash signedkan_wip/src/vision/launch_demo.sh a2        # train Stage A-2 → save → launch
-bash signedkan_wip/src/vision/launch_demo.sh b_resnet  # Stage B (ResNet-tiny)
-bash signedkan_wip/src/vision/launch_demo.sh b_hsikan  # Stage B' (HSiKAN-CR)
-bash signedkan_wip/src/vision/launch_demo.sh c_fpn     # Stage C (resnet + 2-level FPN)
+bash hymeko_neuro/experiments/vision/launch_demo.sh list      # what ckpts exist
+bash hymeko_neuro/experiments/vision/launch_demo.sh quick     # force quick-train (no save)
+bash hymeko_neuro/experiments/vision/launch_demo.sh auto      # detect or quick-train (default)
+bash hymeko_neuro/experiments/vision/launch_demo.sh a2        # train Stage A-2 → save → launch
+bash hymeko_neuro/experiments/vision/launch_demo.sh b_resnet  # Stage B (ResNet-tiny)
+bash hymeko_neuro/experiments/vision/launch_demo.sh b_hsikan  # Stage B' (HSiKAN-CR)
+bash hymeko_neuro/experiments/vision/launch_demo.sh c_fpn     # Stage C (resnet + 2-level FPN)
 ```
 
 The `a2` / `b_*` / `c_fpn` modes train + save under
@@ -61,11 +61,11 @@ most recent one without retraining.  Override the save root with
 Direct invocation (bypassing the launcher):
 
 ```bash
-python -m signedkan_wip.src.vision.demo_hymeyolo_tk \
+python -m hymeko_neuro.experiments.vision.demo_hymeyolo_tk \
     --checkpoint /tmp/hymeyolo_ckpts/ricci-mod_seed0.pt
 ```
 
-Full demo docs: [signedkan_wip/src/vision/DEMO_README.md](../signedkan_wip/src/vision/DEMO_README.md).
+Full demo docs: [hymeko_neuro/experiments/vision/DEMO_README.md](../hymeko_neuro/experiments/vision/DEMO_README.md).
 
 ---
 
@@ -76,7 +76,7 @@ variants in parallel on Cluttered MNIST and emits a jsonl with
 per-config metrics. The default is small enough for CPU.
 
 ```bash
-python -m signedkan_wip.src.vision.train_circles_ricci \
+python -m hymeko_neuro.experiments.vision.train_circles_ricci \
     --n-images 500 --epochs 10 --lr 3e-3 --seed 0 \
     --jsonl-out /tmp/cmnist_quick.jsonl
 ```
@@ -109,7 +109,7 @@ warm-start. This is the config behind the headline
 **0.7460 ± 0.035 mAP_50** result.
 
 ```bash
-python -m signedkan_wip.src.vision.train_circles_ricci \
+python -m hymeko_neuro.experiments.vision.train_circles_ricci \
     --n-images 5000 --epochs 100 --lr 3e-3 \
     --ricci-scale 1.0 --warm-start \
     --schedule cosine --warmup-epochs 10 --min-lr-ratio 0.01 \
@@ -122,7 +122,7 @@ python -m signedkan_wip.src.vision.train_circles_ricci \
 Now run the demo against the saved checkpoint:
 
 ```bash
-python -m signedkan_wip.src.vision.demo_hymeyolo_tk \
+python -m hymeko_neuro.experiments.vision.demo_hymeyolo_tk \
     --checkpoint /tmp/hymeyolo_ckpts/ricci-mod_seed0.pt
 ```
 
@@ -132,8 +132,8 @@ The header now shows `source: checkpoint`, `epochs: 100`,
 For 5 seeds (the proper benchmark protocol):
 
 ```bash
-bash signedkan_wip/experiments/run_hymeyolo_stage_a2_5seed_2026_05_16.sh
-# results land in signedkan_wip/experiments/results/hymeyolo_stage_a2_*/
+bash hymeko_neuro/experiments/run_hymeyolo_stage_a2_5seed_2026_05_16.sh
+# results land in hymeko_neuro/experiments/results/hymeyolo_stage_a2_*/
 ```
 
 ---
@@ -168,7 +168,7 @@ basis function is more arithmetic-heavy than a ReLU).  Paired vs
 **Stage B (ResNet-tiny):**
 
 ```bash
-python -m signedkan_wip.src.vision.train_circles_ricci \
+python -m hymeko_neuro.experiments.vision.train_circles_ricci \
     --n-images 5000 --epochs 100 --lr 3e-3 \
     --ricci-scale 1.0 --warm-start \
     --schedule cosine --warmup-epochs 10 --min-lr-ratio 0.01 \
@@ -180,7 +180,7 @@ python -m signedkan_wip.src.vision.train_circles_ricci \
 **Stage B' (HSiKAN-CR backbone):**
 
 ```bash
-python -m signedkan_wip.src.vision.train_circles_ricci \
+python -m hymeko_neuro.experiments.vision.train_circles_ricci \
     --n-images 5000 --epochs 100 --lr 3e-3 \
     --ricci-scale 1.0 --warm-start \
     --schedule cosine --warmup-epochs 10 --min-lr-ratio 0.01 \
@@ -198,7 +198,7 @@ is a direct measure of the activation's contribution.
 **Stage C (ResNet-tiny + 2-level FPN):**
 
 ```bash
-python -m signedkan_wip.src.vision.train_circles_ricci \
+python -m hymeko_neuro.experiments.vision.train_circles_ricci \
     --n-images 5000 --epochs 100 --lr 3e-3 \
     --ricci-scale 1.0 --warm-start \
     --schedule cosine --warmup-epochs 10 --min-lr-ratio 0.01 \
@@ -216,9 +216,9 @@ Pre-baked 5-seed launchers (use one of these for benchmark-grade
 runs):
 
 ```bash
-bash signedkan_wip/experiments/run_hymeyolo_ladder_5seed.sh b_resnet
-bash signedkan_wip/experiments/run_hymeyolo_ladder_5seed.sh b_hsikan
-bash signedkan_wip/experiments/run_hymeyolo_ladder_5seed.sh c_fpn
+bash hymeko_neuro/experiments/run_hymeyolo_ladder_5seed.sh b_resnet
+bash hymeko_neuro/experiments/run_hymeyolo_ladder_5seed.sh b_hsikan
+bash hymeko_neuro/experiments/run_hymeyolo_ladder_5seed.sh c_fpn
 ```
 
 The demo automatically picks up the new architecture from the
@@ -236,12 +236,12 @@ queries.
 
 ```bash
 # Smoke (50 images, 1 epoch, CPU OK — under 30 s):
-python -m signedkan_wip.src.vision.train_voc_stagec \
+python -m hymeko_neuro.experiments.vision.train_voc_stagec \
     --n-images 50 --epochs 1 --input-size 96 --batch-size 4 \
     --seed 0 --device cpu
 
 # Production single-seed (5011 trainval images, 30 epochs, ~60 min GPU):
-python -m signedkan_wip.src.vision.train_voc_stagec \
+python -m hymeko_neuro.experiments.vision.train_voc_stagec \
     --image-set trainval --epochs 30 --input-size 224 --batch-size 8 \
     --n-box-queries 12 --lr 3e-3 --seed 0 \
     --save-checkpoint /tmp/stage_d_ckpts/ \
@@ -252,8 +252,8 @@ The orchestrator runs the smoke first and only proceeds to the
 5-seed when smoke mAP_50 ≥ 0.10 (CLAUDE §3 production-scale gate):
 
 ```bash
-bash signedkan_wip/experiments/run_stage_d_voc2007_2026_05_18.sh
-# results in signedkan_wip/experiments/results/stage_d_voc2007_*/
+bash hymeko_neuro/experiments/run_stage_d_voc2007_2026_05_18.sh
+# results in hymeko_neuro/experiments/results/stage_d_voc2007_*/
 ```
 
 VOC2007 data lives under [data/torchvision/VOCdevkit/VOC2007/](../data/torchvision/VOCdevkit/VOC2007/) — already on disk.
@@ -266,11 +266,11 @@ Stage D plan: [docs/plans/2026-05-17-hymeyolo-stage-d-pascal-voc/plan.pdf](plans
 ### Quick view: every run, latest per stage
 
 ```bash
-python -m signedkan_wip.experiments.show_hymeyolo_results
+python -m hymeko_neuro.experiments.show_hymeyolo_results
 ```
 
 Walks every HyMeYOLO run dir under
-`signedkan_wip/experiments/results/`, parses the jsonl outputs,
+`hymeko_neuro/experiments/results/`, parses the jsonl outputs,
 and prints a one-line-per-(stage, dataset, label) summary
 ordered by recency:
 
@@ -288,16 +288,16 @@ stage_a2_5seed cmnist                 +ricci-mod        5       0.7460  0.0350  
 Flags:
 
 ```bash
-python -m signedkan_wip.experiments.show_hymeyolo_results --all          # one row per seed
-python -m signedkan_wip.experiments.show_hymeyolo_results --stage b_hsikan
-python -m signedkan_wip.experiments.show_hymeyolo_results --csv > out.csv
+python -m hymeko_neuro.experiments.show_hymeyolo_results --all          # one row per seed
+python -m hymeko_neuro.experiments.show_hymeyolo_results --stage b_hsikan
+python -m hymeko_neuro.experiments.show_hymeyolo_results --csv > out.csv
 ```
 
 ### Raw artefacts
 
 | Where                                                            | What                                                  |
 |------------------------------------------------------------------|-------------------------------------------------------|
-| `signedkan_wip/experiments/results/<run-dir>/`                   | per-run logs, jsonl, orchestrator.log                 |
+| `hymeko_neuro/experiments/results/<run-dir>/`                   | per-run logs, jsonl, orchestrator.log                 |
 | `*.jsonl`                                                        | one JSON record per config / seed (mAP, loss curve)   |
 | `reports/2026-05-16-hymeyolo-cluttered-mnist-sota.md`            | Stage A-2 SOTA writeup                                |
 | `reports/2026-05-17-hymeyolo-stage-c-5seed.md`                   | Stage B/B'/C 5-seed paired analysis                   |

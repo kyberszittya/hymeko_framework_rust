@@ -1,8 +1,8 @@
+use super::constants::*;
+use crate::test_helpers::{log_test_footer, log_test_header};
 use hymeko::{as_node, body, find_node};
 use log::info;
 use std::time::Instant;
-use crate::test_helpers::{log_test_header, log_test_footer};
-use super::constants::*;
 
 #[test]
 fn parses_minimal_example_context_fields() {
@@ -11,7 +11,8 @@ fn parses_minimal_example_context_fields() {
         "Validates the nested nodes in the minimal hierarchy example.",
     );
     let start = Instant::now();
-    let source_code = parser::read_source_file(MINIMAL_BASIC_HIERARCHY_PATH).expect("failed to read source file");
+    let source_code =
+        parser::read_source_file(MINIMAL_BASIC_HIERARCHY_PATH).expect("failed to read source file");
 
     // 2. Parse it, tying the AST lifetimes to the String
     let d = parser::parse_description(&source_code).unwrap();
@@ -36,7 +37,10 @@ fn parses_minimal_example_context_fields() {
     for (item, expected) in lev0_body.iter().zip(BASIC_LEVEL0_BODY_NAMES.iter()) {
         assert_eq!(as_node(item).unwrap().inner.name, *expected);
     }
-    info!("Validated node_lev_0 children: {:?}", BASIC_LEVEL0_BODY_NAMES);
+    info!(
+        "Validated node_lev_0 children: {:?}",
+        BASIC_LEVEL0_BODY_NAMES
+    );
 
     // node0 is a block and contains: node0;
     let node0_block = as_node(&lev0_body[0]).unwrap();
@@ -44,7 +48,10 @@ fn parses_minimal_example_context_fields() {
     assert_eq!(node0_body.len(), BASIC_NODE0_CHILD_COUNT);
     let inner_node0 = as_node(&node0_body[0]).unwrap();
     assert_eq!(inner_node0.inner.name, BASIC_LEVEL0_BODY_NAMES[0]);
-    assert!(inner_node0.inner.body.is_none(), "inner node0 should be a statement node");
+    assert!(
+        inner_node0.inner.body.is_none(),
+        "inner node0 should be a statement node"
+    );
 
     // node_lev_1 body: node0;
     let lev1_body = body(lev1).unwrap();
@@ -52,7 +59,10 @@ fn parses_minimal_example_context_fields() {
     for (item, expected) in lev1_body.iter().zip(BASIC_LEVEL1_BODY_NAMES.iter()) {
         assert_eq!(as_node(item).unwrap().inner.name, *expected);
     }
-    info!("Validated node_lev_1 children: {:?}", BASIC_LEVEL1_BODY_NAMES);
+    info!(
+        "Validated node_lev_1 children: {:?}",
+        BASIC_LEVEL1_BODY_NAMES
+    );
     log_test_footer(
         "parses_minimal_example_context_fields/basic_hierarchy",
         Some(start.elapsed()),

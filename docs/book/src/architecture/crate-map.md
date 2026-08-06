@@ -44,8 +44,8 @@ The framework is split across ~15 Rust crates and 2 Python packages. Each owns o
 
 | package | role |
 |---|---|
-| **`signedkan_wip`** | HSiKAN research code: `signedkan.py`, `mixed_arity_signedkan.py`, `hymeko_train_walker.py`, baselines (SGCN, SiGAT, SGT), benchmarks |
-| **`python/ehk_torch_stub`** | Tier-3 layer surface (`SignedKANLayer`, `ArityMixer`, `WalkLayer`, `SignedClassifier`); after May 2026 cleanup, delegates to real `signedkan_wip.signedkan` when importable |
+| **`hymeko_neuro`** | HSiKAN research code: `signedkan.py`, `mixed_arity_signedkan.py`, `hymeko_train_walker.py`, baselines (SGCN, SiGAT, SGT), benchmarks |
+| **`python/ehk_torch_stub`** | Tier-3 layer surface (`SignedKANLayer`, `ArityMixer`, `WalkLayer`, `SignedClassifier`); after May 2026 cleanup, delegates to real `hymeko_neuro.signedkan` when importable |
 
 ## Dependency direction
 
@@ -60,7 +60,7 @@ The framework is split across ~15 Rust crates and 2 Python packages. Each owns o
                   ↓
        hymeko_cli  hymeko_py  hymeko_wasm
                                 ↑
-                       signedkan_wip (consumes hymeko_py)
+                       hymeko_neuro (consumes hymeko_py)
 ```
 
 Anything below depends on anything above. There are no upward references.

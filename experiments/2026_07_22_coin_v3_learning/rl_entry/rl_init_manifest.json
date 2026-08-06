@@ -1,0 +1,28 @@
+{
+ "verdict": "RL_ACTOR_INITIALIZATION_REPRODUCED",
+ "frozen_bc": "experiments/2026_07_22_coin_v3_learning/bc_configs/bc_handoff_only_best.pt",
+ "frozen_bc_sha256": "cc8c31fd926b1a0058c19e7e905c899a6a6f6855e0592ca4c5f544632a34c2b1",
+ "shared_init_sha256": "1902454ca7a74c2716798589b532853d5c27f23c49245b0973ca03be4da761b0",
+ "squash": "clip(identity in +-4)",
+ "action_scale": 4.0,
+ "obs_dim": 48,
+ "action_dim": 4,
+ "obs_contract": "node_features flat 48",
+ "semantic_graph_fp": "sem:469094de1fba54b2ff481706ca2e09ce",
+ "bundle_hash": "6664ac459cca8f62",
+ "sac_eq_td3_maxdiff": 0.0,
+ "actor_vs_bc_maxdiff": 7.152557373046875e-07,
+ "bc_headline": 3,
+ "td3_headline": 3,
+ "sac_headline": 3,
+ "bc_validation": 2,
+ "td3_validation": 2,
+ "sac_validation": 2,
+ "td3_grasp": 9,
+ "sac_grasp": 9,
+ "delivered": [
+  1011,
+  1447,
+  1568
+ ]
+}

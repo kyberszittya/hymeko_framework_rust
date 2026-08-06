@@ -1,0 +1,57 @@
+{
+  "name": "quadruped_stand",
+  "select": "standing",
+  "total_steps": 6000,
+  "standing_median": 0.0,
+  "standing_per_seed": [
+    0.0
+  ],
+  "seeds": [
+    {
+      "seed": 0,
+      "peak": {
+        "standing": 0.0,
+        "step": 0.0,
+        "stage": "bc_step0"
+      },
+      "curve": [
+        {
+          "step": 0.0,
+          "stage": "bc_step0",
+          "standing": 0.0
+        },
+        {
+          "step": 1000.0,
+          "stage": "rl_refined",
+          "standing": 0.0
+        },
+        {
+          "step": 2000.0,
+          "stage": "rl_refined",
+          "standing": 0.0
+        },
+        {
+          "step": 3000.0,
+          "stage": "rl_refined",
+          "standing": 0.0
+        },
+        {
+          "step": 4000.0,
+          "stage": "rl_refined",
+          "standing": 0.0
+        },
+        {
+          "step": 5000.0,
+          "stage": "rl_refined",
+          "standing": 0.0
+        },
+        {
+          "step": 6000.0,
+          "stage": "rl_refined",
+          "standing": 0.0
+        }
+      ],
+      "wall_s": 234.2
+    }
+  ]
+}

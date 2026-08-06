@@ -1,0 +1,49 @@
+{
+ "bundle_hash": "6664ac459cca8f62",
+ "n_accepted": 7,
+ "n_replay_certified": 4,
+ "certs": [
+  {
+   "seed": 1045,
+   "grasped_from_neutral": false,
+   "replay_strict_delivery": false,
+   "robot_touched": true
+  },
+  {
+   "seed": 1447,
+   "grasped_from_neutral": true,
+   "replay_strict_delivery": true,
+   "robot_touched": true
+  },
+  {
+   "seed": 1174,
+   "grasped_from_neutral": false,
+   "replay_strict_delivery": false,
+   "robot_touched": true
+  },
+  {
+   "seed": 1278,
+   "grasped_from_neutral": false,
+   "replay_strict_delivery": false,
+   "robot_touched": true
+  },
+  {
+   "seed": 1011,
+   "grasped_from_neutral": true,
+   "replay_strict_delivery": true,
+   "robot_touched": true
+  },
+  {
+   "seed": 1164,
+   "grasped_from_neutral": true,
+   "replay_strict_delivery": true,
+   "robot_touched": true
+  },
+  {
+   "seed": 1568,
+   "grasped_from_neutral": true,
+   "replay_strict_delivery": true,
+   "robot_touched": true
+  }
+ ]
+}

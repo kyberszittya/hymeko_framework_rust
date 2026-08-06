@@ -24,11 +24,11 @@ AUC lift does not.
 
 | File | Status | LOC |
 | --- | --- | --- |
-| `signedkan_wip/src/core/side_signedkan.py` | extended | +52 (outer-checkpoint mode + per-branch checkpoint + 2 config fields) |
-| `signedkan_wip/src/mixed_arity_signedkan/model.py` | extended | +6 (`collect_attn_entropy` kwarg gates `_attn_entropy_terms` reset) |
-| `signedkan_wip/experiments/runs/run_final_cell.py` | extended | +14 (`--outer-grad-checkpoint` CLI + dispatch wiring) |
-| `signedkan_wip/tests/test_side_mixed_arity.py` | extended | +75 (3 new tests: entropy skip, outer-ckpt parity, outer-ckpt grads) |
-| `signedkan_wip/experiments/run_phase22_slashdot_5seed_2026_05_20.sh` | new | 109 |
+| `hymeko_neuro/hyperedge/side_signedkan.py` | extended | +52 (outer-checkpoint mode + per-branch checkpoint + 2 config fields) |
+| `hymeko_neuro/models/mixed_arity_signedkan/model.py` | extended | +6 (`collect_attn_entropy` kwarg gates `_attn_entropy_terms` reset) |
+| `hymeko_neuro/experiments/runs/run_final_cell.py` | extended | +14 (`--outer-grad-checkpoint` CLI + dispatch wiring) |
+| `hymeko_neuro/tests/test_side_mixed_arity.py` | extended | +75 (3 new tests: entropy skip, outer-ckpt parity, outer-ckpt grads) |
+| `hymeko_neuro/experiments/run_phase22_slashdot_5seed_2026_05_20.sh` | new | 109 |
 | `reports/2026-05-20-phase22-slashdot-side-mixed-variance.md` | new | this file |
 
 ## CORE.YAML items touched
@@ -128,8 +128,8 @@ Slashdot config.
 
 | Suite | Result |
 | --- | --- |
-| `pytest signedkan_wip/tests/test_side_mixed_arity.py` | **13 / 13 pass** |
-| `pytest signedkan_wip/tests/test_side_signedkan.py` | 12 / 12 (no regression) |
+| `pytest hymeko_neuro/tests/test_side_mixed_arity.py` | **13 / 13 pass** |
+| `pytest hymeko_neuro/tests/test_side_signedkan.py` | 12 / 12 (no regression) |
 | `cargo test -p hymeko_pgraph` | 96 / 96 + 1 ignored doctest |
 | Bare single-branch baseline reproduces 0.906 ± 0.004 | ✓ (vs published 0.9067 ± 0.0029) |
 
@@ -167,7 +167,7 @@ Clean.
 - **5-seed log directory:**
   `/tmp/phase22_slashdot_5seed_20260520T18*/`
 - **JSONL results:**
-  `signedkan_wip/experiments/results/phase22_slashdot_5seed_2026_05_20.jsonl`
+  `hymeko_neuro/experiments/results/phase22_slashdot_5seed_2026_05_20.jsonl`
 - **GPU:** RTX 2070 SUPER 8 GiB; kernel ON.
 - **5-seed wall:** ~10 min total (cycle cache amortizes
   enumeration; per-seed wall is dominated by training).

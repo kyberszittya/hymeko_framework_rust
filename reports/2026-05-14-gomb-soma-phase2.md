@@ -16,9 +16,9 @@ ladder; polygons and triangles follow in phases 3-4.
 
 | File | LOC | Notes |
 |---|---|---|
-| [signedkan_wip/src/hymeko_gomb/soma/walk_layer.py](../signedkan_wip/src/hymeko_gomb/soma/walk_layer.py) | 132 | `WalkConvLayer` — sign-branched, position-aware HG-conv |
-| [signedkan_wip/src/hymeko_gomb/soma/__init__.py](../signedkan_wip/src/hymeko_gomb/soma/__init__.py) | +2 / -2 | re-export `WalkConvLayer` |
-| [signedkan_wip/tests/test_gomb_soma_walk_layer.py](../signedkan_wip/tests/test_gomb_soma_walk_layer.py) | 222 | 8 unit tests including SBM smoke |
+| [hymeko_neuro/models/hymeko_gomb/soma/walk_layer.py](../hymeko_neuro/models/hymeko_gomb/soma/walk_layer.py) | 132 | `WalkConvLayer` — sign-branched, position-aware HG-conv |
+| [hymeko_neuro/models/hymeko_gomb/soma/__init__.py](../hymeko_neuro/models/hymeko_gomb/soma/__init__.py) | +2 / -2 | re-export `WalkConvLayer` |
+| [hymeko_neuro/tests/test_gomb_soma_walk_layer.py](../hymeko_neuro/tests/test_gomb_soma_walk_layer.py) | 222 | 8 unit tests including SBM smoke |
 
 No edits to Gömb / HypergraphConv ABC / CORE.YAML.
 
@@ -45,7 +45,7 @@ Parameter count at $k = 3, d_\text{in} = d_\text{out} = 16$: $2 \cdot 3 \cdot 16
 ## 5. Test results
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_walk_layer.py -v
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_walk_layer.py -v
 test_construction_and_param_count                         PASSED
 test_forward_shape                                        PASSED
 test_sign_branching_actually_branches                     PASSED
@@ -88,7 +88,7 @@ passes at atol $10^{-5}$ under FP32 — comfortable margin.
 ## 8. Static analysis
 
 ```
-$ ruff check signedkan_wip/src/hymeko_gomb/soma/walk_layer.py
+$ ruff check hymeko_neuro/models/hymeko_gomb/soma/walk_layer.py
    (clean)
 ```
 
@@ -134,8 +134,8 @@ will be the key structural difference; we'll handle it by:
   $\{4, 5, 6\}$.
 
 Adds:
-* `signedkan_wip/src/hymeko_gomb/soma/polygon_layer.py`
-* `signedkan_wip/tests/test_gomb_soma_polygon_layer.py`
+* `hymeko_neuro/models/hymeko_gomb/soma/polygon_layer.py`
+* `hymeko_neuro/tests/test_gomb_soma_polygon_layer.py`
 * SBM smoke with planted polygons.
 
 No phase 3 work in this commit, per the one-phase-per-session rule.
@@ -143,7 +143,7 @@ No phase 3 work in this commit, per the one-phase-per-session rule.
 ## 12. Reproducibility
 
 ```python
-from signedkan_wip.src.hymeko_gomb.soma import (
+from hymeko_neuro.models.hymeko_gomb.soma import (
     HypergraphConvConfig, WalkConvLayer,
 )
 

@@ -20,8 +20,7 @@
 use std::collections::HashMap;
 
 use parser::ast::{
-    Anno, ArcInner, ConstDecl, ConstExpr, BinOp,
-    Description, EdgeDecl, EdgeInner, HyperItem,
+    Anno, ArcInner, BinOp, ConstDecl, ConstExpr, Description, EdgeDecl, EdgeInner, HyperItem,
     NodeDecl, NodeInner, Ref, RefAtom, SignedRef, Value,
 };
 
@@ -81,7 +80,9 @@ pub fn evaluate_consts(
         in_progress: &mut Vec<SymId>,
         it: &Interner,
     ) -> Result<f64, ConstResolveError> {
-        if let Some(&v) = resolved.get(&sym) { return Ok(v); }
+        if let Some(&v) = resolved.get(&sym) {
+            return Ok(v);
+        }
         if in_progress.contains(&sym) {
             // Build cycle path starting from `sym`'s first appearance.
             let start = in_progress.iter().position(|&s| s == sym).unwrap();
@@ -92,9 +93,11 @@ pub fn evaluate_consts(
             cycle.push(it.resolve(sym).to_string());
             return Err(ConstResolveError::Cycle { names: cycle });
         }
-        let expr = by_name.get(&sym).ok_or_else(|| {
-            ConstResolveError::UndefinedRef { name: it.resolve(sym).to_string() }
-        })?;
+        let expr = by_name
+            .get(&sym)
+            .ok_or_else(|| ConstResolveError::UndefinedRef {
+                name: it.resolve(sym).to_string(),
+            })?;
         in_progress.push(sym);
         let v = eval_expr(expr, by_name, resolved, in_progress, it)?;
         in_progress.pop();
@@ -112,12 +115,8 @@ pub fn evaluate_consts(
         Ok(match e {
             ConstExpr::Lit(n) => *n,
             ConstExpr::Pi => std::f64::consts::PI,
-            ConstExpr::Exp(arg) => {
-                eval_expr(arg, by_name, resolved, in_progress, it)?.exp()
-            }
-            ConstExpr::Neg(arg) => {
-                -eval_expr(arg, by_name, resolved, in_progress, it)?
-            }
+            ConstExpr::Exp(arg) => eval_expr(arg, by_name, resolved, in_progress, it)?.exp(),
+            ConstExpr::Neg(arg) => -eval_expr(arg, by_name, resolved, in_progress, it)?,
             ConstExpr::Bin(op, l, r) => {
                 let lv = eval_expr(l, by_name, resolved, in_progress, it)?;
                 let rv = eval_expr(r, by_name, resolved, in_progress, it)?;
@@ -126,14 +125,14 @@ pub fn evaluate_consts(
                     BinOp::Sub => lv - rv,
                     BinOp::Mul => lv * rv,
                     BinOp::Div => {
-                        if rv == 0.0 { return Err(ConstResolveError::DivisionByZero); }
+                        if rv == 0.0 {
+                            return Err(ConstResolveError::DivisionByZero);
+                        }
                         lv / rv
                     }
                 }
             }
-            ConstExpr::Ref(name) => {
-                eval(*name, by_name, resolved, in_progress, it)?
-            }
+            ConstExpr::Ref(name) => eval(*name, by_name, resolved, in_progress, it)?,
         })
     }
 
@@ -304,9 +303,8 @@ fn substitute_in_value(
             let by_name: HashMap<SymId, &ConstExpr<SymId>> = HashMap::new();
             let mut resolved_local: HashMap<SymId, f64> = table.clone();
             let mut in_progress: Vec<SymId> = Vec::new();
-            let value = eval_in_context(
-                &expr, &by_name, &mut resolved_local, &mut in_progress, it,
-            )?;
+            let value =
+                eval_in_context(&expr, &by_name, &mut resolved_local, &mut in_progress, it)?;
             *v = Value::Num(value);
             Ok(())
         }
@@ -337,15 +335,19 @@ fn eval_in_context(
                 BinOp::Sub => lv - rv,
                 BinOp::Mul => lv * rv,
                 BinOp::Div => {
-                    if rv == 0.0 { return Err(ConstResolveError::DivisionByZero); }
+                    if rv == 0.0 {
+                        return Err(ConstResolveError::DivisionByZero);
+                    }
                     lv / rv
                 }
             }
         }
         ConstExpr::Ref(name) => {
-            *resolved.get(name).ok_or_else(|| ConstResolveError::UndefinedRef {
-                name: it.resolve(*name).to_string(),
-            })?
+            *resolved
+                .get(name)
+                .ok_or_else(|| ConstResolveError::UndefinedRef {
+                    name: it.resolve(*name).to_string(),
+                })?
         }
     })
 }
@@ -355,7 +357,9 @@ mod tests {
     use super::*;
     use crate::resolution::interner::Interner;
 
-    fn mk_lit(n: f64) -> ConstExpr<SymId> { ConstExpr::Lit(n) }
+    fn mk_lit(n: f64) -> ConstExpr<SymId> {
+        ConstExpr::Lit(n)
+    }
     fn mk_bin(op: BinOp, l: ConstExpr<SymId>, r: ConstExpr<SymId>) -> ConstExpr<SymId> {
         ConstExpr::Bin(op, Box::new(l), Box::new(r))
     }
@@ -364,7 +368,10 @@ mod tests {
     fn evaluates_simple_literals() {
         let mut it = Interner::default();
         let a = it.intern("A");
-        let decls = vec![ConstDecl { name: a, value: mk_lit(0.5) }];
+        let decls = vec![ConstDecl {
+            name: a,
+            value: mk_lit(0.5),
+        }];
         let table = evaluate_consts(&decls, &it).unwrap();
         assert_eq!(table.get(&a), Some(&0.5));
     }
@@ -379,7 +386,10 @@ mod tests {
             mk_bin(BinOp::Mul, mk_lit(0.1), mk_lit(2.0)),
             mk_lit(0.05),
         );
-        let decls = vec![ConstDecl { name: a, value: expr }];
+        let decls = vec![ConstDecl {
+            name: a,
+            value: expr,
+        }];
         let table = evaluate_consts(&decls, &it).unwrap();
         assert!((table[&a] - 0.25).abs() < 1e-12);
     }
@@ -391,8 +401,14 @@ mod tests {
         let b = it.intern("B");
         // A = B / 2;  B = 1.0;
         let decls = vec![
-            ConstDecl { name: a, value: mk_bin(BinOp::Div, ConstExpr::Ref(b), mk_lit(2.0)) },
-            ConstDecl { name: b, value: mk_lit(1.0) },
+            ConstDecl {
+                name: a,
+                value: mk_bin(BinOp::Div, ConstExpr::Ref(b), mk_lit(2.0)),
+            },
+            ConstDecl {
+                name: b,
+                value: mk_lit(1.0),
+            },
         ];
         let table = evaluate_consts(&decls, &it).unwrap();
         assert_eq!(table.get(&a), Some(&0.5));
@@ -405,8 +421,14 @@ mod tests {
         let a = it.intern("A");
         let b = it.intern("B");
         let decls = vec![
-            ConstDecl { name: a, value: ConstExpr::Ref(b) },
-            ConstDecl { name: b, value: ConstExpr::Ref(a) },
+            ConstDecl {
+                name: a,
+                value: ConstExpr::Ref(b),
+            },
+            ConstDecl {
+                name: b,
+                value: ConstExpr::Ref(a),
+            },
         ];
         let err = evaluate_consts(&decls, &it).unwrap_err();
         match err {
@@ -423,7 +445,10 @@ mod tests {
         let mut it = Interner::default();
         let a = it.intern("A");
         let undefined = it.intern("UNDEFINED");
-        let decls = vec![ConstDecl { name: a, value: ConstExpr::Ref(undefined) }];
+        let decls = vec![ConstDecl {
+            name: a,
+            value: ConstExpr::Ref(undefined),
+        }];
         let err = evaluate_consts(&decls, &it).unwrap_err();
         match err {
             ConstResolveError::UndefinedRef { name } => assert_eq!(name, "UNDEFINED"),
@@ -450,12 +475,18 @@ mod tests {
         let mut it = Interner::default();
         let a = it.intern("A");
         // A = exp(0) — should be 1.0
-        let decls = vec![ConstDecl { name: a, value: ConstExpr::Exp(Box::new(mk_lit(0.0))) }];
+        let decls = vec![ConstDecl {
+            name: a,
+            value: ConstExpr::Exp(Box::new(mk_lit(0.0))),
+        }];
         let table = evaluate_consts(&decls, &it).unwrap();
         assert!((table[&a] - 1.0).abs() < 1e-12);
 
         let b = it.intern("B");
-        let decls = vec![ConstDecl { name: b, value: ConstExpr::Pi }];
+        let decls = vec![ConstDecl {
+            name: b,
+            value: ConstExpr::Pi,
+        }];
         let table = evaluate_consts(&decls, &it).unwrap();
         assert!((table[&b] - std::f64::consts::PI).abs() < 1e-12);
     }

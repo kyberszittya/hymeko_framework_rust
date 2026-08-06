@@ -11,6 +11,4 @@
 //! so the operator lives in the cycle-pool crate (where the SoA
 //! types live) and Nagare composes it.
 
-pub use hymeko_graph::{
-    clifford_fir_backward, clifford_fir_forward, CliffordFIR,
-};
+pub use hymeko_graph::{CliffordFIR, clifford_fir_backward, clifford_fir_forward};

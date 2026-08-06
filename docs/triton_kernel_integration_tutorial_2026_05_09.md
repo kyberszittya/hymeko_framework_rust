@@ -55,21 +55,21 @@ flowchart LR
 
 Port `_catmull_rom_eval` (the leaf operation) first. It's the simplest unit and validates that the basic Triton plumbing works.
 
-- File: `signedkan_wip/src/triton_kernels.py` — `_catmull_rom_kernel`, `catmull_rom_triton`
+- File: `hymeko_neuro/kernels/triton_kernels.py` — `_catmull_rom_kernel`, `catmull_rom_triton`
 - Acceptance: forward parity ≤ 1e-4 vs `_catmull_rom_eval` at 6 shapes; speedup ≥ 5× at canonical shape.
 
 ### Step 2 — Fused inner (no-skip)
 
 Fuse the gather + per-sign CR + σ-mask + mean reduce into one kernel. This is where the real speedup lives — it eliminates the `(T, k, 2, d)` intermediate that the PyTorch path materialises.
 
-- File: `signedkan_wip/src/triton_kernels.py` — `_signedkan_inner_kernel`, `signedkan_inner_triton`
+- File: `hymeko_neuro/kernels/triton_kernels.py` — `_signedkan_inner_kernel`, `signedkan_inner_triton`
 - Acceptance: forward parity ≤ 1e-4 vs an explicit PyTorch reference; speedup ≥ 10× at canonical shape; arity-agnostic over k=2..6.
 
 ### Step 3 — Sensitivity sweep
 
 Map the kernel's performance landscape across (T, d, k, G, BLOCK_T, BLOCK_D). Don't skip this — block-size defaults can cost 2× speedup.
 
-- File: `signedkan_wip/src/triton_kernels_sensitivity.py`
+- File: `hymeko_neuro/triton_kernels_sensitivity.py`
 - Output: identifies optimal BLOCK_T (16 in our case, was defaulting to 32 → bonus 2× speedup just from the default change). Also reports peak memory savings (94.6% in our run).
 
 ### Step 4 — Skip-variant extensions
@@ -237,10 +237,10 @@ Acceptance: BA end-to-end test passes with `HSIKAN_TRITON_KERNEL=1` on the same 
 
 | file | role |
 |---|---|
-| `signedkan_wip/src/triton_kernels.py` | kernels, autograd wrappers, install/uninstall |
-| `signedkan_wip/src/triton_kernels_sensitivity.py` | parameter sensitivity sweep |
-| `signedkan_wip/tests/test_triton_kernels.py` | 31 tests, tiers 1/3/4/5/6 |
-| `signedkan_wip/src/signedkan.py` (`_can_use_triton_inner`, `_triton_inner_agg`) | live integration fast-path |
+| `hymeko_neuro/kernels/triton_kernels.py` | kernels, autograd wrappers, install/uninstall |
+| `hymeko_neuro/triton_kernels_sensitivity.py` | parameter sensitivity sweep |
+| `hymeko_neuro/tests/test_triton_kernels.py` | 31 tests, tiers 1/3/4/5/6 |
+| `hymeko_neuro/signedkan.py` (`_can_use_triton_inner`, `_triton_inner_agg`) | live integration fast-path |
 | `docs/triton_kernel_integration_tutorial_2026_05_09.md` | this document |
 
 ---
@@ -459,14 +459,14 @@ This test already exists for the v0 PyTorch-ref backward (`test_signedkan_inner_
 
 ```bash
 # Full suite (≤ 60s)
-python -m pytest signedkan_wip/tests/test_triton_kernels.py -v
+python -m pytest hymeko_neuro/tests/test_triton_kernels.py -v
 
 # Skip the slow end-to-end BA training test (≤ 5s)
-python -m pytest signedkan_wip/tests/test_triton_kernels.py -v -k "not end_to_end_ba"
+python -m pytest hymeko_neuro/tests/test_triton_kernels.py -v -k "not end_to_end_ba"
 
 # Sensitivity sweep (~2 min)
-python -m signedkan_wip.src.triton_kernels_sensitivity
+python -m hymeko_neuro.triton_kernels_sensitivity
 
 # Try training with the kernel ON (forward-only OK; backward may OOM on small GPUs)
-HSIKAN_TRITON_KERNEL=1 python -m signedkan_wip.src.run_final_cell --dataset bitcoin_alpha
+HSIKAN_TRITON_KERNEL=1 python -m hymeko_neuro.run_final_cell --dataset bitcoin_alpha
 ```

@@ -1,0 +1,28 @@
+[
+  {
+    "spline_kind": "bspline",
+    "dataset": "bitcoin_otc",
+    "seed": 0,
+    "test_auc": 0.8420521978655613,
+    "test_f1m": 0.7050977902521608,
+    "test_loss": 0.46237871050834656,
+    "n_params": 190369,
+    "train_seconds": 70.29029703140259,
+    "inference_ms": 81.37639999040402,
+    "best_epoch": 10,
+    "cfg": "HSiKAN-BS"
+  },
+  {
+    "spline_kind": "catmull_rom",
+    "dataset": "bitcoin_otc",
+    "seed": 0,
+    "test_auc": 0.8593512663962648,
+    "test_f1m": 0.7213517138875858,
+    "test_loss": 0.421846479177475,
+    "n_params": 190113,
+    "train_seconds": 1.3108751773834229,
+    "inference_ms": 40.89125001337379,
+    "best_epoch": 10,
+    "cfg": "HSiKAN-CR"
+  }
+]

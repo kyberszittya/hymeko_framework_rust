@@ -1,0 +1,79 @@
+{
+ "seed": 0,
+ "steps_scale": 1.0,
+ "banks": {
+  "A1_first_contact": 197,
+  "C1_bilateral": 68,
+  "T0_ready": 39
+ },
+ "bands_eval": {
+  "+0.018-0.030": {
+   "n": 13,
+   "first_contact": 12,
+   "capture_entry": 12,
+   "handoff": 0,
+   "strict": 1,
+   "post_handoff_strict": 0,
+   "first_contact_rate": 0.923,
+   "handoff_rate": 0.0,
+   "strict_rate": 0.077,
+   "failures": {
+    "CAPTURE_FAILURE": 11,
+    "APPROACH_FAILURE": 1
+   }
+  },
+  "+0.030-0.045": {
+   "n": 8,
+   "first_contact": 5,
+   "capture_entry": 5,
+   "handoff": 0,
+   "strict": 0,
+   "post_handoff_strict": 0,
+   "first_contact_rate": 0.625,
+   "handoff_rate": 0.0,
+   "strict_rate": 0.0,
+   "failures": {
+    "CAPTURE_FAILURE": 5,
+    "APPROACH_FAILURE": 3
+   }
+  },
+  "+0.045-0.060": {
+   "n": 15,
+   "first_contact": 13,
+   "capture_entry": 13,
+   "handoff": 0,
+   "strict": 0,
+   "post_handoff_strict": 0,
+   "first_contact_rate": 0.867,
+   "handoff_rate": 0.0,
+   "strict_rate": 0.0,
+   "failures": {
+    "CAPTURE_FAILURE": 13,
+    "APPROACH_FAILURE": 2
+   }
+  },
+  "+0.060-0.080": {
+   "n": 1,
+   "first_contact": 1,
+   "capture_entry": 1,
+   "handoff": 0,
+   "strict": 0,
+   "post_handoff_strict": 0,
+   "first_contact_rate": 1.0,
+   "handoff_rate": 0.0,
+   "strict_rate": 0.0,
+   "failures": {
+    "CAPTURE_FAILURE": 1
+   }
+  }
+ },
+ "causal_held1": {
+  "n": 24,
+  "transport_alone": 4,
+  "approach_only": 0,
+  "full_chain": 3,
+  "zero_action": 0
+ },
+ "max_certified_clearance": 0.0182,
+ "classification": "APPROACH_POSITIVE"
+}

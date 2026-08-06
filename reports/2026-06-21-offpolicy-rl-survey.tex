@@ -1,0 +1,168 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb}\usepackage{booktabs}\usepackage{hyperref}\usepackage{enumitem}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\title{\textbf{Off-policy actor--critic for continuous control}\\[2pt]
+\large DDPG $\to$ TD3 $\to$ SAC and the newer architectures --- a technical reference,\\
+mapped onto the HyMeKo RL substrate, with a safe-RL forward look}
+\author{Aiko (Claude Code) --- for Dr.\ Csaba Hajdu}\date{2026-06-21}
+\begin{document}\maketitle
+
+\begin{abstract}\noindent
+A working reference for the off-policy actor--critic family, written to inform the DDPG/TD3 implementation on
+the HyMeKo cart-pole (PPO is the saved baseline). It traces the lineage DDPG\,$\to$\,TD3\,$\to$\,SAC by the
+\emph{specific failure each successor fixes}, surveys the modern sample-efficiency/stability methods (REDQ,
+TQC, DroQ, CrossQ, TD7), distils the design axes that actually matter, maps each onto the repo's
+\code{RolloutEnv}\,+\,backbone\,+\,exploration-vocab\,+\,off-policy-core architecture, and sketches how safe RL
+(constrained MDPs) would enter declaratively. Synthesis from the established literature (knowledge to
+2026-01); not a web-cited survey --- a deep-research pass can add external citations on request.
+\end{abstract}
+
+\section{The off-policy contract}
+On-policy methods (PPO, our baseline) collect a fresh rollout, update, and discard it. Off-policy methods keep
+a \textbf{replay buffer} of past transitions $(s,a,r,s',d)$ and resample them, decoupling data collection from
+the update --- far more sample-efficient, at the cost of stability. The shared machinery:
+\begin{itemize}[nosep]
+  \item \textbf{A $Q$-critic} $Q_\phi(s,a)$ (action-value), trained by a Bellman/TD target
+        $y = r + \gamma\,(1-d)\,Q_{\bar\phi}(s', a')$ on a \emph{target} network $\bar\phi$ (Polyak-averaged,
+        $\bar\phi \leftarrow \tau\phi + (1-\tau)\bar\phi$) for a non-moving regression target.
+  \item \textbf{A policy} $\pi$ improved \emph{through} the critic, not by a likelihood-ratio surrogate.
+  \item \textbf{Exploration} injected explicitly (the policy is deterministic or its entropy is controlled),
+        not implicit in the on-policy stochasticity.
+\end{itemize}
+The recurring enemy is \textbf{$Q$-value overestimation}: $\max/\arg\max$ over a noisy critic biases the
+target upward, the policy exploits the error, and training diverges. Most of the lineage is a sequence of
+overestimation controls.
+
+\section{DDPG --- deterministic policy gradient}
+\textbf{Idea.} A deterministic actor $\mu_\theta(s)$ and a $Q$-critic; the actor ascends the critic:
+\[
+\nabla_\theta J \approx \mathbb{E}_{s\sim\mathcal{D}}\big[\nabla_a Q_\phi(s,a)\big|_{a=\mu_\theta(s)}\,
+\nabla_\theta \mu_\theta(s)\big].
+\]
+Critic regresses to $y = r + \gamma\,(1-d)\,Q_{\bar\phi}(s',\mu_{\bar\theta}(s'))$. Exploration $=$ additive
+noise at action selection: $a = \mu_\theta(s) + \epsilon$, $\epsilon\sim\mathcal{N}$ or Ornstein--Uhlenbeck.
+\textbf{Failure modes (why nobody ships plain DDPG):} severe $Q$-overestimation; extreme sensitivity to
+hyperparameters/seed (the cart-pole's MLP-bimodality is a mild echo); brittle target updates. It is the right
+\emph{first} implementation (smallest off-policy core) but expected to be fragile --- report that honestly
+rather than tune it away.
+
+\section{TD3 --- three fixes to DDPG}
+TD3 $=$ DDPG $+$ three targeted patches, each addressing a named DDPG pathology:
+\begin{enumerate}[nosep]
+  \item \textbf{Clipped double-$Q$ (twin critics).} Two critics $Q_{\phi_1},Q_{\phi_2}$; the target uses the
+        \emph{minimum}: $y = r + \gamma(1-d)\min_i Q_{\bar\phi_i}(s',\tilde a')$. Directly caps overestimation.
+  \item \textbf{Delayed policy updates.} Update the actor (and targets) every $d$ critic steps ($d{=}2$) ---
+        a slower-moving policy on a better-fit critic.
+  \item \textbf{Target policy smoothing.} $\tilde a' = \mu_{\bar\theta}(s') + \mathrm{clip}(\epsilon,-c,c)$,
+        $\epsilon\sim\mathcal{N}(0,\sigma)$ --- regularises the critic so it can't exploit sharp peaks.
+\end{enumerate}
+TD3 is the reliable deterministic baseline; on our codebase it is \emph{additive over DDPG} (a second critic,
+a counter, one more noise site --- the third injection site in the exploration vocab).
+
+\section{SAC --- maximum-entropy, stochastic, off-policy}
+\textbf{Idea.} Maximise reward \emph{plus} policy entropy: $J = \sum_t \mathbb{E}[r_t + \alpha\,
+\mathcal{H}(\pi(\cdot|s_t))]$. A \emph{stochastic} squashed-Gaussian actor (tanh-Gaussian) gives the
+reparameterised policy gradient; soft $Q$ targets add the entropy term; twin critics (as TD3) cap
+overestimation; the temperature $\alpha$ is auto-tuned to a target entropy. \textbf{Why it matters:} SAC is the
+single strongest, most robust continuous-control baseline --- the fair opponent to put the HSiKAN backbone into.
+It is also the cleanest fit for the exploration vocab: entropy is intrinsic (a source wired to the policy
+distribution), so PPO and SAC share that injection site while differing in the on/off-policy core.
+
+\section{Newer architectures (post-SAC: sample efficiency \& stability)}
+The frontier is mostly \emph{better/faster critics} at high update-to-data (UTD) ratios:
+\begin{description}[nosep,leftmargin=1.0cm]
+  \item[REDQ (2021).] A \emph{randomised ensemble} of $N$ critics; targets take the min over a random subset
+        of size $M{=}2$. Enables UTD$\,\approx\,$20 (many gradient steps per env step) $\Rightarrow$ SAC-level
+        returns at a fraction of the samples. Cost: $N$ critics.
+  \item[TQC (2020).] \emph{Truncated Quantile Critics} --- distributional critics (quantile regression) whose
+        pooled atoms are \emph{truncated} (drop the top-$k$) to control overestimation continuously rather than
+        by a hard min. Strong on harder MuJoCo.
+  \item[DroQ (2021).] REDQ's effect with a \emph{small} ensemble by adding \textbf{dropout + LayerNorm} to the
+        critics --- cheaper, nearly as sample-efficient. A pragmatic default.
+  \item[CrossQ (2024).] \textbf{Removes target networks entirely}; uses BatchNorm (carefully placed) + a wider
+        critic to stay stable. Simpler and compute-light, matching REDQ-class efficiency --- attractive because
+        it deletes the target-net machinery.
+  \item[TD7 (2023).] TD3 $+$ \textbf{SALE} (state--action learned embeddings: a learned latent the critic/actor
+        consume) $+$ \textbf{LAP} (loss-adjusted prioritised replay) $+$ policy checkpoints. State of the art
+        among deterministic methods; the SALE embedding is conceptually close to our \emph{backbone} idea.
+\end{description}
+Adjacent families worth knowing, not on the immediate path: \textbf{distributional RL} (C51\,$\to$\,QR-DQN\,
+$\to$\,IQN --- TQC's lineage), \textbf{model-based} (MBPO, Dreamer-v3 --- learn a world model, plan/imagine),
+and \textbf{offline RL} (CQL, IQL --- learn from a fixed buffer, no interaction).
+
+\section{The design axes that actually matter}
+A taxonomy to place any method (and any HyMeKo variant) on:
+\begin{center}\small
+\begin{tabular}{lll}
+\toprule
+axis & options & who \\
+\midrule
+data & on-policy / off-policy(replay) & PPO / DDPG,TD3,SAC,\dots \\
+policy & deterministic / stochastic & DDPG,TD3 / SAC,PPO \\
+critic & $V(s)$ / $Q(s,a)$ / distributional $Z(s,a)$ & PPO / DDPG\dots / TQC,IQN \\
+overestimation ctrl & min-of-2 / ensemble-min / quantile-trunc & TD3 / REDQ / TQC \\
+target net & Polyak / none & most / CrossQ \\
+exploration site & policy-entropy / action-noise / target-smoothing & PPO,SAC / DDPG,TD3 / TD3 \\
+UTD ratio & 1 / high($\sim$20) & classic / REDQ,DroQ \\
+representation & raw / learned embedding (SALE) / \textbf{hypergraph (HSiKAN)} & most / TD7 / \textbf{ours} \\
+\bottomrule
+\end{tabular}
+\end{center}
+The last row is the research seam: every method above is agnostic to \emph{how the state is encoded}, so the
+HSiKAN hypergraph backbone is an orthogonal swap into any of them --- which is exactly why a real-topology
+task (not cart-pole) is needed to test whether the structure helps.
+
+\section{Mapping onto the HyMeKo substrate}
+The repo already has the orthogonal pieces; off-policy adds a bounded core (architecture plan
+\code{2026-06-21-rl-algorithm-architecture}):
+\begin{itemize}[nosep]
+  \item \textbf{Reuse:} \code{RolloutEnv} Protocol (collection), the \code{hsikan}/\code{mlp}/\code{signedkan}
+        backbones (now also feeding a $Q$-critic that consumes \code{concat(}embed\code{, action)}), the
+        vectorised env factory, \code{policy\_store} (off-policy policies store identically).
+  \item \textbf{New (P2):} \code{ReplayBuffer} (SoA ring, fixed RSS), \code{QCritic} + deterministic actor
+        head, target nets + Polyak, the DPG update. \textbf{P3} (TD3) is additive: twin $Q$, delayed updates,
+        target smoothing. \textbf{Later:} SAC (stochastic head + auto-$\alpha$), then a REDQ/CrossQ critic
+        option behind a flag.
+  \item \textbf{Exploration vocab (P1):} the three injection sites (policy-dist, action-select, target-action)
+        already cover PPO/DDPG/TD3/SAC; a method \emph{declares} which sites it consumes. DDPG can ship with a
+        minimal Gaussian \code{NoiseProcess} now and be retrofitted to the declarative vocab.
+\end{itemize}
+\textbf{Recommended order:} DDPG (smallest core, expect fragility) $\to$ TD3 (the reliable deterministic
+baseline) $\to$ SAC (the strong stochastic baseline) $\to$ optionally a high-UTD critic (DroQ/CrossQ) for
+sample efficiency. Each benchmarked against the saved PPO reference (192$\pm$15 cart-pole), and the
+\emph{architecture} comparison run only on a real-topology task with the params-matched control.
+
+\section{Safe reinforcement learning --- the next direction}
+Once an off-policy learner works, ``safe RL'' asks it to respect constraints, not just maximise reward.
+The standard framings:
+\begin{itemize}[nosep]
+  \item \textbf{Constrained MDP (CMDP).} Maximise return subject to expected cost $\le$ budget:
+        $\max_\pi J_r(\pi)\ \text{s.t.}\ J_c(\pi)\le d$. Solved by a \textbf{Lagrangian} (a learned multiplier
+        $\lambda$ on the cost, dual ascent) --- e.g.\ Lagrangian-SAC/TD3, or \textbf{CPO} (a trust-region
+        constrained policy step).
+  \item \textbf{Safety layer / shielding.} A projection or shield that overrides unsafe actions at execution
+        (a hard constraint), optionally learned (Safety-Layer) or model-based (control-barrier functions).
+  \item \textbf{Recovery / fallback policies.} A separate policy that activates near constraint violation.
+\end{itemize}
+\textbf{The HyMeKo angle (why this is a natural fit):} constraints are \emph{declarative} here already. The
+reward is a weighted bundle of \code{meta\_reward} terms; a \textbf{cost} is the same shape (a
+\code{meta\_constraint} vocabulary: a bundle of cost terms with budgets), and the kinematic hypergraph already
+carries the safety-relevant structure (joint limits, self-collision, out-of-bounds --- terms we \emph{already}
+have as reward penalties in \code{galambos\_task}). So a CMDP would be: read a \code{constraint\_spec} from
+\code{.hymeko}, evaluate $J_c$ from those terms, and add a Lagrangian multiplier to the off-policy update ---
+the exact same ``MDP-and-now-its-constraints as data'' story. \emph{Proposed as the direction after TD3; not
+started.}
+
+\section{Bottom line for the implementation}
+Build DDPG now as the minimal off-policy core (honest about its fragility), TD3 immediately after as the
+deterministic baseline, then SAC as the strong opponent. Keep the HSiKAN backbone as an orthogonal swap, and
+hold the architecture verdict for a real-topology task. Safe RL enters as a declarative \code{meta\_constraint}
+$+$ a Lagrangian on the off-policy update --- the cleanest continuation of the storage thesis.
+
+\paragraph{Companion artifacts.} Architecture \& workflow plan:
+\code{docs/plans/2026-06-21-rl-algorithm-architecture/}. PPO baseline + storage:
+\code{reports/2026-06-21-rl-on-hymeko-technical-report.\{tex,pdf\}}.
+\end{document}

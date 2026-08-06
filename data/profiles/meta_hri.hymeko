@@ -1,0 +1,11 @@
+// HRI coalition vocabulary (editor profile). Compact subset of
+// data/coalitions/meta_hri.hymeko: agents are nodes, relations are signed
+// links between them.
+hri_meta_description {}
+
+hri_meta {
+    human {}
+    robot {}
+    interpersonal {}
+    hri_relation {}
+}

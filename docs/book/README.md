@@ -22,7 +22,7 @@ docs/book/
     ├── architecture/  crate map, data flow, layers, extension points
     ├── concepts/      IR, queries, templates, tier system, tensor decomp
     ├── recipes/       add-a-format, add-a-layer-kind, add-a-query, debug
-    ├── research/      signedkan_wip orientation, HSiKAN, HyMeKo-driven training
+    ├── research/      hymeko_neuro orientation, HSiKAN, HyMeKo-driven training
     ├── reference-cli.md
     └── reference-env-vars.md
 ```
@@ -45,4 +45,4 @@ A future GitHub Action could auto-deploy on push to master.
 
 ## Source-of-truth pointers
 
-Per project memory: do not duplicate research-state from `signedkan_wip/HSIKAN_*.md` — link instead. The book cites concrete file paths so source updates flow naturally.
+Per project memory: do not duplicate research-state from `hymeko_neuro/HSIKAN_*.md` — link instead. The book cites concrete file paths so source updates flow naturally.

@@ -13,7 +13,7 @@
 // the empirically best architecture — for once the scalar-cost
 // framework wins without needing the multi-objective lever.
 //
-// Mapping: signedkan_wip/src/hsikan_pgraph_mapping.py
+// Mapping: hymeko_neuro/experiments/hsikan_pgraph_mapping.py
 // Driver:  run_hsikan_msg_sweep.py (--algorithm abb / --weights for MO)
 
 HSiKAN_Sweep_Depth {}

@@ -18,7 +18,9 @@ pub fn print_dense_block<F: Real>(
     let mut block = vec![vec![F::zero(); c]; r];
 
     for e in coo.iter() {
-        if e.k != k_sel { continue; }
+        if e.k != k_sel {
+            continue;
+        }
         let i = e.i;
         let j = e.j;
 
