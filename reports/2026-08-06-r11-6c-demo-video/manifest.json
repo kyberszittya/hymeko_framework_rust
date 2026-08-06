@@ -1,0 +1,39 @@
+{
+ "contract": "R11_6C_DEMO_VIDEO",
+ "purpose": "deterministic visualization only (selects nothing)",
+ "facts": [
+  {
+   "sid": "bank_c0_2",
+   "bank_id": "bank_c0_2",
+   "k6": true,
+   "final_dtz": 2.52
+  },
+  {
+   "sid": "bank_c1_+0.03_-0.02",
+   "bank_id": "bank_c3_r7_a-15",
+   "k6": true,
+   "final_dtz": 18.43
+  },
+  {
+   "sid": "bank_c2_+0.025_-0.015",
+   "bank_id": "bank_c3_r7_a-15",
+   "k6": true,
+   "final_dtz": 13.29
+  },
+  {
+   "sid": "bank_c3_r5_a-15",
+   "bank_id": "bank_c3_r5_a-15",
+   "k6": true,
+   "final_dtz": 4.04
+  },
+  {
+   "sid": "bank_c3_r9_a-30",
+   "bank_id": "bank_c3_r7_a-30",
+   "k6": false,
+   "final_dtz": 24.37
+  }
+ ],
+ "n_frames": 520,
+ "mp4": "reports/2026-08-06-r11-6c-demo-video/r11_6c_demo.mp4",
+ "gif": "reports/2026-08-06-r11-6c-demo-video/r11_6c_demo.gif"
+}
