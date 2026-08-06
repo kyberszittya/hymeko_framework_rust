@@ -87,6 +87,27 @@ snapshot: **5 seeds × 2 dev = 10 rollouts**.
 deployable policy**: the top-1 baseline the deploy uses gets 0, k3 is inconsistent, and capture-seed consistency
 gates 40% of rollouts before delivery. The retrieval ceiling is real for the box as it is for the coin.
 
+## θ×handoff transfer matrix — the decisive audit (`theta_handoff_matrix.json`)
+
+Before touching the selector, the causal audit: on each dev snapshot that reached delivery, apply **all 7 stored
+bank θ** (not the retrieval policy) → strict-K6/dtz. This separates a *selection* limit from a *coverage* limit.
+
+**Verdict: `BOX_RETRIEVAL_BANK_COVERAGE_LIMIT`.** Of the 6 delivery-reaching dev snapshots, **0/6 have any stored
+bank θ that delivers strict-K6** — the best over all 7 stored θ is 25.4–33.6 mm on every snapshot, all above the
+20 mm K6 threshold. Selection-gap = 0 (there is no snapshot where a stored delivering θ exists that retrieval failed
+to pick). So the deploy top-1's 0/6 is **not** a selector failure — the bank simply does not contain a θ that
+delivers on the held-out dev handoffs.
+
+**The flagship K6 was an interpolation, not a stored θ.** On `s3`, k3-weighted delivered K6 (17.72 mm) while the best
+*individual* stored θ managed only 25.38 mm — the blend landed in a delivering basin **no stored θ reaches**. This is
+decisive guidance: it would be a trap (the coin-arc mistake) to keep engineering the selector. The delivering region
+is reachable but **under-sampled** by the 7-θ bank (1 best-θ per train scenario, by design).
+
+⇒ **Next is targeted densification, not selector engineering** — generate teacher θ that cover the dev delivery
+basins (more train scenarios / more θ per scenario near the held-out configs), then re-audit and gate on FIXED
+snapshots (conditional K6 ≥ 50%, ≥3 seeds), with a fresh sealed test. The frozen `flagship_certificate.json` records
+this honestly (θ_provenance = interpolation; audit = coverage limit).
+
 ## Honest next levers (not run — for user scoping)
 
 - **More eval seeds per dev scenario** (deploy baseline unchanged, top-1 nearest): 2/4 dev rollouts never reached
