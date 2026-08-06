@@ -7,7 +7,9 @@
 //! → `freezeState` transition); on a syntax error it returns structured feedback
 //! for the error loop.
 
-use parser::ast::{AstStr, HyperItem};
+use std::collections::HashMap;
+
+use parser::ast::{AstStr, HyperItem, SignedRef};
 
 use crate::context::Ambience;
 use crate::synthesize::Refinement;
@@ -133,4 +135,148 @@ fn collect_items(items: &[HyperItem<'_, &str>], out: &mut Vec<(String, usize)>) 
             HyperItem::Arc(_) => {}
         }
     }
+}
+
+/// One hyperedge of a [`GraphView`]: its name and the nodes it connects.
+#[derive(Debug, Clone)]
+pub struct GraphEdge {
+    /// The edge's declared name.
+    pub name: String,
+    /// The names of the nodes the edge references (its `bases`).
+    pub nodes: Vec<String>,
+}
+
+/// A structural view of a parsed HyMeKo model — the declared nodes and the hyperedges over them.
+///
+/// This is the *graph the source describes*: what HOTARU plans over when it produces a semantic plan
+/// (operations grounded in real nodes/edges), rather than opaque source strings.
+#[derive(Debug, Clone, Default)]
+pub struct GraphView {
+    nodes: Vec<String>,
+    edges: Vec<GraphEdge>,
+}
+
+impl GraphView {
+    /// The declared node names.
+    #[must_use]
+    pub fn nodes(&self) -> &[String] {
+        &self.nodes
+    }
+
+    /// The hyperedges (name + connected nodes).
+    #[must_use]
+    pub fn edges(&self) -> &[GraphEdge] {
+        &self.edges
+    }
+
+    /// Whether a node with this name is declared.
+    #[must_use]
+    pub fn has_node(&self, name: &str) -> bool {
+        self.nodes.iter().any(|n| n == name)
+    }
+
+    /// Whether an edge with this name exists.
+    #[must_use]
+    pub fn has_edge(&self, name: &str) -> bool {
+        self.edges.iter().any(|e| e.name == name)
+    }
+
+    /// Whether `a` and `b` lie in the same connected component, treating each hyperedge as fully
+    /// connecting the nodes it references (union-find over the incidence).
+    ///
+    /// # Postconditions
+    /// `false` if either name is not a declared node; `true` when `a == b` and it is a node.
+    #[must_use]
+    pub fn connected(&self, a: &str, b: &str) -> bool {
+        if !self.has_node(a) || !self.has_node(b) {
+            return false;
+        }
+        if a == b {
+            return true;
+        }
+        let index: HashMap<&str, usize> = self
+            .nodes
+            .iter()
+            .enumerate()
+            .map(|(i, n)| (n.as_str(), i))
+            .collect();
+        let mut parent: Vec<usize> = (0..self.nodes.len()).collect();
+        for edge in &self.edges {
+            let mut members = edge
+                .nodes
+                .iter()
+                .filter_map(|n| index.get(n.as_str()).copied());
+            if let Some(anchor) = members.next() {
+                for m in members {
+                    let (ra, rb) = (uf_find(&mut parent, anchor), uf_find(&mut parent, m));
+                    parent[ra] = rb;
+                }
+            }
+        }
+        uf_find(&mut parent, index[a]) == uf_find(&mut parent, index[b])
+    }
+}
+
+/// Iterative union-find root with path halving.
+fn uf_find(parent: &mut [usize], mut x: usize) -> usize {
+    while parent[x] != x {
+        parent[x] = parent[parent[x]];
+        x = parent[x];
+    }
+    x
+}
+
+/// Dry-run parse into a [`GraphView`] (nodes + hyperedges), or `None` on a syntax error.
+///
+/// The graph-element oracle HOTARU's semantic planner ([`crate::hotaru::SearchHotaru::plan_graph`]) reads
+/// to ground its candidate operations in the model's real nodes and to test topological goals.
+#[must_use]
+pub fn preview_graph(source: &str) -> Option<GraphView> {
+    parser::parse_description(source)
+        .ok()
+        .map(|ast| collect_graph(&ast))
+}
+
+fn collect_graph(ast: &AstStr<'_>) -> GraphView {
+    let mut nodes: Vec<String> = ast
+        .header
+        .iter()
+        .map(|n| n.inner.name.to_string())
+        .collect();
+    let mut edges: Vec<GraphEdge> = Vec::new();
+    collect_graph_items(&ast.items, &mut nodes, &mut edges);
+    GraphView { nodes, edges }
+}
+
+fn collect_graph_items(
+    items: &[HyperItem<'_, &str>],
+    nodes: &mut Vec<String>,
+    edges: &mut Vec<GraphEdge>,
+) {
+    for item in items {
+        match item {
+            HyperItem::Node(node) => {
+                nodes.push(node.inner.name.to_string());
+                if let Some(body) = &node.inner.body {
+                    collect_graph_items(body, nodes, edges);
+                }
+            }
+            HyperItem::Edge(edge) => {
+                edges.push(GraphEdge {
+                    name: edge.inner.name.to_string(),
+                    nodes: edge.inner.bases.iter().map(ref_name).collect(),
+                });
+                collect_graph_items(&edge.inner.body, nodes, edges);
+            }
+            HyperItem::Arc(_) => {}
+        }
+    }
+}
+
+/// The referenced node name of a signed reference (its dotted path joined).
+fn ref_name(sr: &SignedRef<'_, &str>) -> String {
+    let atom = match sr {
+        SignedRef::Plus(a) | SignedRef::Minus(a) | SignedRef::Neutral(a) => a,
+    };
+    atom.target.path.join(".")
 }

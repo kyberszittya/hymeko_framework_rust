@@ -24,8 +24,13 @@ pub mod search;
 pub mod synthesize;
 
 pub use context::{Ambience, CognitiveContext, Goal, Intent, Kyosei, Objectives};
-pub use engine::{preview_edge_names, preview_edges, ErrorFeedback, EvalOutcome, HymekoEngine};
-pub use hotaru::{HiveDelta, HotaruPlanner, HotaruSynthesizer, ScriptedHotaru, SearchHotaru};
+pub use engine::{
+    preview_edge_names, preview_edges, preview_graph, ErrorFeedback, EvalOutcome, GraphEdge,
+    GraphView, HymekoEngine,
+};
+pub use hotaru::{
+    GraphGoal, HiveDelta, HotaruPlanner, HotaruSynthesizer, ScriptedHotaru, SearchHotaru,
+};
 pub use loop_driver::{CognitiveLoop, LoopReport, Termination};
 pub use search::{astar, solve, AstarResult, SearchProblem};
 pub use synthesize::{CognitiveSynthesizer, Refinement, ScriptedSynthesizer};

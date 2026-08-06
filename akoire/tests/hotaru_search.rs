@@ -7,8 +7,8 @@
 //! fixed `ScriptedHotaru`/`ScriptedSynthesizer`).
 
 use akoire::{
-    CognitiveLoop, HiveDelta, HotaruSynthesizer, HymekoEngine, Intent, Kyosei, Objectives,
-    SearchHotaru, Termination,
+    preview_graph, CognitiveLoop, GraphGoal, HiveDelta, HotaruSynthesizer, HymekoEngine, Intent,
+    Kyosei, Objectives, Refinement, SearchHotaru, Termination,
 };
 
 /// The HIVE-delta menu HOTARU searches over: a base host block, two wanted edges, one distractor.
@@ -80,4 +80,42 @@ fn planner_planned_for_less_exhausts_against_stricter_goal() {
     assert_eq!(report.termination, Termination::Exhausted);
     assert_eq!(report.accepted, plan_len);
     assert_eq!(report.rejected, 0);
+}
+
+#[test]
+fn graph_plan_drives_loop_to_a_connected_model() {
+    // HOTARU plans over the graph the model DESCRIBES: from a seed with nodes a,b,c (no edges) and a
+    // topological goal "connect a to c", it derives a semantic plan (add e_ab, e_bc) grounded in the
+    // real nodes; the loop, started from the committed seed, gate-keeps each add-edge to a model that
+    // actually connects a and c. `candidate_edges` + goal are the spec an LLM would emit from intent.
+    let seed = "Rig {\n  a;\n  b;\n  c;\n}";
+    let cands: [(&str, &[&str]); 2] = [("e_ab", &["a", "b"]), ("e_bc", &["b", "c"])];
+    let goal = GraphGoal::Connect("a".into(), "c".into());
+    let planner = SearchHotaru::plan_graph(seed, &cands, &goal, &Kyosei::default(), 256)
+        .expect("a and c are connectable");
+    let plan_len = planner.remaining();
+    assert_eq!(plan_len, 2, "add e_ab then e_bc");
+
+    // Establish the model (generation 1), then let the semantic plan drive the loop over it.
+    let mut engine = HymekoEngine::new();
+    engine.evaluate(&Refinement(seed.to_string()));
+    let objectives = Objectives {
+        required_edges: vec!["e_ab".into(), "e_bc".into()],
+    };
+    let mut cog = CognitiveLoop::new(engine, HotaruSynthesizer::new(planner), 10);
+    let report = cog.run(
+        &Intent("connect a to c".into()),
+        &objectives,
+        &Kyosei::default(),
+    );
+
+    assert_eq!(report.termination, Termination::Converged);
+    assert_eq!(report.accepted, plan_len);
+    assert_eq!(report.rejected, 0);
+    // the resulting committed model actually connects a and c (the semantic goal, verified on the graph)
+    let graph = preview_graph(cog.engine().ambience().source()).expect("final model parses");
+    assert!(
+        graph.connected("a", "c"),
+        "the plan achieved the topological goal"
+    );
 }

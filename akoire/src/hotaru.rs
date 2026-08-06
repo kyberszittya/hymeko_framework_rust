@@ -7,7 +7,7 @@
 use std::collections::VecDeque;
 
 use crate::context::{CognitiveContext, Kyosei, Objectives};
-use crate::engine::{preview_edge_names, preview_edges};
+use crate::engine::{preview_edge_names, preview_edges, preview_graph, GraphView};
 use crate::search::{solve, AstarResult, SearchProblem};
 use crate::synthesize::{CognitiveSynthesizer, Refinement};
 
@@ -35,6 +35,16 @@ impl HiveDelta {
             name: name.into(),
             op: HiveDeltaOp::AppendSource(fragment.into()),
         }
+    }
+
+    /// A *semantic* graph operation: add a hyperedge named `name` over `nodes` (a top-level
+    /// `@name : n0, n1, … { }`). The delta HOTARU's graph planner composes — grounded in real node
+    /// names — so a plan is a sequence of edges over the model's own elements.
+    #[must_use]
+    pub fn add_edge(name: impl Into<String>, nodes: &[&str]) -> Self {
+        let name = name.into();
+        let fragment = format!("@{name} : {} {{ }}", nodes.join(", "));
+        Self::append_source(name, fragment)
     }
 
     /// Stable planner-facing delta label.
@@ -164,6 +174,50 @@ impl SearchHotaru {
         )
     }
 
+    /// Plan a *semantic graph plan*: a sequence of grounded `add_edge` deltas that transforms the model
+    /// `seed` describes into one satisfying `goal`, choosing from `candidate_edges`.
+    ///
+    /// This is HOTARU planning over the HyMeKo-**described graph elements**: it reads the seed's nodes,
+    /// admits only `(name, nodes)` candidates whose nodes are *actually declared* in the seed graph
+    /// (grounding), and searches toward a topological [`GraphGoal`]. `candidate_edges` + `goal` are
+    /// exactly the specification an LLM would produce from intent — HOTARU turns it into a verified plan.
+    ///
+    /// # Preconditions
+    /// `max_expansions >= 1`.
+    /// # Postconditions
+    /// `Some(planner)` whose queued `add_edge` deltas, applied from `seed`, reach a graph satisfying
+    /// `goal` (minimum length — the heuristic is admissible); `None` if `seed` does not parse or the
+    /// goal is unreachable from the grounded candidates within `max_expansions`.
+    #[must_use]
+    pub fn plan_graph(
+        seed: &str,
+        candidate_edges: &[(&str, &[&str])],
+        goal: &GraphGoal,
+        kyosei: &Kyosei,
+        max_expansions: usize,
+    ) -> Option<Self> {
+        debug_assert!(max_expansions >= 1, "max_expansions must be >= 1");
+        let graph = preview_graph(seed)?; // the seed must be a parseable model
+        let menu: Vec<HiveDelta> = candidate_edges
+            .iter()
+            .filter(|(_, nodes)| nodes.iter().all(|n| graph.has_node(n))) // ground against real nodes
+            .map(|(name, nodes)| HiveDelta::add_edge(*name, nodes))
+            .collect();
+        solve(
+            &GraphProblem {
+                seed,
+                menu: &menu,
+                goal,
+                kyosei,
+            },
+            max_expansions,
+        )
+        .actions
+        .map(|deltas| Self {
+            plan: deltas.into_iter().collect(),
+        })
+    }
+
     /// Number of planned deltas still to stream.
     #[must_use]
     pub fn remaining(&self) -> usize {
@@ -200,23 +254,7 @@ impl SearchProblem for HiveDeltaProblem<'_> {
     }
 
     fn neighbours(&self, src: &String) -> Vec<(HiveDelta, String, f64)> {
-        let mut succ = Vec::new();
-        for delta in self.menu {
-            let next = delta.lower(src).0;
-            if next == *src {
-                continue; // no-op delta
-            }
-            // Feasible only if it parses AND every edge is within the Kyosei arity bound.
-            if let Some(edges) = preview_edges(&next) {
-                if edges
-                    .iter()
-                    .all(|(_, arity)| *arity <= self.kyosei.max_arity)
-                {
-                    succ.push((delta.clone(), next, 1.0));
-                }
-            }
-        }
-        succ
+        feasible_successors(src, self.menu, self.kyosei)
     }
 
     fn is_goal(&self, src: &String) -> bool {
@@ -230,6 +268,103 @@ impl SearchProblem for HiveDeltaProblem<'_> {
         preview_edge_names(src).map_or(self.objectives.required_edges.len() as f64, |names| {
             self.objectives.missing_edges(&names) as f64
         })
+    }
+}
+
+/// Successors of a HIVE state: each menu delta applied, kept only if the result parses **and** every
+/// edge is within the [`Kyosei`] arity bound. The shared feasibility relation for both the edge-name
+/// planner ([`HiveDeltaProblem`]) and the graph-element planner ([`GraphProblem`]) — one oracle, no
+/// duplicate DFS (CLAUDE.md §6.1).
+fn feasible_successors(
+    src: &str,
+    menu: &[HiveDelta],
+    kyosei: &Kyosei,
+) -> Vec<(HiveDelta, String, f64)> {
+    let mut succ = Vec::new();
+    for delta in menu {
+        let next = delta.lower(src).0;
+        if next == *src {
+            continue; // no-op delta
+        }
+        if let Some(edges) = preview_edges(&next) {
+            if edges.iter().all(|(_, arity)| *arity <= kyosei.max_arity) {
+                succ.push((delta.clone(), next, 1.0));
+            }
+        }
+    }
+    succ
+}
+
+/// A *semantic* goal over the graph a HyMeKo model describes (not over opaque source strings).
+///
+/// This is what makes HOTARU's output a semantic plan: it targets a property of the *graph elements*
+/// (an edge by name, or a topological relation between nodes), which an LLM-produced specification can
+/// express directly.
+#[derive(Debug, Clone)]
+pub enum GraphGoal {
+    /// Every named edge must exist in the graph.
+    RequiredEdges(Vec<String>),
+    /// The two named nodes must lie in one connected component (via the hyperedges).
+    Connect(String, String),
+}
+
+impl GraphGoal {
+    /// Whether `graph` satisfies this goal.
+    #[must_use]
+    pub fn satisfied(&self, graph: &GraphView) -> bool {
+        match self {
+            GraphGoal::RequiredEdges(reqs) => reqs.iter().all(|r| graph.has_edge(r)),
+            GraphGoal::Connect(a, b) => graph.connected(a, b),
+        }
+    }
+
+    /// An admissible remaining-cost estimate: missing required edges, or 0/1 for a connectivity goal.
+    #[must_use]
+    fn heuristic(&self, graph: &GraphView) -> f64 {
+        match self {
+            GraphGoal::RequiredEdges(reqs) => {
+                reqs.iter().filter(|r| !graph.has_edge(r)).count() as f64
+            }
+            GraphGoal::Connect(a, b) => {
+                if graph.connected(a, b) {
+                    0.0
+                } else {
+                    1.0
+                }
+            }
+        }
+    }
+}
+
+/// HOTARU's *graph-element* search as a [`SearchProblem`]: a node is an accumulated HyQL model, an edge
+/// is a grounded `add_edge` [`HiveDelta`] (cost one). Successors are the arity-respecting parseable
+/// applications of the menu (shared with [`HiveDeltaProblem`]); the goal is a topological property of
+/// the *graph the source describes* ([`GraphGoal`]), read via [`preview_graph`].
+struct GraphProblem<'a> {
+    seed: &'a str,
+    menu: &'a [HiveDelta],
+    goal: &'a GraphGoal,
+    kyosei: &'a Kyosei,
+}
+
+impl SearchProblem for GraphProblem<'_> {
+    type Node = String;
+    type Edge = HiveDelta;
+
+    fn start(&self) -> String {
+        self.seed.to_string()
+    }
+
+    fn neighbours(&self, src: &String) -> Vec<(HiveDelta, String, f64)> {
+        feasible_successors(src, self.menu, self.kyosei)
+    }
+
+    fn is_goal(&self, src: &String) -> bool {
+        preview_graph(src).is_some_and(|g| !src.trim().is_empty() && self.goal.satisfied(&g))
+    }
+
+    fn heuristic(&self, src: &String) -> f64 {
+        preview_graph(src).map_or(1.0, |g| self.goal.heuristic(&g))
     }
 }
 
@@ -380,6 +515,77 @@ mod search_tests {
         // max_arity 3 ⇒ the edge is admissible ⇒ the goal is reached.
         let planner = SearchHotaru::plan("", &m, &obj, &Kyosei { max_arity: 3 }, 256).unwrap();
         assert_eq!(planner.remaining(), 2, "base, e_abc");
+    }
+
+    // ---- graph-element (semantic) planning --------------------------------
+
+    const RIG: &str = "Rig {\n  a;\n  b;\n  c;\n}"; // three nodes, no edges
+
+    #[test]
+    fn preview_graph_extracts_nodes_edges_connectivity() {
+        let g = preview_graph("Rig {\n  a;\n  b;\n  c;\n}\n@e_ab : a, b { }").unwrap();
+        assert_eq!(g.nodes(), ["a", "b", "c"]);
+        assert_eq!(g.edges().len(), 1);
+        assert_eq!(g.edges()[0].name, "e_ab");
+        assert_eq!(g.edges()[0].nodes, ["a", "b"]);
+        assert!(g.connected("a", "b")); // joined by e_ab
+        assert!(!g.connected("a", "c")); // c is isolated
+        assert!(g.connected("c", "c")); // reflexive on a real node
+        assert!(!g.connected("a", "zzz")); // unknown node
+    }
+
+    #[test]
+    fn plan_graph_connects_two_nodes_via_minimal_edges() {
+        // No direct a–c candidate ⇒ the plan must chain e_ab + e_bc to connect a and c.
+        let cands: [(&str, &[&str]); 2] = [("e_ab", &["a", "b"]), ("e_bc", &["b", "c"])];
+        let goal = GraphGoal::Connect("a".into(), "c".into());
+        let planner = SearchHotaru::plan_graph(RIG, &cands, &goal, &Kyosei::default(), 256)
+            .expect("a and c are connectable");
+        let names: Vec<&str> = planner.plan.iter().map(HiveDelta::name).collect();
+        assert_eq!(names, ["e_ab", "e_bc"]);
+        let src = apply_all(RIG, planner.plan.as_slices().0);
+        assert!(preview_graph(&src).unwrap().connected("a", "c")); // the plan achieves the goal
+    }
+
+    #[test]
+    fn plan_graph_prefers_the_direct_edge() {
+        // With a direct a–c candidate, the shortest semantic plan is that single edge.
+        let cands: [(&str, &[&str]); 3] = [
+            ("e_ab", &["a", "b"]),
+            ("e_bc", &["b", "c"]),
+            ("e_ac", &["a", "c"]),
+        ];
+        let goal = GraphGoal::Connect("a".into(), "c".into());
+        let planner =
+            SearchHotaru::plan_graph(RIG, &cands, &goal, &Kyosei::default(), 256).unwrap();
+        assert_eq!(planner.remaining(), 1); // just e_ac
+    }
+
+    #[test]
+    fn plan_graph_grounds_candidates_against_real_nodes() {
+        // The only candidate references a node "zzz" absent from the model ⇒ grounded out ⇒ unreachable.
+        let cands: [(&str, &[&str]); 1] = [("e_az", &["a", "zzz"])];
+        let goal = GraphGoal::Connect("a".into(), "c".into());
+        assert!(SearchHotaru::plan_graph(RIG, &cands, &goal, &Kyosei::default(), 256).is_none());
+    }
+
+    #[test]
+    fn plan_graph_required_edges_goal() {
+        let cands: [(&str, &[&str]); 2] = [("e_ab", &["a", "b"]), ("e_bc", &["b", "c"])];
+        let goal = GraphGoal::RequiredEdges(vec!["e_bc".into()]);
+        let planner =
+            SearchHotaru::plan_graph(RIG, &cands, &goal, &Kyosei::default(), 256).unwrap();
+        let names: Vec<&str> = planner.plan.iter().map(HiveDelta::name).collect();
+        assert_eq!(names, ["e_bc"]);
+    }
+
+    #[test]
+    fn plan_graph_unparseable_seed_is_none() {
+        let cands: [(&str, &[&str]); 1] = [("e_ab", &["a", "b"])];
+        let goal = GraphGoal::Connect("a".into(), "b".into());
+        assert!(
+            SearchHotaru::plan_graph("Rig { a }", &cands, &goal, &Kyosei::default(), 256).is_none()
+        );
     }
 }
 
