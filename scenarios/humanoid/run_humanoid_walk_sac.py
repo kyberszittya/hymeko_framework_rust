@@ -56,6 +56,7 @@ def main() -> None:
     ap.add_argument("--periodic", action="store_true")         # PERIODIC-GAIT PRIOR (phase clock + cyclic reward)
     ap.add_argument("--gait_period", type=int, default=400)    # env steps per L->R gait cycle
     ap.add_argument("--w_gait", type=float, default=6.0)       # phase-synchronised foot-alternation reward
+    ap.add_argument("--viability_boundary", type=str, default="")  # .npz: GATE forward reward by P(viable)
     ap.add_argument("--max_steps", type=int, default=300)
     ap.add_argument("--out", type=str, default="experiments/humanoid_walk_sac")
     args = ap.parse_args()
@@ -67,6 +68,7 @@ def main() -> None:
                               torque_action=args.torque, w_stability=args.w_stability,
                               model_src=args.model_src, periodic_gait=args.periodic,
                               gait_period=args.gait_period, w_gait=args.w_gait,
+                              viability_boundary=args.viability_boundary,
                               max_steps=args.max_steps)
     env = HumanoidBalanceEnv(cfg=train_cfg, seed=0)
     obs_dim = int(env.observation_space.shape[0])

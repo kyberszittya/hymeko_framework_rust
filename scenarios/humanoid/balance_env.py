@@ -67,6 +67,9 @@ class BalanceConfig:
     #   sustained cycle) rather than a one-shot dynamic lunge. Default off (obs/reward unchanged).
     gait_period: int = 400           # env steps per full L→R gait cycle (phase advances 2π/gait_period/step)
     w_gait: float = 0.0              # reward weight on phase-synchronised foot alternation (periodic_gait only)
+    viability_boundary: str = ""     # path to a LEARNED viability boundary (.npz); when set, the forward
+    #   reward is GATED by P(viable): speed is paid only while the state is provably recoverable, so the
+    #   policy walks forward WITHIN the certified region (stability-constrained RL). See viability_gate.py.
     fall_uprightness: float = 0.6
     fall_pelvis_z: float = 0.55
     model_src: str = "humanoid.hymeko"   # model variant to emit (e.g. "humanoid_toe.hymeko" for the toe/push-off model)
@@ -128,6 +131,10 @@ class HumanoidBalanceEnv:
         self._rng = np.random.default_rng(seed)
         self._t = 0
         self._phase = 0.0                                               # periodic-gait phase clock
+        self._viab = None                                              # learned viability boundary (logistic)
+        if self.cfg.viability_boundary:
+            d = np.load(self.cfg.viability_boundary)
+            self._viab = {"mean": d["mean"], "std": d["std"], "w": d["w"], "b": float(d["b"])}
         obs = self._obs()
         self.observation_space = spaces.Box(-np.inf, np.inf, obs.shape, np.float32)
         self.action_space = spaces.Box(-1.0, 1.0, (self.model.nu,), np.float32)
@@ -139,6 +146,22 @@ class HumanoidBalanceEnv:
                 "com_xy_off": float(np.linalg.norm(com[:2] - support)),
                 "com_speed": float(np.linalg.norm(self.data.cvel[1][:3])),
                 "uprightness": float(self.data.xmat[self._pelvis].reshape(3, 3)[2, 2])}
+
+    def viability_state(self) -> np.ndarray:
+        """The reduced state the learned viability boundary reads — the features that predict a fall:
+        uprightness, forward tilt, pitch-rate, forward velocity, CoM-forward offset from support."""
+        m = self.data.xmat[self._pelvis].reshape(3, 3)
+        com = self.data.subtree_com[1]
+        support = 0.5 * (self.data.xpos[self._fl][:2] + self.data.xpos[self._fr][:2])
+        return np.array([m[2, 2], m[0, 2], float(self.data.qvel[4]),
+                         float(self.data.qvel[0]), float(com[0] - support[0])], dtype=np.float64)
+
+    def _viability_gate(self) -> float:
+        """P(viable) from the loaded logistic boundary — the reward gate in [0, 1] (1.0 if none loaded)."""
+        if self._viab is None:
+            return 1.0
+        s = (self.viability_state() - self._viab["mean"]) / self._viab["std"]
+        return float(1.0 / (1.0 + np.exp(-(s @ self._viab["w"] + self._viab["b"]))))
 
     def _obs(self) -> np.ndarray:
         m = self.data.xmat[self._pelvis].reshape(3, 3)
@@ -208,8 +231,10 @@ class HumanoidBalanceEnv:
         info = {"V": v, "upright": upright}
         if self.cfg.w_velocity > 0.0:                              # DIRECT LOCOMOTION: reward forward base velocity
             fwd_v = float(np.clip(self.data.qvel[0], -self.cfg.vel_cap, self.cfg.vel_cap))
-            reward += self.cfg.w_velocity * fwd_v
+            gate = self._viability_gate()                          # GATE by P(viable): pay speed only while
+            reward += self.cfg.w_velocity * fwd_v * gate          #   provably recoverable (stability-constrained)
             info["fwd_v"] = fwd_v
+            info["viab_gate"] = gate
         if self.cfg.w_stability > 0.0:                            # viability-band HINGE: only when leaning past
             reward -= self.cfg.w_stability * max(0.0, self.cfg.upright_safe - sig["uprightness"])  # the safe band
         if self.cfg.periodic_gait:                                # PERIODIC GAIT: reward L/R stride alternating
