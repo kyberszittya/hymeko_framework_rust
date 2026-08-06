@@ -16,13 +16,14 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import numpy as np
 
+from scenarios.humanoid.cem import cem_optimize
+from scenarios.humanoid.cem import linear_policy as policy
+from scenarios.humanoid.cem import policy_dim as _dim
 from scenarios.humanoid.footstep_env import FootstepConfig, HumanoidFootstepEnv
-from scenarios.humanoid.train_footstep_walk import _dim, policy
 
 # The per-step forward target range (m ahead of the stance foot) the policy is trained to hit. Bounded
 # to the model's dynamically-feasible stride band (measured ~0.005–0.025 forward per step); commanding
@@ -65,37 +66,15 @@ def _eval(args: "tuple[np.ndarray, FootstepConfig]") -> "tuple[float, int, float
 
 
 def train(iters: int, pop: int, elite: int, cfg: FootstepConfig, workers: int, out: Path) -> np.ndarray:
-    od = HumanoidFootstepEnv(cfg, seed=0).observation_space.shape[0]
-    dim = _dim(od, 2)
-    rng = np.random.default_rng(0)
-    mu, sig = np.zeros(dim), np.ones(dim) * 0.5
-    best = (-1e9, np.zeros(dim), 0, 1.0)                    # (ret, theta, steps, mean_err)
-    out.mkdir(parents=True, exist_ok=True)
-    journal = (out / "journal.jsonl").open("w")
-    for it in range(iters):
-        cand = mu + sig * rng.standard_normal((pop, dim))
-        if workers > 1:
-            with ProcessPoolExecutor(max_workers=workers) as ex:
-                res = list(ex.map(_eval, [(c, cfg) for c in cand]))
-        else:
-            res = [rollout(c, cfg) for c in cand]
-        scores = np.array([r[0] for r in res])
-        idx = np.argsort(scores)[::-1][:elite]
-        mu, sig = cand[idx].mean(0), cand[idx].std(0) + 0.04
-        for c, (rr, ss, ee) in zip(cand, res):
-            if rr > best[0]:
-                best = (rr, c.copy(), ss, ee)
-        row = {"iter": it, "elite_ret": float(scores[idx].mean()), "best_err": float(best[3])}
-        journal.write(json.dumps(row) + "\n")
-        journal.flush()
-        print(f"[target] iter{it} elite_ret={row['elite_ret']:.1f} best_err={best[3]:.4f}", flush=True)
-    journal.close()
-    np.save(out / "best_policy.npy", best[1])
+    dim = _dim(HumanoidFootstepEnv(cfg, seed=0).observation_space.shape[0], 2)
+    best_theta, best = cem_optimize(_eval, cfg, dim, iters=iters, pop=pop, elite=elite, workers=workers,
+                                    out=out, label="target", report=lambda b: f"best_err={b[2]:.4f}")
+    np.save(out / "best_policy.npy", best_theta)
     (out / "result.json").write_text(json.dumps({
-        "best_ret": best[0], "best_steps": best[2], "best_mean_target_err": best[3],
+        "best_ret": best[0], "best_steps": best[1], "best_mean_target_err": best[2],
         "target_lo": TARGET_LO, "target_hi": TARGET_HI, "iters": iters, "pop": pop}, indent=2))
-    print(f"[target] DONE best_err={best[3]:.4f} steps={best[2]}", flush=True)
-    return best[1]
+    print(f"[target] DONE best_err={best[2]:.4f} steps={best[1]}", flush=True)
+    return best_theta
 
 
 def main() -> None:

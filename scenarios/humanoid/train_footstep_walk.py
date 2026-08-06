@@ -17,11 +17,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import numpy as np
 
+from scenarios.humanoid.cem import cem_optimize
+from scenarios.humanoid.cem import linear_policy as policy       # re-exported for back-compat callers
+from scenarios.humanoid.cem import policy_dim as _dim
 from scenarios.humanoid.footstep_env import FootstepConfig, HumanoidFootstepEnv
 
 def _cfg(fwd_stride: float, w_forward: float, max_footsteps: int, fall_penalty: float = 25.0,
@@ -38,16 +40,6 @@ def _cfg(fwd_stride: float, w_forward: float, max_footsteps: int, fall_penalty: 
                           model_src=model_src, toe_off=toe_off, learn_toe=learn_toe,
                           step_h=step_h, swing_weight=swing_weight, forward_cap=forward_cap,
                           t_step=t_step, ds_frac=ds_frac, w_upright=w_upright)
-
-
-def _dim(obs_dim: int, act_dim: int = 2) -> int:
-    return act_dim * obs_dim + act_dim       # a linear policy: a = tanh(W·obs + b) (2-d foothold, +1 if learned toe-off)
-
-
-def policy(theta: np.ndarray, obs: np.ndarray, obs_dim: int, act_dim: int = 2) -> np.ndarray:
-    w = theta[:act_dim * obs_dim].reshape(act_dim, obs_dim)
-    b = theta[act_dim * obs_dim:]
-    return np.tanh(w @ obs + b)
 
 
 def rollout(theta: np.ndarray, cfg: FootstepConfig, seed: int = 0) -> "tuple[float, int, float]":
@@ -74,39 +66,17 @@ def _eval(args):
 def train(iters: int, pop: int, elite: int, cfg: FootstepConfig, workers: int, out: Path,
           warm: "np.ndarray | None" = None) -> np.ndarray:
     env0 = HumanoidFootstepEnv(cfg, seed=0)
-    od = env0.observation_space.shape[0]
-    dim = _dim(od, env0.action_space.shape[0])
-    rng = np.random.default_rng(0)
-    mu = warm.copy() if (warm is not None and warm.shape[0] == dim) else np.zeros(dim)  # warm-start (curriculum)
-    sig = np.ones(dim) * (0.25 if warm is not None else 0.5)
-    best = (-1e9, np.zeros(dim), 0, -1e9)                          # (ret, theta, steps, fwd)
-    out.mkdir(parents=True, exist_ok=True)
-    journal = (out / "journal.jsonl").open("w")
-    scaff = rollout(np.zeros(dim), cfg)
-    for it in range(iters):
-        cand = mu + sig * rng.standard_normal((pop, dim))
-        if workers > 1:
-            with ProcessPoolExecutor(max_workers=workers) as ex:
-                res = list(ex.map(_eval, [(c, cfg) for c in cand]))
-        else:
-            res = [rollout(c, cfg) for c in cand]
-        scores = np.array([r[0] for r in res])
-        idx = np.argsort(scores)[::-1][:elite]
-        mu, sig = cand[idx].mean(0), cand[idx].std(0) + 0.04
-        for c, (rr, ss, ff) in zip(cand, res):
-            if rr > best[0]:                                      # track the highest-RETURN policy (survive+forward)
-                best = (rr, c.copy(), ss, ff)
-        row = {"iter": it, "elite_ret": float(scores[idx].mean()), "best_fwd": float(best[3])}
-        journal.write(json.dumps(row) + "\n")
-        journal.flush()
-        print(f"[fwalk] iter{it} elite_ret={row['elite_ret']:.1f} best_fwd={best[3]:+.3f}", flush=True)
-    journal.close()
-    np.save(out / "best_policy.npy", best[1])
+    dim = _dim(env0.observation_space.shape[0], env0.action_space.shape[0])
+    scaff = rollout(np.zeros(dim), cfg)                           # a = 0 scaffold (reward-independent baseline)
+    best_theta, best = cem_optimize(_eval, cfg, dim, iters=iters, pop=pop, elite=elite, workers=workers,
+                                    warm=warm, out=out, label="fwalk",
+                                    report=lambda b: f"best_fwd={b[2]:+.3f}")
+    np.save(out / "best_policy.npy", best_theta)
     (out / "result.json").write_text(json.dumps({
-        "scaffold_fwd": scaff[2], "best_fwd": best[3], "best_steps": best[2],
+        "scaffold_fwd": scaff[2], "best_fwd": best[2], "best_steps": best[1],
         "iters": iters, "pop": pop}, indent=2))
-    print(f"[fwalk] DONE scaffold_fwd={scaff[2]:+.3f} best_fwd={best[3]:+.3f} steps={best[2]}", flush=True)
-    return best[1]
+    print(f"[fwalk] DONE scaffold_fwd={scaff[2]:+.3f} best_fwd={best[2]:+.3f} steps={best[1]}", flush=True)
+    return best_theta
 
 
 def main() -> None:

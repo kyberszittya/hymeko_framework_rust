@@ -12,13 +12,14 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import numpy as np
 
 from scenarios.humanoid.balance_env import BalanceConfig, HumanoidBalanceEnv
-from scenarios.humanoid.train_footstep_walk import _dim, policy
+from scenarios.humanoid.cem import cem_optimize
+from scenarios.humanoid.cem import linear_policy as policy
+from scenarios.humanoid.cem import policy_dim as _dim
 
 
 def walk_cfg(max_steps: int, w_velocity: float = 6.0) -> BalanceConfig:
@@ -48,35 +49,15 @@ def _eval(args: "tuple[np.ndarray, BalanceConfig]") -> "tuple[float, int, float]
 def train(iters: int, pop: int, elite: int, cfg: BalanceConfig, workers: int, out: Path) -> np.ndarray:
     env0 = HumanoidBalanceEnv(cfg, seed=0)
     dim = _dim(env0.observation_space.shape[0], env0.action_space.shape[0])
-    rng = np.random.default_rng(0)
-    mu, sig = np.zeros(dim), np.ones(dim) * 0.3
-    best = (-1e9, np.zeros(dim), 0, 0.0)                    # (ret, theta, steps, fwd)
-    out.mkdir(parents=True, exist_ok=True)
-    journal = (out / "journal.jsonl").open("w")
-    for it in range(iters):
-        cand = mu + sig * rng.standard_normal((pop, dim))
-        if workers > 1:
-            with ProcessPoolExecutor(max_workers=workers) as ex:
-                res = list(ex.map(_eval, [(c, cfg) for c in cand]))
-        else:
-            res = [rollout(c, cfg) for c in cand]
-        scores = np.array([r[0] for r in res])
-        idx = np.argsort(scores)[::-1][:elite]
-        mu, sig = cand[idx].mean(0), cand[idx].std(0) + 0.03
-        for c, (rr, ss, ff) in zip(cand, res):
-            if rr > best[0]:
-                best = (rr, c.copy(), ss, ff)
-        row = {"iter": it, "elite_ret": float(scores[idx].mean()), "best_fwd": float(best[3])}
-        journal.write(json.dumps(row) + "\n")
-        journal.flush()
-        print(f"[bwalk] iter{it} elite_ret={row['elite_ret']:.1f} best_fwd={best[3]:+.3f}", flush=True)
-    journal.close()
-    np.save(out / "best_policy.npy", best[1])
+    best_theta, best = cem_optimize(_eval, cfg, dim, iters=iters, pop=pop, elite=elite, workers=workers,
+                                    sigma0=0.3, out=out, label="bwalk",
+                                    report=lambda b: f"best_fwd={b[2]:+.3f}")
+    np.save(out / "best_policy.npy", best_theta)
     (out / "result.json").write_text(json.dumps({
-        "best_ret": best[0], "best_steps": best[2], "best_fwd": best[3], "iters": iters, "pop": pop},
+        "best_ret": best[0], "best_steps": best[1], "best_fwd": best[2], "iters": iters, "pop": pop},
         indent=2))
-    print(f"[bwalk] DONE best_fwd={best[3]:+.3f} steps={best[2]}", flush=True)
-    return best[1]
+    print(f"[bwalk] DONE best_fwd={best[2]:+.3f} steps={best[1]}", flush=True)
+    return best_theta
 
 
 def main() -> None:
