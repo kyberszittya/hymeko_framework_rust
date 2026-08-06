@@ -36,6 +36,7 @@ from hymeko_rl.train.rl_config import mechanism_reward, select_contact_mode
 from hymeko_rl.env.inverted_pendulum_env import InvertedPendulumEnv, emit_cartpole_mjcf
 from hymeko_rl.train.normalize import RunningRMS
 from hymeko_rl.agents.policy import POLICY_KINDS, PerNodeActionHead
+from hymeko_rl.agents.star_entropy import star_expansion_entropy   # structural (H★) exploration seat
 from hymeko_rl.train.replay import ReplayBuffer
 from hymeko_rl.train.train_inverted_pendulum import eval_balance
 
@@ -354,6 +355,7 @@ class SACConfig:
     n_step: int = 1                        # k-step returns in the critic target (1 = standard; >1 uses ReplayBuffer.sample_nstep)
     critic_mode: str = "TASK_ONLY"         # "TASK_ONLY" (F11) or "TASK_AND_MECHANISM" (F12: + a semantic Q_mechanism)
     mech_coef: float = 0.5                 # pre-registered actor weight on Q_mechanism (F12 only; NOT tuned per run)
+    struct_entropy_coef: float = 0.0       # HyMeKo-native STRUCTURAL entropy H★ seat: + coef·H★ in the actor objective (HSiKAN per-node actor only; 0 = off, no change)
     tau: float = 0.005
     actor_lr: float = 1e-3
     critic_lr: float = 1e-3
@@ -574,6 +576,8 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
         q_pi = torch.stack([c(s, ap) for c in critics], 0).amin(0)         # Q_task
         if mech is not None:                                               # F12: + mech_coef * Q_mechanism
             q_pi = q_pi + mech.actor_bonus(s, ap)
+        if cfg.struct_entropy_coef > 0.0 and hasattr(actor, "_node_acts"):  # structural (H★) exploration seat
+            q_pi = q_pi + cfg.struct_entropy_coef * star_expansion_entropy(actor._node_acts(s))
         return (alpha * logp - q_pi).mean(), logp                  # alpha passed detached; logp reused for α update
 
     _anchored = cfg.bc_coef > 0.0 or cfg.rollout_anchor_coef > 0.0 or dagger_teacher is not None

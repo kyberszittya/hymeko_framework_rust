@@ -1,0 +1,40 @@
+{
+  "verdict": "STILL_ONE_SIDED",
+  "test": {
+    "reach_rate": 0.2,
+    "per_goal": [
+      {
+        "bearing": 0,
+        "min_dist": 0.118,
+        "reached": true
+      },
+      {
+        "bearing": 20,
+        "min_dist": 0.439,
+        "reached": false
+      },
+      {
+        "bearing": -20,
+        "min_dist": 0.49,
+        "reached": false
+      },
+      {
+        "bearing": 40,
+        "min_dist": 0.335,
+        "reached": false
+      },
+      {
+        "bearing": -40,
+        "min_dist": 0.347,
+        "reached": false
+      }
+    ],
+    "plus_y": "0/2",
+    "minus_y": "0/2"
+  },
+  "equivariance_residual": 0.0,
+  "gait": "diag",
+  "total_steps": 30000,
+  "note": "SIMULATION. In-loop hard mirror-equivariant MLP (Reynolds-symmetrized mean), omni crab, flat validated mirror. Equivariant BY CONSTRUCTION -> two-sided if it learns any crab.",
+  "warmstart": true
+}

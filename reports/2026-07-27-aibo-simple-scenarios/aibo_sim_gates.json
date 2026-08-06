@@ -1,0 +1,219 @@
+{
+  "gates": {
+    "A0": true,
+    "A1": true,
+    "A2": true,
+    "A3": true
+  },
+  "highest_passed": "A3",
+  "physical_vs_simulated": "SIMULATED (22-DOF ERS-1000 sim; NOT hardware)",
+  "AIBO_SIM_01_forward_stop_hold": {
+    "bearing_deg": 0.0,
+    "initial_pose": {
+      "x": 0.0054784674928581726,
+      "y": -0.009208531449445188,
+      "yaw_deg": 0.0
+    },
+    "realised_forward_speed_mps": 0.174904063200201,
+    "realised_yaw_rate_dps": null,
+    "target_distance_error_m": 0.4139598776810261,
+    "orientation_error_deg": 4.540111831186082,
+    "stopping_steps": 12,
+    "final_body_speed_mps": 0.0016185730114890514,
+    "min_uprightness": 0.9958952586818032,
+    "no_fall": true,
+    "certificate_passed": true,
+    "reached": true,
+    "oriented": true,
+    "halted": true,
+    "held": true,
+    "visited_modes": [
+      "STAND",
+      "ALIGN",
+      "WALK",
+      "DECELERATE",
+      "STOP",
+      "HOLD"
+    ]
+  },
+  "AIBO_SIM_02_turn_align_stop": [
+    {
+      "bearing_deg": 30.0,
+      "initial_pose": {
+        "x": 0.0054784674928581726,
+        "y": -0.009208531449445188,
+        "yaw_deg": 0.0
+      },
+      "realised_forward_speed_mps": 0.10861844553649297,
+      "realised_yaw_rate_dps": 3.197808621974156,
+      "target_distance_error_m": 0.41550905066645777,
+      "orientation_error_deg": 14.582994355803834,
+      "stopping_steps": 12,
+      "final_body_speed_mps": 0.004991212259065052,
+      "min_uprightness": 0.9958952586818032,
+      "no_fall": true,
+      "certificate_passed": true,
+      "reached": true,
+      "oriented": true,
+      "halted": true,
+      "held": true,
+      "visited_modes": [
+        "STAND",
+        "ALIGN",
+        "WALK",
+        "DECELERATE",
+        "STOP",
+        "HOLD"
+      ]
+    },
+    {
+      "bearing_deg": -30.0,
+      "initial_pose": {
+        "x": 0.0054784674928581726,
+        "y": -0.009208531449445188,
+        "yaw_deg": 0.0
+      },
+      "realised_forward_speed_mps": 0.10742425524418422,
+      "realised_yaw_rate_dps": -3.0302205652175105,
+      "target_distance_error_m": 0.4189096765510571,
+      "orientation_error_deg": 14.749549553625593,
+      "stopping_steps": 4,
+      "final_body_speed_mps": 0.004828610544068969,
+      "min_uprightness": 0.9958952586818032,
+      "no_fall": true,
+      "certificate_passed": true,
+      "reached": true,
+      "oriented": true,
+      "halted": true,
+      "held": true,
+      "visited_modes": [
+        "STAND",
+        "ALIGN",
+        "WALK",
+        "DECELERATE",
+        "STOP",
+        "HOLD"
+      ]
+    }
+  ],
+  "AIBO_SIM_03_approach_align_stop_offsets": [
+    {
+      "bearing_deg": 10.0,
+      "initial_pose": {
+        "x": 0.0054784674928581726,
+        "y": -0.009208531449445188,
+        "yaw_deg": 0.0
+      },
+      "realised_forward_speed_mps": 0.17481898963642223,
+      "realised_yaw_rate_dps": null,
+      "target_distance_error_m": 0.4173270904337395,
+      "orientation_error_deg": 9.25783438818738,
+      "stopping_steps": 13,
+      "final_body_speed_mps": 0.002108405771351025,
+      "min_uprightness": 0.9958952586818032,
+      "no_fall": true,
+      "certificate_passed": true,
+      "reached": true,
+      "oriented": true,
+      "halted": true,
+      "held": true,
+      "visited_modes": [
+        "STAND",
+        "ALIGN",
+        "WALK",
+        "DECELERATE",
+        "STOP",
+        "HOLD"
+      ]
+    },
+    {
+      "bearing_deg": -10.0,
+      "initial_pose": {
+        "x": 0.0054784674928581726,
+        "y": -0.009208531449445188,
+        "yaw_deg": 0.0
+      },
+      "realised_forward_speed_mps": 0.1453620435279491,
+      "realised_yaw_rate_dps": -10.91802183826509,
+      "target_distance_error_m": 0.4178586001500176,
+      "orientation_error_deg": 14.317091058548382,
+      "stopping_steps": 5,
+      "final_body_speed_mps": 0.004021775384687275,
+      "min_uprightness": 0.9958952586818032,
+      "no_fall": true,
+      "certificate_passed": true,
+      "reached": true,
+      "oriented": true,
+      "halted": true,
+      "held": true,
+      "visited_modes": [
+        "STAND",
+        "ALIGN",
+        "WALK",
+        "DECELERATE",
+        "STOP",
+        "HOLD"
+      ]
+    },
+    {
+      "bearing_deg": 20.0,
+      "initial_pose": {
+        "x": 0.0054784674928581726,
+        "y": -0.009208531449445188,
+        "yaw_deg": 0.0
+      },
+      "realised_forward_speed_mps": 0.12766642278022314,
+      "realised_yaw_rate_dps": 6.978853534882376,
+      "target_distance_error_m": 0.4137463076725415,
+      "orientation_error_deg": 14.883178584317703,
+      "stopping_steps": 13,
+      "final_body_speed_mps": 0.0011745145304621848,
+      "min_uprightness": 0.9958952586818032,
+      "no_fall": true,
+      "certificate_passed": true,
+      "reached": true,
+      "oriented": true,
+      "halted": true,
+      "held": true,
+      "visited_modes": [
+        "STAND",
+        "ALIGN",
+        "WALK",
+        "DECELERATE",
+        "STOP",
+        "HOLD"
+      ]
+    },
+    {
+      "bearing_deg": -20.0,
+      "initial_pose": {
+        "x": 0.0054784674928581726,
+        "y": -0.009208531449445188,
+        "yaw_deg": 0.0
+      },
+      "realised_forward_speed_mps": 0.11788078576695381,
+      "realised_yaw_rate_dps": -3.5545428307354157,
+      "target_distance_error_m": 0.4180649825981408,
+      "orientation_error_deg": 16.08801973746211,
+      "stopping_steps": 3,
+      "final_body_speed_mps": 0.002540317208476714,
+      "min_uprightness": 0.9958952586818032,
+      "no_fall": true,
+      "certificate_passed": true,
+      "reached": true,
+      "oriented": true,
+      "halted": true,
+      "held": true,
+      "visited_modes": [
+        "STAND",
+        "ALIGN",
+        "WALK",
+        "DECELERATE",
+        "STOP",
+        "HOLD"
+      ]
+    }
+  ],
+  "plot": "aibo_sim_paths.png",
+  "gif": "reports/2026-07-27-aibo-simple-scenarios/aibo_sim_approach.gif"
+}

@@ -1,0 +1,138 @@
+{
+  "note": "SIMULATION. The trained one-sided omni MLP, RAW vs EXACT mirror-equivariant (Reynolds symmetrization, no retraining), over the asymmetric diag scaffold and the symmetric bound scaffold. Central-hypothesis test: equivariance PRESERVES symmetry, cannot MANUFACTURE one the dynamics lacks.",
+  "diag": {
+    "raw": {
+      "reach_rate": 0.4,
+      "per_goal": [
+        {
+          "bearing": 0,
+          "min_dist": 0.119,
+          "reached": true
+        },
+        {
+          "bearing": 20,
+          "min_dist": 0.12,
+          "reached": true
+        },
+        {
+          "bearing": -20,
+          "min_dist": 0.502,
+          "reached": false
+        },
+        {
+          "bearing": 40,
+          "min_dist": 0.247,
+          "reached": false
+        },
+        {
+          "bearing": -40,
+          "min_dist": 0.554,
+          "reached": false
+        }
+      ],
+      "plus_y": "1/2",
+      "minus_y": "0/2"
+    },
+    "mirror_equivariant": {
+      "reach_rate": 0.6,
+      "per_goal": [
+        {
+          "bearing": 0,
+          "min_dist": 0.12,
+          "reached": true
+        },
+        {
+          "bearing": 20,
+          "min_dist": 0.118,
+          "reached": true
+        },
+        {
+          "bearing": -20,
+          "min_dist": 0.119,
+          "reached": true
+        },
+        {
+          "bearing": 40,
+          "min_dist": 0.442,
+          "reached": false
+        },
+        {
+          "bearing": -40,
+          "min_dist": 0.6,
+          "reached": false
+        }
+      ],
+      "plus_y": "1/2",
+      "minus_y": "1/2"
+    },
+    "equivariance_residual": 0.0
+  },
+  "bound": {
+    "raw": {
+      "reach_rate": 0.0,
+      "per_goal": [
+        {
+          "bearing": 0,
+          "min_dist": 0.6,
+          "reached": false
+        },
+        {
+          "bearing": 20,
+          "min_dist": 0.452,
+          "reached": false
+        },
+        {
+          "bearing": -20,
+          "min_dist": 0.511,
+          "reached": false
+        },
+        {
+          "bearing": 40,
+          "min_dist": 0.573,
+          "reached": false
+        },
+        {
+          "bearing": -40,
+          "min_dist": 0.583,
+          "reached": false
+        }
+      ],
+      "plus_y": "0/2",
+      "minus_y": "0/2"
+    },
+    "mirror_equivariant": {
+      "reach_rate": 0.0,
+      "per_goal": [
+        {
+          "bearing": 0,
+          "min_dist": 0.44,
+          "reached": false
+        },
+        {
+          "bearing": 20,
+          "min_dist": 0.443,
+          "reached": false
+        },
+        {
+          "bearing": -20,
+          "min_dist": 0.504,
+          "reached": false
+        },
+        {
+          "bearing": 40,
+          "min_dist": 0.48,
+          "reached": false
+        },
+        {
+          "bearing": -40,
+          "min_dist": 0.579,
+          "reached": false
+        }
+      ],
+      "plus_y": "0/2",
+      "minus_y": "0/2"
+    },
+    "equivariance_residual": 0.0
+  },
+  "verdict": "MIRROR_EQUIVARIANCE_MANUFACTURES_SYMMETRY"
+}

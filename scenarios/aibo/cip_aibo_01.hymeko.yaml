@@ -1,0 +1,83 @@
+# CIP-AIBO-01 --- Stand / Walk / Align / Decelerate / Stop / Hold.
+# HyMeKo control-language contract (schema v0) for the ERS-1000 AIBO quadruped.
+# SIMULATION ONLY: realized by QuadrupedGoalEnv (22-DOF ERS-1000) + a scripted
+# SteeredTrotGait. No physical AIBO hardware in this session; AIBO-1's contract is
+# a SIMULATOR command-response contract, never claimed as hardware.
+schema_version: v0
+name: cip_aibo_01_approach_align_stop
+
+entities:
+  - {id: torso, kind: body, attributes: {model: ers_1000, base: free}}
+  - {id: leg_fl, kind: body}
+  - {id: leg_fr, kind: body}
+  - {id: leg_bl, kind: body}
+  - {id: leg_br, kind: body}
+  - {id: hip_fl, kind: joint}
+  - {id: knee_fl, kind: joint}
+  - {id: hip_fr, kind: joint}
+  - {id: waypoint, kind: target}
+  - {id: imu, kind: sensor}
+  - {id: odometry, kind: sensor}
+  - {id: gait_ctrl, kind: controller, attributes: {realizer: scripted_steered_trot}}
+
+morphology:
+  - {kind: kinematic, source: torso, target: leg_fl}
+  - {kind: kinematic, source: torso, target: leg_fr}
+  - {kind: kinematic, source: torso, target: leg_bl}
+  - {kind: kinematic, source: torso, target: leg_br}
+  - {kind: kinematic, source: leg_fl, target: hip_fl}
+  - {kind: kinematic, source: hip_fl, target: knee_fl}
+  - {kind: actuation, source: hip_fl, target: leg_fl}
+
+ports:
+  - {id: hip_fl.tau, kind: actuation, owner: hip_fl}
+  - {id: knee_fl.tau, kind: actuation, owner: knee_fl}
+  - {id: hip_fr.tau, kind: actuation, owner: hip_fr}
+  - {id: imu.orientation, kind: observation, owner: imu}
+  - {id: odom.pose, kind: observation, owner: odometry}
+  - {id: foot.contact, kind: contact, owner: leg_fl}
+  - {id: torso.support, kind: constraint, owner: torso}
+
+physics:
+  - {name: torso_inertia, role: energy_storage}
+  - {name: leg_kinetic, role: energy_storage}
+  - {name: joint_damping, role: dissipation}
+  - {name: gait_interconnection, role: interconnection}
+  - {name: foot_ground_contact, role: contact}
+  - {name: upright_support, role: constraint}
+
+hybrid:
+  initial_mode: STAND
+  modes:
+    - {name: STAND}
+    - {name: ALIGN}
+    - {name: WALK}
+    - {name: DECELERATE}
+    - {name: STOP, reset: {stop_dwell: 0.0}}
+    - {name: HOLD, reset: {hold_dwell: 0.0}}
+  transitions:
+    - {source: STAND, dest: ALIGN, guard: stand_settled}
+    - {source: ALIGN, dest: WALK, guard: aligned_to_waypoint}
+    - {source: WALK, dest: ALIGN, guard: heading_lost}
+    - {source: WALK, dest: DECELERATE, guard: near_waypoint}
+    - {source: DECELERATE, dest: STOP, guard: at_waypoint}
+    - {source: STOP, dest: HOLD, guard: body_halted}
+    - {source: HOLD, dest: STAND, guard: hold_incomplete}
+
+task:
+  intents:
+    - {name: forward_velocity, lower: 0.0, upper: 1.0, unit: norm}
+    - {name: yaw_rate, lower: -1.0, upper: 1.0, unit: norm}
+    - {name: alignment_demand, lower: 0.0, upper: 1.0, unit: norm}
+    - {name: support_margin, lower: 0.0, upper: 1.0, unit: norm}
+    - {name: gait_cadence, lower: 0.0, upper: 1.0, unit: norm}
+    - {name: deceleration_demand, lower: 0.0, upper: 1.0, unit: norm}
+    - {name: stop_demand, lower: 0.0, upper: 1.0, unit: norm}
+  authorities:
+    - {name: forward_authority, source: observed, provenance: "measured body forward velocity under the trot"}
+    - {name: yaw_authority, source: observed, provenance: "measured yaw rate under the steered trot (differential stride)"}
+    - {name: stability_authority, source: observed, provenance: "torso uprightness (no-fall margin)"}
+  certificates:
+    - {name: approach_align_stop, kind: success, predicate: "waypoint reached AND body halted AND held for dwell"}
+    - {name: no_fall, kind: safety, predicate: "torso upright throughout, no divergence"}
+    - {name: speed_bounded_at_stop, kind: safety, predicate: "planar body speed below threshold during STOP/HOLD"}

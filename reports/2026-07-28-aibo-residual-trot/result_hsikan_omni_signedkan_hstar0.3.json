@@ -1,0 +1,71 @@
+{
+  "verdict": "SIGNEDKAN_MATCHES_MLP",
+  "signedkan_test": {
+    "reach_rate": 0.4,
+    "per_goal": [
+      {
+        "bearing": 0,
+        "min_dist": 0.1183,
+        "reached": true
+      },
+      {
+        "bearing": 20,
+        "min_dist": 0.1198,
+        "reached": true
+      },
+      {
+        "bearing": -20,
+        "min_dist": 0.1973,
+        "reached": false
+      },
+      {
+        "bearing": 40,
+        "min_dist": 0.3482,
+        "reached": false
+      },
+      {
+        "bearing": -40,
+        "min_dist": 0.4654,
+        "reached": false
+      }
+    ],
+    "plus_y": "1/2",
+    "minus_y": "0/2"
+  },
+  "mlp_test": {
+    "reach_rate": 0.4,
+    "per_goal": [
+      {
+        "bearing": 0,
+        "min_dist": 0.119,
+        "reached": true
+      },
+      {
+        "bearing": 20,
+        "min_dist": 0.1196,
+        "reached": true
+      },
+      {
+        "bearing": -20,
+        "min_dist": 0.502,
+        "reached": false
+      },
+      {
+        "bearing": 40,
+        "min_dist": 0.2475,
+        "reached": false
+      },
+      {
+        "bearing": -40,
+        "min_dist": 0.5544,
+        "reached": false
+      }
+    ],
+    "plus_y": "1/2",
+    "minus_y": "0/2"
+  },
+  "signedkan_reach": 0.4,
+  "mlp_reach": 0.4,
+  "total_steps": 30000,
+  "note": "SIMULATION. signedkan per-node actor over the AIBO kinematic hypergraph (structure propagation) vs MLP over the flat obs, both omni (abduction crab), symmetric grid."
+}

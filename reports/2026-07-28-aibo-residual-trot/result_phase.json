@@ -1,0 +1,21 @@
+{
+  "mode": "phase",
+  "verdict": "RESIDUAL_REGRESSES_SCAFFOLD",
+  "scaffold_reach_rate_test": 0.2,
+  "scaffold_mean_min_dist_test": 0.355,
+  "residual_best_val_reach_rate_val": 0.0,
+  "residual_reach_rate_test": 0.0,
+  "residual_mean_min_dist_test": 0.524,
+  "reach_rate_delta_test": -0.2,
+  "eval_curve_val": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "total_steps": 120000,
+  "smoke": false,
+  "note": "SIMULATION. Bounded residual (scale 0.25) over the trot-gait scaffold (a=0), multi-goal (dist 0.5-0.75, bearing +-40). Baseline = scaffold on the same held-out grid."
+}

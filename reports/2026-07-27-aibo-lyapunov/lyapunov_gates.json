@@ -1,0 +1,58 @@
+{
+  "verdict": "AIBO_STATE_DEPENDENT_LOOP_SATISFIES_LYAPUNOV",
+  "lyapunov_V": "0.5*(w_d*max(0,d-reach)^2 + w_theta*herr^2 + w_v*speed^2)",
+  "pursuit_state_dependent": {
+    "offset_+10deg": {
+      "V0": 0.0864,
+      "Vfinal": 0.0131,
+      "Vmax": 0.152,
+      "descent_fraction": 0.934,
+      "nonnegative": true,
+      "converged": true,
+      "net_decrease": true,
+      "passes": true
+    },
+    "offset_-10deg": {
+      "V0": 0.0895,
+      "Vfinal": 0.0312,
+      "Vmax": 0.166,
+      "descent_fraction": 0.96,
+      "nonnegative": true,
+      "converged": true,
+      "net_decrease": true,
+      "passes": true
+    },
+    "offset_+20deg": {
+      "V0": 0.1305,
+      "Vfinal": 0.0337,
+      "Vmax": 0.1803,
+      "descent_fraction": 0.978,
+      "nonnegative": true,
+      "converged": true,
+      "net_decrease": true,
+      "passes": true
+    },
+    "offset_-20deg": {
+      "V0": 0.1368,
+      "Vfinal": 0.0394,
+      "Vmax": 0.2159,
+      "descent_fraction": 0.988,
+      "nonnegative": true,
+      "converged": true,
+      "net_decrease": true,
+      "passes": true
+    }
+  },
+  "negative_control_constant_forward": {
+    "V0": 0.1305,
+    "Vfinal": 4.3067,
+    "Vmax": 4.6955,
+    "descent_fraction": 0.565,
+    "nonnegative": true,
+    "converged": false,
+    "net_decrease": false,
+    "passes": false
+  },
+  "discriminates": true,
+  "note": "SIMULATION. Refined hypothesis: pH/Lyapunov high-level loop pays on the STATE-DEPENDENT AIBO (unlike PnP's uniform bias). The Lyapunov certificate is reward-independent and generalizes stability_certificate (core-promotion candidate)."
+}
