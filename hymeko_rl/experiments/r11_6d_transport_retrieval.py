@@ -47,19 +47,21 @@ def _auroc(labels: "list[bool]", scores: "list[float]") -> "float | None":
     return wins / (len(pos) * len(neg))
 
 
-def _loso_score(idx: dict, qf: dict, loso_sigs: dict, thetas: list, train: list, w: Any) -> "tuple[float, float]":
-    res = [evaluate_handoff(idx, sj, qf[sj], loso_sigs[sj], [t for t in thetas if t != sj], w) for sj in train]
+def _loso_score(idx: dict, qf: dict, loso_sigs: dict, thetas: list, train: list, w: Any,
+                reach: bool = False) -> "tuple[float, float]":
+    res = [evaluate_handoff(idx, sj, qf[sj], loso_sigs[sj], [t for t in thetas if t != sj], w, reach=reach)
+           for sj in train]
     rate = round(float(np.mean([r["k6"] for r in res])), 3)
     regrets = [r["regret"] for r in res if r["regret"] is not None]
     return rate, round(float(np.mean(regrets)), 2) if regrets else 0.0
 
 
-def _calibrate(cells: list, idx: dict, qf: dict, thetas: list, train: list) -> "tuple[Any, dict]":
+def _calibrate(cells: list, idx: dict, qf: dict, thetas: list, train: list, reach: bool = False) -> "tuple[Any, dict]":
     """Leave-one-scenario-out over train (own theta + own handoff removed); pick weights by (top-1 K6, -mean regret)."""
     loso_sigs = {sj: build_signatures(cells, exclude=frozenset({sj})) for sj in train}
     best: "tuple[tuple, Any, float] | None" = None
     for w in WEIGHT_GRID:
-        rate, regret = _loso_score(idx, qf, loso_sigs, thetas, train, w)
+        rate, regret = _loso_score(idx, qf, loso_sigs, thetas, train, w, reach)
         key = (rate, -regret)
         if best is None or key > best[0]:
             best = (key, w, regret)
@@ -78,15 +80,15 @@ def _nearest_baseline(idx: dict, panel: list, thetas: list, x_by: dict, X: np.nd
     return round(hits / len(panel), 3) if panel else 0.0
 
 
-def _handoff_auroc(idx: dict, qf: dict, sigs: dict, h: str, thetas: list, w: Any) -> "float | None":
+def _handoff_auroc(idx: dict, qf: dict, sigs: dict, h: str, thetas: list, w: Any, reach: bool = False) -> "float | None":
     labels = [bool(idx.get((h, t)) and idx[(h, t)]["k6"] and idx[(h, t)]["safe"]) for t in thetas if t in sigs]
-    scores = [score(qf[h], sigs[t], w) for t in thetas if t in sigs]
+    scores = [score(qf[h], sigs[t], w, reach) for t in thetas if t in sigs]
     return _auroc(labels, scores)
 
 
-def _panel_eval(idx: dict, qf: dict, sigs: dict, panel: list, thetas: list, w: Any) -> "dict[str, Any]":
-    rows = {h: evaluate_handoff(idx, h, qf[h], sigs, thetas, w) for h in panel}
-    aurocs = [a for a in (_handoff_auroc(idx, qf, sigs, h, thetas, w) for h in panel) if a is not None]
+def _panel_eval(idx: dict, qf: dict, sigs: dict, panel: list, thetas: list, w: Any, reach: bool = False) -> "dict[str, Any]":
+    rows = {h: evaluate_handoff(idx, h, qf[h], sigs, thetas, w, reach=reach) for h in panel}
+    aurocs = [a for a in (_handoff_auroc(idx, qf, sigs, h, thetas, w, reach) for h in panel) if a is not None]
     return {"top1_k6": round(float(np.mean([r["k6"] for r in rows.values()])), 3),
             "top3_deliverable": round(float(np.mean([r["top3_deliverable"] for r in rows.values()])), 3),
             "mean_auroc": round(float(np.mean(aurocs)), 3) if aurocs else None, "per_scenario": rows}
@@ -100,12 +102,44 @@ def _verdict(dep: float, dev: dict, c3_k6: int, base_dev: float, r7_ok: bool) ->
     return "R11_6D_TRANSPORT_SIGNATURE_INSUFFICIENT"
 
 
+def _mode_result(cells: list, idx: dict, qf: dict, thetas: list, train: list, dev: list, base_dev: float,
+                 reach: bool) -> "dict[str, Any]":
+    """Calibrate + evaluate one score mode (median or reach); train-only calibration, dev reported."""
+    w, cal = _calibrate(cells, idx, qf, thetas, train, reach)
+    sigs = build_signatures(cells)
+    dep = _panel_eval(idx, qf, sigs, train, thetas, w, reach)
+    de = _panel_eval(idx, qf, sigs, dev, thetas, w, reach)
+    c3 = {h: de["per_scenario"][h] for h in C3_FAR if h in de["per_scenario"]}
+    return {"mode": "reach" if reach else "median", "weights": w.__dict__, "train_loso_k6": cal["loso_k6"],
+            "deployment_train_like": dep["top1_k6"], "dev_top1_k6": de["top1_k6"], "dev_auroc": de["mean_auroc"],
+            "baseline_dev_k6": base_dev, "beats_baseline": de["top1_k6"] > base_dev,
+            "c3_far_k6": sum(1 for r in c3.values() if r["k6"]),
+            "c3_detail": {h: {"top1": r["top1"], "k6": r["k6"], "sel_dtz": r["sel_dtz"]} for h, r in c3.items()}}
+
+
+def _reexamine(cells: list, idx: dict, qf: dict, thetas: list, train: list, dev: list, base_dev: float) -> "dict[str, Any]":
+    """Cheap re-examination on the existing matrix: median vs reach score, + a train-LOSO-vs-dev overfit scan."""
+    loso_sigs = {sj: build_signatures(cells, exclude=frozenset({sj})) for sj in train}
+    all_sigs = build_signatures(cells)
+    scan = []
+    for w in WEIGHT_GRID:                                            # overfit: does the train-LOSO ranking track dev?
+        loso, _r = _loso_score(idx, qf, loso_sigs, thetas, train, w, reach=False)
+        dev_k6 = _panel_eval(idx, qf, all_sigs, dev, thetas, w, reach=False)["top1_k6"]
+        scan.append({"loso": loso, "dev": dev_k6, "w": w.__dict__})
+    scan.sort(key=lambda z: z["loso"], reverse=True)
+    return {"median": _mode_result(cells, idx, qf, thetas, train, dev, base_dev, reach=False),
+            "reach": _mode_result(cells, idx, qf, thetas, train, dev, base_dev, reach=True),
+            "overfit_scan_top5_by_loso": scan[:5], "best_dev_in_grid": round(max(s["dev"] for s in scan), 3),
+            "baseline_dev_k6": base_dev}
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--matrix", type=Path, default=MATRIX)
     ap.add_argument("--frozen", type=Path, default=FROZEN)
     ap.add_argument("--dataset-dir", type=Path, default=B1_DATASET)
     ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    ap.add_argument("--reexamine", action="store_true", help="median vs reach score + train-LOSO/dev overfit scan")
     args = ap.parse_args()
     m = json.loads(args.matrix.read_text())
     cells, thetas = m["cells"], sorted(m["thetas"])
@@ -115,15 +149,21 @@ def main() -> None:
     fp = json.loads(args.frozen.read_text())
     X, std = np.asarray(fp["table"]["X"], np.float64), Standardizer.fit(np.asarray(fp["table"]["X"], np.float64))
     x_by = {s.scenario_id: np.asarray(s.x, np.float64) for s in _load_dataset(args.dataset_dir)}
-
+    base_dev = _nearest_baseline(idx, dev, thetas, x_by, X, std)
+    args.out.mkdir(parents=True, exist_ok=True)
+    if args.reexamine:
+        rex = _reexamine(cells, idx, qf, thetas, train, dev, base_dev)
+        (args.out / "reexamine.json").write_text(json.dumps(rex, indent=2), encoding="utf-8")
+        print(json.dumps({k: rex[k] for k in ("median", "reach", "best_dev_in_grid", "baseline_dev_k6")}, indent=2),
+              flush=True)
+        print("R11_6D_REEXAMINE_DONE", flush=True)
+        return
     w, cal = _calibrate(cells, idx, qf, thetas, train)
     all_sigs = build_signatures(cells)
     dep = _panel_eval(idx, qf, all_sigs, train, thetas, w)            # deployment (own theta available)
     dev_eval = _panel_eval(idx, qf, all_sigs, dev, thetas, w)
-    out = _assemble(w, cal, dep, dev_eval,
-                    _nearest_baseline(idx, dev, thetas, x_by, X, std),
+    out = _assemble(w, cal, dep, dev_eval, base_dev,
                     _nearest_baseline(idx, train, thetas, x_by, X, std))   # nearest=self on train -> ~1.0 memorization
-    args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "retrieval.json").write_text(json.dumps({**out, "dev_per_scenario": dev_eval["per_scenario"]}, indent=2),
                                              encoding="utf-8")
     print(json.dumps(out, indent=2), flush=True)

@@ -52,15 +52,37 @@ pre-registered `SELECTION_UNCALIBRATED` outcome, and per the plan's own rule (ML
 shows a nonlinear gap) it is the *evidence* that a **handoff-conditioned transport predictor** is needed — predict
 `transport(θ_i, s)` from the θ-signature × query-handoff interaction, not a per-θ median.
 
+## Re-examination (cheap, on the existing matrix) — the per-θ class is capped at the baseline
+
+Two checks, no new rollouts:
+
+| score mode | train-LOSO | dev top-1 K6 | c3 far-angle | vs baseline (0.571) |
+|---|---|---|---|---|
+| median (first run) | 0.614 | **0.429** | 0/3 | worse (overfit) |
+| **reach** (undershoot vs p90) | 0.545 | **0.571** | 1/3 (`r7_a+45` recovered) | **ties, no regression** |
+
+- **The overfit was real.** All five top train-LOSO configs (median) land at dev 0.429 — train-LOSO overstates by ~0.19.
+- **The reach-aware score fixes the calibration** — judging undershoot against each θ's *reach* (90th-pct transport) rather
+  than its median stops deprioritising the high-variance far-reaching θ, recovering `r7_a+45` and removing the regression.
+- **But `best_dev_in_grid = 0.571 = baseline`** — the maximum dev K6 over the *entire* weight grid (median score) equals
+  descriptor-nearest. **No per-θ-signature weighting beats the baseline.** The r9 far-angle cases are structurally
+  unselectable by any handoff-independent signature — confirming the (θ×handoff)-dependence diagnosis: the per-θ class has
+  a hard ceiling at the baseline, and reach mode reaches it.
+
 ## Honest bottom line
 
 - **The simple physical ranker does not beat descriptor-nearest** (3/7 vs 4/7 dev) and does not recover the r9 far-angle
   cases. Descriptor-nearest (4/7) remains the better deploy retrieval; R11.6C's frozen policy is unchanged.
 - **Transportability is not refuted** — AUROC 0.743 says the score carries real information; the r9 delivering θ *exist*
   (feasibility probe) and the score ranks them above chance but not top-1.
-- **The identified next lever** (a Phase-4.1 decision, HALT for review): a **handoff-conditioned transport predictor** —
-  still interpretable, still train-only, still top-1, no blending, but predicting each θ's transport *from the query
-  handoff* rather than a per-θ scalar. This directly targets the diagnosed coarseness.
+- **The re-examination rules out cheap tuning.** No per-θ-signature config (median or reach, any grid weights) beats the
+  baseline — the class ceiling *is* 0.571. Reach mode is the clean best (ties, no overfit, no regression) but adds nothing
+  over descriptor-nearest.
+- **The only remaining lever to exceed the baseline / recover r9** (a Phase-4.1 decision, HALT for review): a
+  **handoff-conditioned transport predictor** — predict each θ's transport *from the query handoff* (θ-signature × handoff
+  geometry), not a per-θ scalar. This is now rigorously justified: the per-θ class provably cannot exceed the baseline,
+  and the (θ×handoff)-dependence is the exact structure a conditioned predictor would capture. Still interpretable,
+  train-only, top-1, no blending.
 
 The **dev panel is now spent as a development signal** (it calibrated + evaluated the ranker); the final generalisation
 claim remains on the sealed test, which is untouched. The gate did not clear, so **no test unseal is warranted**.

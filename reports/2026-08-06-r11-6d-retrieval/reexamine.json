@@ -1,0 +1,129 @@
+{
+  "median": {
+    "mode": "median",
+    "weights": {
+      "alpha": 2.0,
+      "beta": 1.0,
+      "gamma": 50.0,
+      "eta": 30.0,
+      "rho": 20.0
+    },
+    "train_loso_k6": 0.614,
+    "deployment_train_like": 0.682,
+    "dev_top1_k6": 0.429,
+    "dev_auroc": 0.743,
+    "baseline_dev_k6": 0.571,
+    "beats_baseline": false,
+    "c3_far_k6": 0,
+    "c3_detail": {
+      "bank_c3_r7_a+45": {
+        "top1": "bank_c1_+0.01_+0.02",
+        "k6": false,
+        "sel_dtz": 4.09
+      },
+      "bank_c3_r9_a-30": {
+        "top1": "bank_c2_-0.025_+0.000",
+        "k6": false,
+        "sel_dtz": 34.98
+      },
+      "bank_c3_r9_a-15": {
+        "top1": "bank_c2_-0.025_+0.000",
+        "k6": false,
+        "sel_dtz": 26.68
+      }
+    }
+  },
+  "reach": {
+    "mode": "reach",
+    "weights": {
+      "alpha": 1.0,
+      "beta": 0.5,
+      "gamma": 0.0,
+      "eta": 30.0,
+      "rho": 0.0
+    },
+    "train_loso_k6": 0.545,
+    "deployment_train_like": 0.545,
+    "dev_top1_k6": 0.571,
+    "dev_auroc": 0.713,
+    "baseline_dev_k6": 0.571,
+    "beats_baseline": false,
+    "c3_far_k6": 1,
+    "c3_detail": {
+      "bank_c3_r7_a+45": {
+        "top1": "bank_c3_r7_a+15",
+        "k6": true,
+        "sel_dtz": 22.88
+      },
+      "bank_c3_r9_a-30": {
+        "top1": "bank_c2_-0.025_+0.000",
+        "k6": false,
+        "sel_dtz": 34.98
+      },
+      "bank_c3_r9_a-15": {
+        "top1": "bank_c1_-0.03_-0.02",
+        "k6": false,
+        "sel_dtz": 25.41
+      }
+    }
+  },
+  "overfit_scan_top5_by_loso": [
+    {
+      "loso": 0.614,
+      "dev": 0.429,
+      "w": {
+        "alpha": 2.0,
+        "beta": 1.0,
+        "gamma": 0.0,
+        "eta": 30.0,
+        "rho": 0.0
+      }
+    },
+    {
+      "loso": 0.614,
+      "dev": 0.429,
+      "w": {
+        "alpha": 2.0,
+        "beta": 1.0,
+        "gamma": 20.0,
+        "eta": 30.0,
+        "rho": 0.0
+      }
+    },
+    {
+      "loso": 0.614,
+      "dev": 0.429,
+      "w": {
+        "alpha": 2.0,
+        "beta": 1.0,
+        "gamma": 20.0,
+        "eta": 30.0,
+        "rho": 20.0
+      }
+    },
+    {
+      "loso": 0.614,
+      "dev": 0.429,
+      "w": {
+        "alpha": 2.0,
+        "beta": 1.0,
+        "gamma": 50.0,
+        "eta": 30.0,
+        "rho": 0.0
+      }
+    },
+    {
+      "loso": 0.614,
+      "dev": 0.429,
+      "w": {
+        "alpha": 2.0,
+        "beta": 1.0,
+        "gamma": 50.0,
+        "eta": 30.0,
+        "rho": 20.0
+      }
+    }
+  ],
+  "best_dev_in_grid": 0.571,
+  "baseline_dev_k6": 0.571
+}

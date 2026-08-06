@@ -12,8 +12,18 @@ from hymeko_rl.coin_delivery.transport_retrieval import (
 from hymeko_rl.experiments.r11_6d_transport_retrieval import _auroc
 
 
-def _sig(transport: float, k6: float = 1.0, contact: float = 1.0, lo: float = -1.0, hi: float = 1.0) -> TransportSignature:
-    return TransportSignature(transport, 0.0, lo, hi, 0.0, 0.0, k6, contact)
+def _sig(transport: float, k6: float = 1.0, contact: float = 1.0, lo: float = -1.0, hi: float = 1.0,
+         p90: "float | None" = None) -> TransportSignature:
+    return TransportSignature(transport, transport if p90 is None else p90, 0.0, lo, hi, 0.0, 0.0, k6, contact)
+
+
+def test_reach_mode_credits_high_reach_theta_for_far_target() -> None:
+    # a theta whose median is 75mm but reaches 100mm (p90) should NOT be penalised as undershoot for a 100mm target.
+    qf = {"d_required_mm": 100.0, "bearing": 0.0}
+    w = TransportWeights(alpha=2.0, beta=1.0)
+    far = _sig(75.0, p90=100.0)
+    assert score(qf, far, w, reach=False) == -2.0 * 25            # median-match penalises the 25mm undershoot
+    assert score(qf, far, w, reach=True) == 0.0                   # reach-aware: p90 reaches 100 -> no undershoot
 
 
 def test_score_penalises_undershoot_and_overshoot_separately() -> None:

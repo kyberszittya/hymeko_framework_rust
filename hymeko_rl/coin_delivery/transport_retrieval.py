@@ -55,6 +55,7 @@ class TransportSignature:
     """One theta's empirical transport behaviour, summarised over the train handoffs it was rolled from."""
 
     typical_transport_mm: float
+    transport_p90_mm: float       # a theta's REACH: the 90th pct of projected transport (can it reach far?)
     transport_iqr: float
     angle_lo: float
     angle_hi: float
@@ -66,14 +67,14 @@ class TransportSignature:
 
 def signature_from_cells(cells: "list[dict]") -> TransportSignature:
     """Build a theta's signature from its transfer-matrix column (one cell per source handoff, carrying that handoff's
-    ``bearing`` and the rollout metrics). ``typical_transport`` is the median projected transport; the supported angle
-    range spans the bearings where the theta delivered strict-K6 (else all bearings, as an uninformative-prior)."""
+    ``bearing`` and the rollout metrics). ``typical_transport`` is the median projected transport; ``transport_p90`` its
+    reach; the supported angle range spans the bearings where the theta delivered strict-K6 (else all, as a weak prior)."""
     tr = np.array([c["projected_transport_mm"] for c in cells], np.float64)
     k6 = np.array([c["k6"] for c in cells], bool)
     bearings = np.array([c["bearing"] for c in cells], np.float64)
     hit_b = bearings[k6] if k6.any() else bearings
     return TransportSignature(
-        typical_transport_mm=round(float(np.median(tr)), 2),
+        typical_transport_mm=round(float(np.median(tr)), 2), transport_p90_mm=round(float(np.percentile(tr, 90)), 2),
         transport_iqr=round(float(np.subtract(*np.percentile(tr, [75, 25]))), 2),
         angle_lo=round(float(hit_b.min()), 5), angle_hi=round(float(hit_b.max()), 5),
         undershoot_freq=round(float(np.mean([c["undershoot_mm"] > _UNDERSHOOT_TOL_MM for c in cells])), 3),
@@ -94,17 +95,21 @@ def _angle_gap(bearing: float, lo: float, hi: float) -> float:
     return max(0.0, lo - bearing, bearing - hi)
 
 
-def score(qf: "dict[str, float]", sig: TransportSignature, w: TransportWeights) -> float:
-    """The transportability score (higher is better). Undershoot and overshoot are penalised separately."""
+def score(qf: "dict[str, float]", sig: TransportSignature, w: TransportWeights, reach: bool = False) -> float:
+    """The transportability score (higher is better). Undershoot and overshoot are penalised separately. ``reach``:
+    judge undershoot against the theta's REACH (90th-pct transport) rather than its median, so a theta that CAN transport
+    far (but typically doesn't) is not deprioritised for a far target (overshoot stays judged by the median)."""
     d_req = qf["d_required_mm"]
-    under, over = max(0.0, d_req - sig.typical_transport_mm), max(0.0, sig.typical_transport_mm - d_req)
+    reach_mm = sig.transport_p90_mm if reach else sig.typical_transport_mm
+    under, over = max(0.0, d_req - reach_mm), max(0.0, sig.typical_transport_mm - d_req)
     return (-w.alpha * under - w.beta * over - w.gamma * _angle_gap(qf["bearing"], sig.angle_lo, sig.angle_hi)
             + w.eta * sig.k6_rate + w.rho * sig.contact_rate)
 
 
-def rank_theta(qf: "dict[str, float]", sigs: "dict[str, TransportSignature]", w: TransportWeights) -> "list[str]":
+def rank_theta(qf: "dict[str, float]", sigs: "dict[str, TransportSignature]", w: TransportWeights,
+               reach: bool = False) -> "list[str]":
     """All theta-ids ranked best-first by the transportability score (deterministic tie-break on id)."""
-    return sorted(sigs, key=lambda tid: (score(qf, sigs[tid], w), tid), reverse=True)
+    return sorted(sigs, key=lambda tid: (score(qf, sigs[tid], w, reach), tid), reverse=True)
 
 
 # a small pre-registered weight grid (physical score); MLP only if train-only CV shows a clear nonlinear gap.
@@ -136,10 +141,10 @@ def _delivers(idx: "dict[tuple[str, str], dict]", handoff: str, tid: str) -> boo
 
 def evaluate_handoff(idx: "dict[tuple[str, str], dict]", handoff: str, qf: "dict[str, float]",
                      sigs: "dict[str, TransportSignature]", candidates: "list[str]", w: TransportWeights,
-                     k: int = 3) -> "dict[str, Any]":
+                     k: int = 3, reach: bool = False) -> "dict[str, Any]":
     """Top-1 transportability selection at one handoff: which theta is chosen, whether it delivers, top-k coverage, and
     oracle regret (selected dtz - best-available deliverable dtz among the candidates)."""
-    ranked = rank_theta(qf, {t: sigs[t] for t in candidates if t in sigs}, w)
+    ranked = rank_theta(qf, {t: sigs[t] for t in candidates if t in sigs}, w, reach)
     top1 = ranked[0]
     sel = idx.get((handoff, top1))
     deliver_dtz = [idx[(handoff, t)]["dtz_mm"] for t in candidates if _delivers(idx, handoff, t)]
