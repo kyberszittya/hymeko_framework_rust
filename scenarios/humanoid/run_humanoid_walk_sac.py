@@ -51,6 +51,8 @@ def main() -> None:
     ap.add_argument("--delta_scale", type=float, default=0.4)  # joint-target action authority (rad)
     ap.add_argument("--torque", action="store_true",          # DIRECT torque action (sustains a gait) vs servo
                     help="direct gravity-compensated torque action instead of the position-servo")
+    ap.add_argument("--w_stability", type=float, default=0.0)  # viability-band healthy hinge (keeps it upright)
+    ap.add_argument("--model_src", type=str, default="humanoid.hymeko")  # "humanoid_toe.hymeko" = toe push-off
     ap.add_argument("--max_steps", type=int, default=300)
     ap.add_argument("--out", type=str, default="experiments/humanoid_walk_sac")
     args = ap.parse_args()
@@ -59,7 +61,8 @@ def main() -> None:
 
     train_cfg = BalanceConfig(perturb_lo=0.0, perturb_hi=0.0, w_velocity=args.w_velocity,
                               vel_cap=args.vel_cap, delta_scale=args.delta_scale,
-                              torque_action=args.torque, max_steps=args.max_steps)
+                              torque_action=args.torque, w_stability=args.w_stability,
+                              model_src=args.model_src, max_steps=args.max_steps)
     env = HumanoidBalanceEnv(cfg=train_cfg, seed=0)
     obs_dim = int(env.observation_space.shape[0])
     act_dim = int(env.action_space.shape[0])

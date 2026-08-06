@@ -57,6 +57,11 @@ class BalanceConfig:
     vel_cap: float = 0.6             # forward-velocity reward is capped here (m/s) so a lunge/fall can't game it
     torque_action: bool = False      # action = DIRECT gravity-compensated torque (no q0 anchoring) instead of
     #   the position-servo — lets a policy leave the standing pose and SUSTAIN a walking gait
+    w_stability: float = 0.0         # viability-band HEALTHY shaping: a HINGE penalty applied only when the
+    #   torso leans PAST `upright_safe` (exiting the hysteresis region toward a fall) — NOT a continuous
+    #   lean penalty, so a dynamic gait may lean freely within the safe band. Keeps the walk from toppling.
+    upright_safe: float = 0.68       # inner (hysteresis) uprightness threshold: a NARROW band just above
+    #   fall_uprightness (0.6), so the hinge fires only near the fall — NOT during the normal walking lean
     fall_uprightness: float = 0.6
     fall_pelvis_z: float = 0.55
     model_src: str = "humanoid.hymeko"   # model variant to emit (e.g. "humanoid_toe.hymeko" for the toe/push-off model)
@@ -196,6 +201,8 @@ class HumanoidBalanceEnv:
             fwd_v = float(np.clip(self.data.qvel[0], -self.cfg.vel_cap, self.cfg.vel_cap))
             reward += self.cfg.w_velocity * fwd_v
             info["fwd_v"] = fwd_v
+        if self.cfg.w_stability > 0.0:                            # viability-band HINGE: only when leaning past
+            reward -= self.cfg.w_stability * max(0.0, self.cfg.upright_safe - sig["uprightness"])  # the safe band
         if self.cfg.w_step > 0.0:                                  # capture-point step shaping (opt-in)
             step_bonus, info["capture_err"] = self._capture_step()
             reward += self.cfg.w_step * step_bonus
