@@ -62,6 +62,11 @@ class BalanceConfig:
     #   lean penalty, so a dynamic gait may lean freely within the safe band. Keeps the walk from toppling.
     upright_safe: float = 0.68       # inner (hysteresis) uprightness threshold: a NARROW band just above
     #   fall_uprightness (0.6), so the hinge fires only near the fall — NOT during the normal walking lean
+    periodic_gait: bool = False      # PERIODIC-GAIT PRIOR: a phase clock in the obs + a cyclic reward that
+    #   rewards L/R foot alternation in sync with the phase, so the policy learns a REPEATING gait (a
+    #   sustained cycle) rather than a one-shot dynamic lunge. Default off (obs/reward unchanged).
+    gait_period: int = 400           # env steps per full L→R gait cycle (phase advances 2π/gait_period/step)
+    w_gait: float = 0.0              # reward weight on phase-synchronised foot alternation (periodic_gait only)
     fall_uprightness: float = 0.6
     fall_pelvis_z: float = 0.55
     model_src: str = "humanoid.hymeko"   # model variant to emit (e.g. "humanoid_toe.hymeko" for the toe/push-off model)
@@ -122,6 +127,7 @@ class HumanoidBalanceEnv:
         self.max_steps = self.cfg.max_steps
         self._rng = np.random.default_rng(seed)
         self._t = 0
+        self._phase = 0.0                                               # periodic-gait phase clock
         obs = self._obs()
         self.observation_space = spaces.Box(-np.inf, np.inf, obs.shape, np.float32)
         self.action_space = spaces.Box(-1.0, 1.0, (self.model.nu,), np.float32)
@@ -140,10 +146,12 @@ class HumanoidBalanceEnv:
         support = 0.5 * (self.data.xpos[self._fl][:2] + self.data.xpos[self._fr][:2])
         jq = np.array([self.data.qpos[a] for a in self._act_qadr])
         jv = np.array([self.data.qvel[dof] for dof in self._act_dof])
+        tail = [float(com[0] - support[0]), float(self.data.cvel[1][0])]
+        if self.cfg.periodic_gait:                                     # phase clock: where in the gait cycle
+            tail += [float(np.sin(self._phase)), float(np.cos(self._phase))]
         return np.concatenate([
             [m[2, 2], m[0, 2], float(self.data.xpos[self._pelvis, 2]) - self._h_ref],
-            self.data.qvel[0:6], jq, jv,
-            [float(com[0] - support[0]), float(self.data.cvel[1][0])],
+            self.data.qvel[0:6], jq, jv, tail,
         ]).astype(np.float32)
 
     def reset(self, *, seed=None, options=None):
@@ -159,6 +167,7 @@ class HumanoidBalanceEnv:
             self.data.qvel[1] = lsign * float(self._rng.uniform(self.cfg.push_lat_lo, self.cfg.push_lat_hi))
         self._mj.mj_forward(self.model, self.data)
         self._t = 0
+        self._phase = 0.0
         return self._obs(), {}
 
     def _capture_step(self) -> tuple[float, float]:
@@ -203,6 +212,11 @@ class HumanoidBalanceEnv:
             info["fwd_v"] = fwd_v
         if self.cfg.w_stability > 0.0:                            # viability-band HINGE: only when leaning past
             reward -= self.cfg.w_stability * max(0.0, self.cfg.upright_safe - sig["uprightness"])  # the safe band
+        if self.cfg.periodic_gait:                                # PERIODIC GAIT: reward L/R stride alternating
+            ref = float(np.sin(self._phase))                      #   with the phase clock (a repeating gait), then
+            foot_asym = float(self.data.xpos[self._fl, 0] - self.data.xpos[self._fr, 0])  # advance the clock
+            reward += self.cfg.w_gait * ref * foot_asym
+            self._phase += 2.0 * np.pi / self.cfg.gait_period
         if self.cfg.w_step > 0.0:                                  # capture-point step shaping (opt-in)
             step_bonus, info["capture_err"] = self._capture_step()
             reward += self.cfg.w_step * step_bonus
