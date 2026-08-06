@@ -84,9 +84,9 @@ def deliver_clip(sid: str, smp: Any, fp: dict, Xs: np.ndarray, std: Standardizer
     m = rollout_primitive(snap, clip_theta(theta), CLOSED_LOOP_CFG, frame_hook=film)
     film.close()
     k6 = bool(delivery_success(m, CLOSED_LOOP_CFG))
-    dtz = np.asarray(film.dtz_mm, np.float64)
-    return {"sid": sid, "bank_id": bank_id, "frames": film.frames, "dtz_mm": dtz, "k6": k6,
-            "final_dtz": round(float(m["dtz_end"]) * 1000, 2), "n": len(film.frames)}
+    frames, dtz = _trim_settled(film.frames, film.dtz_mm, k6)     # cut the static post-K6 dwell
+    return {"sid": sid, "bank_id": bank_id, "frames": frames, "dtz_mm": np.asarray(dtz, np.float64), "k6": k6,
+            "final_dtz": round(float(m["dtz_end"]) * 1000, 2), "n": len(frames)}
 
 
 REACH_STRIDE, CAPTURE_STRIDE = 4, 2         # the reach hold + capture are mostly static -> subsample them (keep delivery)
@@ -98,13 +98,24 @@ def _stride(frames: list, dtz: list, k: int) -> "tuple[list, list]":
     return [frames[i] for i in idx], [dtz[i] for i in idx]
 
 
+def _trim_settled(frames: list, dtz: list, k6: bool, tail: int = 16) -> "tuple[list, list]":
+    """Trim a delivery's static post-K6 dwell: keep up to the frame the coin first enters the 20mm zone + a short settle
+    tail. A failure (never enters) keeps the full clip -- the undershoot levelling off is the point."""
+    da = np.asarray(dtz, np.float64)
+    inzone = np.where(da <= CENTER_TOL_MM)[0]
+    if not k6 or len(inzone) == 0:
+        return frames, dtz
+    end = min(len(frames), int(inzone[0]) + tail)
+    return frames[:end], dtz[:end]
+
+
 def opening_clip(theta: np.ndarray) -> list:
     """The full uncut chain from the true zero home: HOME q=[0,0,0,0] -> reach -> capture -> retrieval-theta transport
     -> strict K6. First frame is exactly q=[0,0,0,0]; no snapshot teleport, no staged handoff. The near-static reach/
     capture phases are frame-subsampled so the wall-clock lands on the delivery; the delivery plays at full rate."""
     rig = _rig()
-    cfg = dataclasses.replace(pga.TransitConfig(), substeps=6, hold_steps=160)
-    reach_film = _Filmer(_cam())
+    cfg = dataclasses.replace(pga.TransitConfig(), substeps=6, hold_steps=60)   # shorter settle-hold (verified K6);
+    reach_film = _Filmer(_cam())                                                # cuts the reach dead time at the source
     r = do_reach(rig, cfg, frame_hook=reach_film)
     reach_film.close()
     if r is None:
@@ -119,11 +130,12 @@ def opening_clip(theta: np.ndarray) -> list:
     k6 = bool(delivery_success(m, CLOSED_LOOP_CFG))
     rf, rd = _stride(reach_film.frames, reach_film.dtz_mm, REACH_STRIDE)
     cf, cd = _stride(cap_film.frames, cap_film.dtz_mm, CAPTURE_STRIDE)
+    df, dd = _trim_settled(deliv_film.frames, deliv_film.dtz_mm, k6)      # cut the static post-K6 dwell
     print(f"    reach {len(reach_film.frames)}->{len(rf)} | capture {len(cap_film.frames)}->{len(cf)} | "
-          f"delivery {len(deliv_film.frames)} (full)", flush=True)
-    frames = rf + cf + deliv_film.frames
-    dtz = np.asarray(rd + cd + deliv_film.dtz_mm, np.float64)
-    phases = ["REACH"] * len(rf) + ["CAPTURE"] * len(cf) + ["TRANSPORT"] * len(deliv_film.frames)
+          f"delivery {len(deliv_film.frames)}->{len(df)}", flush=True)
+    frames = rf + cf + df
+    dtz = np.asarray(rd + cd + dd, np.float64)
+    phases = ["REACH"] * len(rf) + ["CAPTURE"] * len(cf) + ["TRANSPORT"] * len(df)
     end = f"STRICT K6  {m['dtz_end'] * 1000:.1f}mm" if k6 else f"{m['dtz_end'] * 1000:.0f}mm"
     n = len(frames)
 
