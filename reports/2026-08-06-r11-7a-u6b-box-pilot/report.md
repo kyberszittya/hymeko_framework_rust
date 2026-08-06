@@ -103,10 +103,25 @@ delivers on the held-out dev handoffs.
 decisive guidance: it would be a trap (the coin-arc mistake) to keep engineering the selector. The delivering region
 is reachable but **under-sampled** by the 7-θ bank (1 best-θ per train scenario, by design).
 
-⇒ **Next is targeted densification, not selector engineering** — generate teacher θ that cover the dev delivery
-basins (more train scenarios / more θ per scenario near the held-out configs), then re-audit and gate on FIXED
-snapshots (conditional K6 ≥ 50%, ≥3 seeds), with a fresh sealed test. The frozen `flagship_certificate.json` records
-this honestly (θ_provenance = interpolation; audit = coverage limit).
+⇒ **First densification test: store all K6 θ (θ-density), not just best-of-1**, then re-audit.
+
+### Densification re-audit — the bottleneck FLIPS to selection (`theta_handoff_matrix_dense.json`)
+
+Storing every certified-K6 teacher θ per scenario grows the bank **7 → 66 θ** (same 8 scenarios, 106 min). Re-running
+the θ×handoff matrix on the dense bank:
+
+**Verdict flips to `BOX_RETRIEVAL_SELECTION_LIMIT`.** Coverage jumped **0/6 → 4/6** dev snapshots now have a delivering
+θ (best-dtz improved 25–33 mm → **9–14 mm**), but the retrieval policies **miss every one** (top-1 24–35 mm, k3 29–107 mm)
+⇒ **selection-gap = 4**. The delivering θ come from a *different* train scenario than the descriptor-nearest one (mostly
+`bank_c2_+0.025_+0.000`) — the "delivering-θ is a transfer outlier" signature the coin also showed. 2/6 still have no
+delivering θ (a minority residual *scenario*-density gap).
+
+So the coverage limit was **partly θ-density** (fixed by keeping all K6 θ) and the bottleneck has now moved to
+**selection**: the delivering θ exist in the 66-θ bank but descriptor-nearest / k3 don't pick them. Per the audit tree
+(branch A), **selector work is now warranted** — and achievable: 4/6 coverage means a principled selector could reach
+~67% conditional-K6, clearing the ≥50% retrieval gate. The next selector must **score complete stored θ and pick one
+(execute unchanged), not blend** (k3's 1/6 was a lucky interpolation, and here it misses all 4 delivering θ). The frozen
+`flagship_certificate.json` records the θ_provenance (interpolation) and the original coverage-limit audit honestly.
 
 ## Honest next levers (not run — for user scoping)
 
