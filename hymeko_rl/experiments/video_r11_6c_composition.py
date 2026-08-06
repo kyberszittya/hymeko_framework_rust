@@ -16,10 +16,16 @@ import imageio.v2 as imageio
 import mujoco
 import numpy as np
 
+import dataclasses
+
 from hymeko_rl.coin_delivery.delivery_bc.dataset import bc_context, fresh_rig, reconstruct_capture, scenario_by_id
 from hymeko_rl.coin_delivery.delivery_bc.evaluate import CLOSED_LOOP_CFG
 from hymeko_rl.coin_delivery.delivery_bc.models import Standardizer, clip_theta
 from hymeko_rl.coin_delivery.forward_displacement import delivery_success, rollout_primitive
+from hymeko_rl.coin_delivery.theta_option import planar_geometric_approach as pga
+from hymeko_rl.coin_delivery.theta_option import torque_path_option as tpo
+from hymeko_rl.experiments.coin_kinetic_capture_exploration_audit import _rig
+from hymeko_rl.experiments.coin_zero_home_reach import do_reach, solve_capture
 from hymeko_rl.experiments.r11_4b_conditioned_bc import _load_dataset
 from hymeko_rl.viz.rollout_overlay import (
     InfoPanel, StatusBar, TimeSeriesPanel, encode_clip, overlay_frames, summary_card)
@@ -28,16 +34,19 @@ FROZEN = Path("reports/2026-08-06-r11-5r-retrieval/frozen_policy.json")
 B1_DATASET = Path("reports/2026-08-05-r11-5r-robust-teacher/dataset_b1")
 OUT = Path("reports/2026-08-06-r11-6c-demo-video")
 CENTER_TOL_MM = 20.0
-H, W = 460, 560
-SUCCESS = ["bank_c0_2", "bank_c1_+0.03_-0.02", "bank_c2_+0.025_-0.015", "bank_c3_r5_a-15"]
+H, W = 480, 560
+OPENING = "bank_c0_2"                                        # the full uncut HOME->REACH->CAPTURE->TRANSPORT->K6 scenario
+SUCCESS = ["bank_c1_+0.03_-0.02", "bank_c2_+0.025_-0.015", "bank_c3_r5_a-15"]   # the target-conditioned montage
 FAILURE = "bank_c3_r9_a-30"
 
 
 def _cam() -> Any:
+    # near-top-down: the task is PLANAR, so an overhead view is the readable one and removes the depth illusion of the
+    # coin passing "through" an arm link (the coin only collides with fingertips+floor, so a link may pass over it).
     cam = mujoco.MjvCamera()
     mujoco.mjv_defaultCamera(cam)
-    cam.distance, cam.elevation, cam.azimuth = 0.9, -55, 90
-    cam.lookat = np.array([0.0, 0.08, 0.0])
+    cam.distance, cam.elevation, cam.azimuth = 1.02, -87, 90
+    cam.lookat = np.array([0.0, 0.09, 0.0])
     return cam
 
 
@@ -80,6 +89,50 @@ def deliver_clip(sid: str, smp: Any, fp: dict, Xs: np.ndarray, std: Standardizer
             "final_dtz": round(float(m["dtz_end"]) * 1000, 2), "n": len(film.frames)}
 
 
+def opening_clip(theta: np.ndarray) -> list:
+    """The full uncut chain from the true zero home: HOME q=[0,0,0,0] -> reach -> capture -> retrieval-theta transport
+    -> strict K6. First frame is exactly q=[0,0,0,0]; no snapshot teleport, no staged handoff."""
+    rig = _rig()
+    cfg = dataclasses.replace(pga.TransitConfig(), substeps=6, hold_steps=160)
+    reach_film = _Filmer(_cam())
+    r = do_reach(rig, cfg, frame_hook=reach_film)
+    reach_film.close()
+    if r is None:
+        return []
+    cap = solve_capture(rig, r["ready"], 0)
+    cap_film = _Filmer(_cam())
+    snap = _capture_roll(rig, r, cap, cap_film)
+    cap_film.close()
+    deliv_film = _Filmer(_cam())
+    m = rollout_primitive(snap, clip_theta(theta), CLOSED_LOOP_CFG, frame_hook=deliv_film)
+    deliv_film.close()
+    k6 = bool(delivery_success(m, CLOSED_LOOP_CFG))
+    frames = reach_film.frames + cap_film.frames + deliv_film.frames
+    dtz = np.asarray(reach_film.dtz_mm + cap_film.dtz_mm + deliv_film.dtz_mm, np.float64)
+    phases = (["REACH"] * len(reach_film.frames) + ["CAPTURE"] * len(cap_film.frames)
+              + ["TRANSPORT"] * len(deliv_film.frames))
+    end = f"STRICT K6  {m['dtz_end'] * 1000:.1f}mm" if k6 else f"{m['dtz_end'] * 1000:.0f}mm"
+    n = len(frames)
+
+    def status(t: int) -> str:
+        return f"{phases[min(t, n - 1)]}   step {min(t, n - 1) + 1}/{n}" if t < n - 2 else f"DONE — {end}"
+
+    def info(t: int) -> list:
+        return [f"phase   {phases[min(t, n - 1)]}", "start   q = [0, 0, 0, 0]  (true zero home)",
+                "        no snapshot teleport", "        no staged handoff", f"end     {end}"]
+
+    panels = [StatusBar("EXACT-ZERO HOME  ->  reach -> capture -> teacher-free transport -> strict K6", status),
+              TimeSeriesPanel({"coin dtz (mm)": dtz}, title="coin distance to target zone (20mm goal dashed)",
+                              threshold=CENTER_TOL_MM, size=(320, 150)), InfoPanel(info)]
+    return overlay_frames(frames, panels)
+
+
+def _capture_roll(rig: Any, r: dict, cap: Any, film: "_Filmer") -> Any:
+    """Render the selected capture rollout and return its handoff snapshot (bit-exact via the zero-theta roller)."""
+    roller = tpo.TorquePathCaptureRoll(r["ready"], rig["ref"], rig["stack"], cap.params, r["coin"])
+    return roller.rollout(np.zeros(tpo.THETA_DIM, np.float32), frame_hook=film)["snapshot"]
+
+
 def _overlay(clip: dict) -> list:
     dtz, n, sid = clip["dtz_mm"], clip["n"], clip["sid"]
     end = f"STRICT K6  {clip['final_dtz']:.1f}mm" if clip["k6"] else f"undershoot {clip['final_dtz']:.0f}mm"
@@ -105,7 +158,14 @@ def render(out: Path = OUT) -> dict:
     Xs = std.transform(X)
     cfg, conf, obj = bc_context()
     smps = {s.scenario_id: s for s in _load_dataset(B1_DATASET)}
-    clip: list = []
+    theta_open = np.asarray(fp["table"]["theta"][fp["table"]["scenario_ids"].index(OPENING)], np.float64)
+    opening = opening_clip(theta_open)
+    print(f"  OPENING {OPENING}: full chain, {len(opening)} frames", flush=True)
+    size = (opening[0].width, opening[0].height) if opening else (W, H)
+    intro = summary_card(size, "Teacher-Free Exact-Zero Coin Delivery with Verified Hybrid Control",
+                         [("start", "exact-zero home  q = [0, 0, 0, 0]"), ("chain", "reach -> capture -> transport"),
+                          ("runtime", "no CEM / no oracle / no teacher"), ("target", "verified strict-K6 entry")], hold=55)
+    clip: list = list(intro) + list(opening)
     facts: list = []
     for sid in [*SUCCESS, FAILURE]:
         c = deliver_clip(sid, smps[sid], fp, Xs, std, cfg, conf, obj)
