@@ -43,33 +43,10 @@ def _forward_distance(env: HumanoidBalanceEnv, act_fn, seeds) -> float:
     return float(np.mean(nets))
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--steps", type=int, default=80_000)
-    ap.add_argument("--w_velocity", type=float, default=8.0)   # >1 makes forward the dominant reward term
-    ap.add_argument("--vel_cap", type=float, default=0.6)      # forward-velocity reward cap (m/s)
-    ap.add_argument("--delta_scale", type=float, default=0.4)  # joint-target action authority (rad)
-    ap.add_argument("--torque", action="store_true",          # DIRECT torque action (sustains a gait) vs servo
-                    help="direct gravity-compensated torque action instead of the position-servo")
-    ap.add_argument("--w_stability", type=float, default=0.0)  # viability-band healthy hinge (keeps it upright)
-    ap.add_argument("--model_src", type=str, default="humanoid.hymeko")  # "humanoid_toe.hymeko" = toe push-off
-    ap.add_argument("--periodic", action="store_true")         # PERIODIC-GAIT PRIOR (phase clock + cyclic reward)
-    ap.add_argument("--gait_period", type=int, default=400)    # env steps per L->R gait cycle
-    ap.add_argument("--w_gait", type=float, default=6.0)       # phase-synchronised foot-alternation reward
-    ap.add_argument("--viability_boundary", type=str, default="")  # .npz: GATE forward reward by P(viable)
-    ap.add_argument("--max_steps", type=int, default=300)
-    ap.add_argument("--out", type=str, default="experiments/humanoid_walk_sac")
-    args = ap.parse_args()
-    out = Path(args.out)
+def train_walk_sac(train_cfg: BalanceConfig, steps: int, out: Path) -> "tuple[Path, dict]":
+    """Train a direct-locomotion SAC on ``train_cfg``; save the best-forward-distance checkpoint. Returns
+    ``(best_path, result)``. The reusable core shared by this CLI and the co-adaptation driver."""
     out.mkdir(parents=True, exist_ok=True)
-
-    train_cfg = BalanceConfig(perturb_lo=0.0, perturb_hi=0.0, w_velocity=args.w_velocity,
-                              vel_cap=args.vel_cap, delta_scale=args.delta_scale,
-                              torque_action=args.torque, w_stability=args.w_stability,
-                              model_src=args.model_src, periodic_gait=args.periodic,
-                              gait_period=args.gait_period, w_gait=args.w_gait,
-                              viability_boundary=args.viability_boundary,
-                              max_steps=args.max_steps)
     env = HumanoidBalanceEnv(cfg=train_cfg, seed=0)
     obs_dim = int(env.observation_space.shape[0])
     act_dim = int(env.action_space.shape[0])
@@ -91,7 +68,7 @@ def main() -> None:
             torch.save(a.state_dict(), best_path)
         return fwd
 
-    cfg = SACConfig(total_steps=args.steps, start_steps=2_000, batch_size=256,
+    cfg = SACConfig(total_steps=steps, start_steps=2_000, batch_size=256,
                     eval_every=10_000, log_every=5_000, seed=0,
                     alpha_mode=AlphaMode.ANNEAL, init_alpha=0.1, alpha_final=0.005, anneal_frac=0.6)
     curve = train_sac(actor, critics, env, cfg, eval_fn=eval_fn)
@@ -108,12 +85,40 @@ def main() -> None:
         "sac_best_val_forward_test": round(best_fwd, 4),
         "forward_delta_test": round(best_fwd - base_fwd, 4),
         "eval_curve_forward_val": [round(c, 4) for c in curve],
-        "total_steps": args.steps,
-        "note": "SIMULATION. Direct-locomotion SAC over balance_env's position-servo action with the "
+        "total_steps": steps,
+        "note": "SIMULATION. Direct-locomotion SAC over balance_env's torque/position-servo action with the "
                 "forward-velocity reward. Checkpoint selected by forward distance on VAL; TEST reported once. "
                 "Baseline = PD-hold (a=0) on the identical TEST seeds.",
     }
     (out / "walk_sac_result.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    return best_path, result
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--steps", type=int, default=80_000)
+    ap.add_argument("--w_velocity", type=float, default=8.0)   # >1 makes forward the dominant reward term
+    ap.add_argument("--vel_cap", type=float, default=0.6)      # forward-velocity reward cap (m/s)
+    ap.add_argument("--delta_scale", type=float, default=0.4)  # joint-target action authority (rad)
+    ap.add_argument("--torque", action="store_true",          # DIRECT torque action (sustains a gait) vs servo
+                    help="direct gravity-compensated torque action instead of the position-servo")
+    ap.add_argument("--w_stability", type=float, default=0.0)  # viability-band healthy hinge (keeps it upright)
+    ap.add_argument("--model_src", type=str, default="humanoid.hymeko")  # "humanoid_toe.hymeko" = toe push-off
+    ap.add_argument("--periodic", action="store_true")         # PERIODIC-GAIT PRIOR (phase clock + cyclic reward)
+    ap.add_argument("--gait_period", type=int, default=400)    # env steps per L->R gait cycle
+    ap.add_argument("--w_gait", type=float, default=6.0)       # phase-synchronised foot-alternation reward
+    ap.add_argument("--viability_boundary", type=str, default="")  # .npz: GATE forward reward by P(viable)
+    ap.add_argument("--max_steps", type=int, default=300)
+    ap.add_argument("--out", type=str, default="experiments/humanoid_walk_sac")
+    args = ap.parse_args()
+    train_cfg = BalanceConfig(perturb_lo=0.0, perturb_hi=0.0, w_velocity=args.w_velocity,
+                              vel_cap=args.vel_cap, delta_scale=args.delta_scale,
+                              torque_action=args.torque, w_stability=args.w_stability,
+                              model_src=args.model_src, periodic_gait=args.periodic,
+                              gait_period=args.gait_period, w_gait=args.w_gait,
+                              viability_boundary=args.viability_boundary,
+                              max_steps=args.max_steps)
+    _, result = train_walk_sac(train_cfg, args.steps, Path(args.out))
     print(json.dumps(result, indent=2))
 
 
