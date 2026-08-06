@@ -1,0 +1,2 @@
+matrix: 51 handoffs x 44 theta = 2244 cells; 612 strict-K6 cells
+R11_6D_MATRIX_DONE

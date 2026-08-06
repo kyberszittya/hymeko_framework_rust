@@ -1,0 +1,109 @@
+{
+  "weights": {
+    "alpha": 2.0,
+    "beta": 1.0,
+    "gamma": 50.0,
+    "eta": 30.0,
+    "rho": 20.0
+  },
+  "calibration": {
+    "loso_k6": 0.614,
+    "mean_regret": 19.02
+  },
+  "deployment_train_like": 0.682,
+  "train_loso_k6": 0.614,
+  "baseline_train_loso_k6": 1.0,
+  "dev": {
+    "top1_k6": 0.429,
+    "top3_deliverable": 0.429,
+    "mean_auroc": 0.743
+  },
+  "baseline_dev_k6": 0.571,
+  "c3_far_angle_k6": "0/3",
+  "c3_detail": {
+    "bank_c3_r7_a+45": {
+      "top1": "bank_c1_+0.01_+0.02",
+      "k6": false,
+      "sel_dtz": 4.09,
+      "regret": 1.21
+    },
+    "bank_c3_r9_a-30": {
+      "top1": "bank_c2_-0.025_+0.000",
+      "k6": false,
+      "sel_dtz": 34.98,
+      "regret": 22.21
+    },
+    "bank_c3_r9_a-15": {
+      "top1": "bank_c2_-0.025_+0.000",
+      "k6": false,
+      "sel_dtz": 26.68,
+      "regret": 15.72
+    }
+  },
+  "verdict": "R11_6D_TRANSPORTABILITY_SIGNAL_POSITIVE_SELECTION_UNCALIBRATED",
+  "dev_per_scenario": {
+    "bank_c0_1": {
+      "top1": "bank_c2_-0.025_+0.000",
+      "k6": true,
+      "sel_dtz": 7.02,
+      "top3_deliverable": true,
+      "oracle_dtz": 2.61,
+      "regret": 4.41,
+      "n_deliverable": 25
+    },
+    "bank_c1_+0.03_-0.02": {
+      "top1": "bank_c3_r7_a+15",
+      "k6": true,
+      "sel_dtz": 8.95,
+      "top3_deliverable": true,
+      "oracle_dtz": 5.5,
+      "regret": 3.45,
+      "n_deliverable": 24
+    },
+    "bank_c2_+0.025_-0.015": {
+      "top1": "bank_c3_r7_a-15",
+      "k6": true,
+      "sel_dtz": 13.29,
+      "top3_deliverable": true,
+      "oracle_dtz": 2.16,
+      "regret": 11.13,
+      "n_deliverable": 26
+    },
+    "bank_c2_+0.025_-0.025": {
+      "top1": "bank_c3_r7_a+15",
+      "k6": false,
+      "sel_dtz": 27.23,
+      "top3_deliverable": false,
+      "oracle_dtz": 1.76,
+      "regret": 25.47,
+      "n_deliverable": 7
+    },
+    "bank_c3_r7_a+45": {
+      "top1": "bank_c1_+0.01_+0.02",
+      "k6": false,
+      "sel_dtz": 4.09,
+      "top3_deliverable": false,
+      "oracle_dtz": 2.88,
+      "regret": 1.21,
+      "n_deliverable": 9
+    },
+    "bank_c3_r9_a-15": {
+      "top1": "bank_c2_-0.025_+0.000",
+      "k6": false,
+      "sel_dtz": 26.68,
+      "top3_deliverable": false,
+      "oracle_dtz": 10.96,
+      "regret": 15.72,
+      "n_deliverable": 2
+    },
+    "bank_c3_r9_a-30": {
+      "top1": "bank_c2_-0.025_+0.000",
+      "k6": false,
+      "sel_dtz": 34.98,
+      "top3_deliverable": false,
+      "oracle_dtz": 12.77,
+      "regret": 22.21,
+      "n_deliverable": 2
+    }
+  }
+}
