@@ -1,0 +1,82 @@
+{
+ "rows": [
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 0,
+   "n_delivering": 1,
+   "nearest_best_rank": 19,
+   "physics_best_rank": 37,
+   "chance_rank": 33.5,
+   "nearest_ranks": [
+    19
+   ],
+   "physics_ranks": [
+    37
+   ]
+  },
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 2,
+   "n_delivering": 1,
+   "nearest_best_rank": 10,
+   "physics_best_rank": 21,
+   "chance_rank": 33.5,
+   "nearest_ranks": [
+    10
+   ],
+   "physics_ranks": [
+    21
+   ]
+  },
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 3,
+   "n_delivering": 1,
+   "nearest_best_rank": 10,
+   "physics_best_rank": 12,
+   "chance_rank": 33.5,
+   "nearest_ranks": [
+    10
+   ],
+   "physics_ranks": [
+    12
+   ]
+  },
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 4,
+   "n_delivering": 0
+  },
+  {
+   "scenario_id": "bank_c3_r6_a+15",
+   "seed": 1,
+   "n_delivering": 4,
+   "nearest_best_rank": 30,
+   "physics_best_rank": 3,
+   "chance_rank": 13.4,
+   "nearest_ranks": [
+    30,
+    42,
+    48,
+    66
+   ],
+   "physics_ranks": [
+    3,
+    10,
+    42,
+    66
+   ]
+  },
+  {
+   "scenario_id": "bank_c3_r6_a+15",
+   "seed": 4,
+   "n_delivering": 0
+  }
+ ],
+ "verdict": "BOX_DELIVERING_THETA_IS_OUTLIER",
+ "finding": "the delivering \u03b8 ranks deep (median best 14 of 66, ~chance) under both nearest and physics scores \u2014 a fundamental transfer outlier, as the coin concluded; heuristic selectors are a dead end",
+ "n_with_delivering": 4,
+ "median_nearest_best_rank": 14.5,
+ "median_physics_best_rank": 16.5,
+ "findable_top_k": 6
+}

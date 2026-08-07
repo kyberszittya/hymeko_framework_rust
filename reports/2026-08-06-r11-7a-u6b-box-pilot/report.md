@@ -137,8 +137,22 @@ the delivering θ is a *handoff-specific transfer outlier* that does not correla
 handoffs"). The θ exist (oracle 4/6) but no interpretable score tested finds them.
 
 ⇒ Box selection is the **same hard problem as the coin**: coverage is now fine, but the delivering θ is not selectable
-by descriptor-nearest, k3-blend, or physics-match. The honest next question (a cheap rank diagnostic): does the
-delivering θ rank *findably* under any score, or is it a fundamental outlier (as the coin concluded)?
+by descriptor-nearest, k3-blend, or physics-match.
+
+### Rank diagnostic — the delivering θ is a fundamental outlier (`rank_diagnostic.json`)
+
+Decisive audit (no deliveries — ranks the 66 stored θ by each score, looks up the delivering θ's rank from the dense
+matrix): **`BOX_DELIVERING_THETA_IS_OUTLIER`.** The delivering θ ranks **deep** — median best **14.5** (nearest) /
+**16.5** (physics) of 66, outside the top-6 "findable" band. Per-snapshot: c2 nearest ranks 10–19 (weakly better than
+chance ≈33.5), physics 12–37; c3 s1 physics ranks 3 but nearest 30. So there is a **weak, inconsistent** signal (not
+pure noise — nearest beats chance on c2, physics on c3), but **no single heuristic surfaces the delivering θ to the top**.
+
+**Conclusion — box retrieval has fully inherited the coin's outlier wall.** Coverage is object-density-fixable, but the
+delivering θ is a handoff-specific transfer outlier that no clean top-1 heuristic (nearest / k3 / physics) selects,
+exactly as the coin proved (R11.6D, "unlearnable from few handoffs"). This is an **object-independent property of the
+demo-bank retrieval approach**, not a box-specific failure. The existence flagship stands; a robust deployable box
+retrieval policy is blocked by the same wall as the coin. Heuristic selector engineering is a dead end here; the honest
+levers are a learned scorer (coin precedent: unlearnable) or accepting the wall and building the multi-object benchmark.
 
 ## Honest next levers (not run — for user scoping)
 
