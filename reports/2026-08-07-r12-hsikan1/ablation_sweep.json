@@ -1,0 +1,129 @@
+{
+ "epochs": 80,
+ "n_seeds": 5,
+ "dev": "mps",
+ "E1": [
+  {
+   "model": "A0_mlp",
+   "params": 6241,
+   "auroc": 0.853,
+   "auroc_ci": 0.008,
+   "top1_k6": 0.643,
+   "top1_k6_ci": 0.044,
+   "regret": 0.214,
+   "regret_ci": 0.044,
+   "oracle_k6": 0.857,
+   "oracle_k6_ci": 0.0
+  },
+  {
+   "model": "A1_random_sparse",
+   "params": 6097,
+   "auroc": 0.823,
+   "auroc_ci": 0.038,
+   "top1_k6": 0.686,
+   "top1_k6_ci": 0.056,
+   "regret": 0.171,
+   "regret_ci": 0.056,
+   "oracle_k6": 0.857,
+   "oracle_k6_ci": 0.0
+  },
+  {
+   "model": "A2_task_hsikan",
+   "params": 6097,
+   "auroc": 0.849,
+   "auroc_ci": 0.015,
+   "top1_k6": 0.729,
+   "top1_k6_ci": 0.052,
+   "regret": 0.129,
+   "regret_ci": 0.052,
+   "oracle_k6": 0.857,
+   "oracle_k6_ci": 0.0
+  },
+  {
+   "model": "A3_steiner_hsikan",
+   "params": 6097,
+   "auroc": 0.852,
+   "auroc_ci": 0.025,
+   "top1_k6": 0.7,
+   "top1_k6_ci": 0.082,
+   "regret": 0.157,
+   "regret_ci": 0.082,
+   "oracle_k6": 0.857,
+   "oracle_k6_ci": 0.0
+  },
+  {
+   "model": "A3c_degree_matched",
+   "params": 6097,
+   "auroc": 0.845,
+   "auroc_ci": 0.013,
+   "top1_k6": 0.671,
+   "top1_k6_ci": 0.095,
+   "regret": 0.186,
+   "regret_ci": 0.095,
+   "oracle_k6": 0.857,
+   "oracle_k6_ci": 0.0
+  }
+ ],
+ "E2": [
+  {
+   "model": "A0_mlp",
+   "params": 6241,
+   "auroc": 0.618,
+   "auroc_ci": 0.044,
+   "top1_k6": 0.318,
+   "top1_k6_ci": 0.049,
+   "regret": 0.455,
+   "regret_ci": 0.049,
+   "oracle_k6": 0.773,
+   "oracle_k6_ci": 0.0
+  },
+  {
+   "model": "A1_random_sparse",
+   "params": 6097,
+   "auroc": 0.541,
+   "auroc_ci": 0.049,
+   "top1_k6": 0.236,
+   "top1_k6_ci": 0.103,
+   "regret": 0.536,
+   "regret_ci": 0.103,
+   "oracle_k6": 0.773,
+   "oracle_k6_ci": 0.0
+  },
+  {
+   "model": "A2_task_hsikan",
+   "params": 6097,
+   "auroc": 0.558,
+   "auroc_ci": 0.049,
+   "top1_k6": 0.191,
+   "top1_k6_ci": 0.077,
+   "regret": 0.582,
+   "regret_ci": 0.077,
+   "oracle_k6": 0.773,
+   "oracle_k6_ci": 0.0
+  },
+  {
+   "model": "A3_steiner_hsikan",
+   "params": 6097,
+   "auroc": 0.51,
+   "auroc_ci": 0.025,
+   "top1_k6": 0.209,
+   "top1_k6_ci": 0.045,
+   "regret": 0.564,
+   "regret_ci": 0.045,
+   "oracle_k6": 0.773,
+   "oracle_k6_ci": 0.0
+  },
+  {
+   "model": "A3c_degree_matched",
+   "params": 6097,
+   "auroc": 0.53,
+   "auroc_ci": 0.03,
+   "top1_k6": 0.182,
+   "top1_k6_ci": 0.098,
+   "regret": 0.591,
+   "regret_ci": 0.098,
+   "oracle_k6": 0.773,
+   "oracle_k6_ci": 0.0
+  }
+ ]
+}

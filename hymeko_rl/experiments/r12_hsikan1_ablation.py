@@ -92,52 +92,73 @@ def _train(model: nn.Module, Xtr: torch.Tensor, ytr: torch.Tensor, epochs: int, 
             opt.step()
 
 
-def main() -> int:
-    epochs = int(sys.argv[1]) if len(sys.argv) > 1 else 40
-    mode = sys.argv[2] if len(sys.argv) > 2 else "E1"
-    seed = int(sys.argv[3]) if len(sys.argv) > 3 else 0
-    dev = "mps" if torch.backends.mps.is_available() else "cpu"
-
-    rows = _load()
-    X, y, _key = _matrix(rows)
+def _run_one(rows: list[dict], X: np.ndarray, y: np.ndarray, mode: str, seed: int, epochs: int, dev: str) -> list[dict]:
     tr, te = _split(rows, mode)
-    # leakage assertion: no handoff (family,scenario,seed) in both splits
     tk = {(rows[i]["handoff_family"], rows[i]["scenario"], rows[i]["seed"]) for i in tr}
     ek = {(rows[i]["handoff_family"], rows[i]["scenario"], rows[i]["seed"]) for i in te}
     assert not (tk & ek), f"LEAKAGE: {len(tk & ek)} handoffs in both splits"
-
     mu, sd = X[tr].mean(0), X[tr].std(0) + 1e-6
     Xn = (X - mu) / sd
-    Xtr = torch.tensor(Xn[tr], device=dev)
-    ytr = torch.tensor(y[tr], device=dev)
+    Xtr, ytr = torch.tensor(Xn[tr], device=dev), torch.tensor(y[tr], device=dev)
     pos_w = float((y[tr] == 0).sum() / max(1, (y[tr] == 1).sum()))
-    print(f"R12 ablation {mode} seed{seed} dev={dev}: train {len(tr)} / test {len(te)} pairs, "
-          f"test handoffs {len(ek)}, pos_weight {pos_w:.2f}, epochs {epochs}", flush=True)
-
-    results = []
+    out = []
     for name, model in MatchedModels().build(seed).items():
         model.to(dev)
         _train(model, Xtr, ytr, epochs, pos_w, dev)
         model.eval()
         with torch.no_grad():
             p_te = model(torch.tensor(Xn[te], device=dev)).cpu().numpy()
-        auroc = _auroc(y[te], p_te)
         top1, oracle = _top1_k6(rows, te, p_te)
-        results.append({"model": name, "params": count_params(model), "auroc": round(auroc, 3),
-                        "top1_k6": round(top1, 3), "oracle_k6": round(oracle, 3),
-                        "regret": round(oracle - top1, 3)})
-        print(f"  {name:20s} params={count_params(model):6d} AUROC={auroc:.3f} "
-              f"top1_K6={top1:.3f} oracle={oracle:.3f} regret={oracle - top1:.3f}", flush=True)
+        out.append({"model": name, "params": count_params(model), "auroc": _auroc(y[te], p_te),
+                    "top1_k6": top1, "oracle_k6": oracle, "regret": oracle - top1})
+    return out
 
-    # budget-match assertion: A0-A3 params within ±20% of the median
-    pc = [r["params"] for r in results]
-    med = float(np.median(pc))
-    band = all(0.8 * med <= p <= 1.2 * med for p in pc)
-    res = {"mode": mode, "seed": seed, "epochs": epochs, "n_train": len(tr), "n_test": len(te),
-           "budget_matched_within_20pct": band, "param_median": med, "results": results}
-    _OUT.mkdir(parents=True, exist_ok=True)
-    (_OUT / f"ablation_{mode}_seed{seed}.json").write_text(json.dumps(res, indent=1))
-    print(f"\nbudget matched (±20%): {band} (median {med:.0f} params). wrote ablation_{mode}_seed{seed}.json")
+
+def _agg(runs: list[list[dict]]) -> list[dict]:
+    """Mean ± 95% CI across seeds, per model."""
+    names = [r["model"] for r in runs[0]]
+    agg = []
+    for k, name in enumerate(names):
+        stat = {}
+        for m in ("auroc", "top1_k6", "regret", "oracle_k6"):
+            v = np.array([run[k][m] for run in runs], float)
+            stat[m] = round(float(v.mean()), 3)
+            stat[f"{m}_ci"] = round(float(1.96 * v.std(ddof=1) / np.sqrt(len(v))) if len(v) > 1 else 0.0, 3)
+        agg.append({"model": name, "params": runs[0][k]["params"], **stat})
+    return agg
+
+
+def main() -> int:
+    if sys.argv[1:2] == ["sweep"]:
+        epochs = int(sys.argv[2]) if len(sys.argv) > 2 else 80
+        n_seeds = int(sys.argv[3]) if len(sys.argv) > 3 else 5
+        dev = "mps" if torch.backends.mps.is_available() else "cpu"
+        rows = _load()
+        X, y, _ = _matrix(rows)
+        summary: dict = {"epochs": epochs, "n_seeds": n_seeds, "dev": dev}
+        for mode in ("E1", "E2"):
+            runs = [_run_one(rows, X, y, mode, s, epochs, dev) for s in range(n_seeds)]
+            agg = _agg(runs)
+            summary[mode] = agg
+            print(f"\n=== {mode} ({n_seeds} seeds, {epochs} ep) — mean±95%CI ===", flush=True)
+            for a in agg:
+                print(f"  {a['model']:20s} AUROC {a['auroc']:.3f}±{a['auroc_ci']:.3f}  "
+                      f"top1_K6 {a['top1_k6']:.3f}±{a['top1_k6_ci']:.3f}  regret {a['regret']:.3f} "
+                      f"(oracle {a['oracle_k6']:.2f})", flush=True)
+        _OUT.mkdir(parents=True, exist_ok=True)
+        (_OUT / "ablation_sweep.json").write_text(json.dumps(summary, indent=1))
+        print("\nwrote ablation_sweep.json", flush=True)
+        return 0
+    # single run
+    epochs = int(sys.argv[1]) if len(sys.argv) > 1 else 40
+    mode = sys.argv[2] if len(sys.argv) > 2 else "E1"
+    seed = int(sys.argv[3]) if len(sys.argv) > 3 else 0
+    dev = "mps" if torch.backends.mps.is_available() else "cpu"
+    rows = _load()
+    X, y, _ = _matrix(rows)
+    res = _run_one(rows, X, y, mode, seed, epochs, dev)
+    for r in res:
+        print(f"  {r['model']:20s} AUROC={r['auroc']:.3f} top1_K6={r['top1_k6']:.3f} regret={r['regret']:.3f}", flush=True)
     return 0
 
 
