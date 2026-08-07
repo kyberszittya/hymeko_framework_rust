@@ -1,0 +1,103 @@
+{
+ "rows": [
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 0,
+   "reached": true,
+   "physics_k6": false,
+   "physics_dtz": 81.73,
+   "physics_safe": true,
+   "nearest_k6": false,
+   "nearest_dtz": 26.64,
+   "oracle_k6": true
+  },
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 1,
+   "reached": false,
+   "pre": "precontact_handoff_invalid"
+  },
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 2,
+   "reached": true,
+   "physics_k6": false,
+   "physics_dtz": 96.81,
+   "physics_safe": true,
+   "nearest_k6": false,
+   "nearest_dtz": 28.74,
+   "oracle_k6": true
+  },
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 3,
+   "reached": true,
+   "physics_k6": false,
+   "physics_dtz": 26.91,
+   "physics_safe": true,
+   "nearest_k6": false,
+   "nearest_dtz": 28.39,
+   "oracle_k6": true
+  },
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 4,
+   "reached": true,
+   "physics_k6": false,
+   "physics_dtz": 87.91,
+   "physics_safe": true,
+   "nearest_k6": false,
+   "nearest_dtz": 27.8,
+   "oracle_k6": false
+  },
+  {
+   "scenario_id": "bank_c3_r6_a+15",
+   "seed": 0,
+   "reached": false,
+   "pre": "capture_no_certified_grasp"
+  },
+  {
+   "scenario_id": "bank_c3_r6_a+15",
+   "seed": 1,
+   "reached": true,
+   "physics_k6": false,
+   "physics_dtz": 33.91,
+   "physics_safe": true,
+   "nearest_k6": false,
+   "nearest_dtz": 24.55,
+   "oracle_k6": true
+  },
+  {
+   "scenario_id": "bank_c3_r6_a+15",
+   "seed": 2,
+   "reached": false,
+   "pre": "capture_no_certified_grasp"
+  },
+  {
+   "scenario_id": "bank_c3_r6_a+15",
+   "seed": 3,
+   "reached": false,
+   "pre": "capture_no_certified_grasp"
+  },
+  {
+   "scenario_id": "bank_c3_r6_a+15",
+   "seed": 4,
+   "reached": true,
+   "physics_k6": false,
+   "physics_dtz": 58.59,
+   "physics_safe": true,
+   "nearest_k6": false,
+   "nearest_dtz": 35.44,
+   "oracle_k6": false
+  }
+ ],
+ "verdict": "R11_7B_BOX_RETRIEVAL_STABILIZATION_FAIL",
+ "gate_pass": false,
+ "n_reached": 6,
+ "physics_k6": 0,
+ "nearest_k6": 0,
+ "oracle_k6": 4,
+ "physics_seeds_with_k6": 0,
+ "n_safety_regressions": 0,
+ "physics_cond_k6": 0.0
+}

@@ -123,6 +123,23 @@ So the coverage limit was **partly θ-density** (fixed by keeping all K6 θ) and
 (execute unchanged), not blend** (k3's 1/6 was a lucky interpolation, and here it misses all 4 delivering θ). The frozen
 `flagship_certificate.json` records the θ_provenance (interpolation) and the original coverage-limit audit honestly.
 
+### Physics-matched selector — FAIL, the delivering θ is a transfer outlier (`physics_selector.json`)
+
+With the delivering θ confirmed in the 66-θ bank (oracle 4/6), the first selector (per user choice): score each stored
+θ by a required-transport-weighted standardized distance on physics features only (target−coin ×2, coin velocity,
+handoff torque, contact asymmetry, handoff velocity), pick argmax, execute unchanged (no blend).
+
+**Result: `R11_7B_BOX_RETRIEVAL_STABILIZATION_FAIL` — physics 0/6, nearest 0/6, oracle 4/6.** The physics selector is
+*worse* than descriptor-nearest on most snapshots (dtz 26–96 mm vs 24–35 mm) — required-transport + handoff-geometry
+matching **mis-ranks** the delivering θ, it does not surface it. **This mirrors the coin's proven mechanism exactly**:
+the delivering θ is a *handoff-specific transfer outlier* that does not correlate with interpretable physics features
+(coin R11.6D: "delivering-θ is a handoff-specific OUTLIER inverting the θ-signature ordering, unlearnable from few
+handoffs"). The θ exist (oracle 4/6) but no interpretable score tested finds them.
+
+⇒ Box selection is the **same hard problem as the coin**: coverage is now fine, but the delivering θ is not selectable
+by descriptor-nearest, k3-blend, or physics-match. The honest next question (a cheap rank diagnostic): does the
+delivering θ rank *findably* under any score, or is it a fundamental outlier (as the coin concluded)?
+
 ## Honest next levers (not run — for user scoping)
 
 - **More eval seeds per dev scenario** (deploy baseline unchanged, top-1 nearest): 2/4 dev rollouts never reached
