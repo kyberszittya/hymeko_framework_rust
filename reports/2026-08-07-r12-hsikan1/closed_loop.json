@@ -1,0 +1,75 @@
+{
+ "n_train_seeds": 3,
+ "dev": "mps",
+ "results": [
+  {
+   "mode": "E1",
+   "n_panel": 14,
+   "oracle_top1_k6": 0.857,
+   "reproduction_agreement": 1.0,
+   "reproduction_n": 89,
+   "models": {
+    "A0_mlp": {
+     "phys_top1_k6": 0.571,
+     "phys_top1_k6_ci": 0.081,
+     "offline_physical_pick_agreement": 1.0
+    },
+    "A1_random_sparse": {
+     "phys_top1_k6": 0.643,
+     "phys_top1_k6_ci": 0.162,
+     "offline_physical_pick_agreement": 1.0
+    },
+    "A2_task_hsikan": {
+     "phys_top1_k6": 0.643,
+     "phys_top1_k6_ci": 0.081,
+     "offline_physical_pick_agreement": 1.0
+    },
+    "A3_steiner_hsikan": {
+     "phys_top1_k6": 0.619,
+     "phys_top1_k6_ci": 0.123,
+     "offline_physical_pick_agreement": 1.0
+    },
+    "A3c_degree_matched": {
+     "phys_top1_k6": 0.619,
+     "phys_top1_k6_ci": 0.047,
+     "offline_physical_pick_agreement": 1.0
+    }
+   }
+  },
+  {
+   "mode": "E2",
+   "n_panel": 22,
+   "oracle_top1_k6": 0.773,
+   "reproduction_agreement": 1.0,
+   "reproduction_n": 140,
+   "models": {
+    "A0_mlp": {
+     "phys_top1_k6": 0.242,
+     "phys_top1_k6_ci": 0.03,
+     "offline_physical_pick_agreement": 1.0
+    },
+    "A1_random_sparse": {
+     "phys_top1_k6": 0.348,
+     "phys_top1_k6_ci": 0.03,
+     "offline_physical_pick_agreement": 1.0
+    },
+    "A2_task_hsikan": {
+     "phys_top1_k6": 0.258,
+     "phys_top1_k6_ci": 0.03,
+     "offline_physical_pick_agreement": 1.0
+    },
+    "A3_steiner_hsikan": {
+     "phys_top1_k6": 0.227,
+     "phys_top1_k6_ci": 0.089,
+     "offline_physical_pick_agreement": 1.0
+    },
+    "A3c_degree_matched": {
+     "phys_top1_k6": 0.303,
+     "phys_top1_k6_ci": 0.059,
+     "offline_physical_pick_agreement": 1.0
+    }
+   }
+  }
+ ],
+ "wall_s": 2351.9
+}

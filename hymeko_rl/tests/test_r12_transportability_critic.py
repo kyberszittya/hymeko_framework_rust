@@ -102,3 +102,25 @@ def test_unknown_family_raises() -> None:
     except KeyError:
         return
     raise AssertionError("expected KeyError for unknown family")
+
+
+# ---- metric backbone (from the ablation harness — every reported number rides on these) -----------
+def test_auroc_known_cases() -> None:
+    from hymeko_rl.experiments.r12_hsikan1_ablation import _auroc
+    y = np.array([1, 1, 0, 0], float)
+    assert _auroc(y, np.array([0.9, 0.8, 0.2, 0.1])) == 1.0        # perfect separation
+    assert _auroc(y, np.array([0.1, 0.2, 0.8, 0.9])) == 0.0        # perfectly reversed
+    assert _auroc(y, np.array([0.6, 0.4, 0.5, 0.3])) == 0.75       # 3 of 4 pos>neg pairs (continuous, tie-free)
+    assert np.isnan(_auroc(np.array([1.0, 1.0]), np.array([0.5, 0.6])))  # single-class ⇒ undefined
+
+
+def test_top1_k6_picks_argmax_prediction() -> None:
+    from hymeko_rl.experiments.r12_hsikan1_ablation import _top1_k6
+    rows = [{"handoff_family": "A", "scenario": "s", "seed": 0, "k6": False},
+            {"handoff_family": "A", "scenario": "s", "seed": 0, "k6": True},
+            {"handoff_family": "A", "scenario": "s", "seed": 0, "k6": False}]
+    idx = [0, 1, 2]
+    top1, oracle = _top1_k6(rows, idx, np.array([0.1, 0.9, 0.2]))   # top-1 lands on the delivering θ
+    assert (top1, oracle) == (1.0, 1.0)
+    top1, oracle = _top1_k6(rows, idx, np.array([0.9, 0.1, 0.2]))   # top-1 misses; oracle still sees the positive
+    assert (top1, oracle) == (0.0, 1.0)

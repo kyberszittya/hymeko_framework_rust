@@ -1,14 +1,18 @@
 # R12 / HSiKAN-1 — Phase 1: architecture ablation (offline ranking)
 
 **Date:** 2026-08-08 · **Branch:** `feature/r11-4a-target-conditioned-delivery-teacher`
-**Verdict:** `R12_HSIKAN1_STRUCTURE_DOES_NOT_BEAT_FLAT` (Phase-1, offline) — **REINFORCED at ~30k params after the
-confound fix**: a stronger/bigger HSiKAN recovers the E2 AUROC collapse (0.51→0.67) but *still* does not beat flat on
-the gate metric, and the unstructured controls tie or edge the task/Steiner incidence. **Learning breaks the retrieval
-wall** (E1); cross-family (E2) top-1 selection remains the shared, information-bound frontier.
+**Verdict:** `STATIC_INCIDENT_TRANSPORTABILITY_RANKER_STRUCTURAL_ADVANTAGE_NOT_SUPPORTED` — the tested FIXED task-contact
+and Steiner incidences give no advantage over a flat MLP (or their own matched sparse controls) on this ranker task, at
+~6k **and** ~30k params, offline **and** physically. This is **R12.1** of a 6-rung ladder; it is **not** "structure axis
+exhausted" — R12.2 (rotor/quaternion) … R12.6 (Steiner as actor–critic routing) are separate, *unmeasured* hypotheses
+(see "R12 ladder — scope of this negative" below). Durable positives: **learning breaks the retrieval wall** (E1 learned
+top-1 0.64 vs flat retrieval ~0), and the task-contact HSiKAN genuinely *uses* its incidence (T1) — it just buys no
+deployment gain here.
 
-> **Two passes.** *Phase-1a* (below) = the original ~6k-param matched sweep. *Phase-1b* (§ "Confound fix") = the
-> stronger-message-function / bigger-budget re-run that rules out the "HSiKAN was under-powered" confound. Read them
-> together: 1b does not overturn 1a's structural null, it *strengthens* it by removing the capacity escape hatch.
+> **Passes.** *Phase-1a* = the ~6k-param matched sweep. *Phase-1b* (§ "Confound fix") = the stronger-message / bigger-
+> budget re-run that rules out the "under-powered HSiKAN" confound. *Closure checks* (§ "R12.1 closure checks") = T1
+> scramble (structure-use), T2 orientation premise-probe, T3 physical closed-loop. Together they scoped-close R12.1
+> without over-closing the ladder.
 
 ## Setup
 
@@ -106,6 +110,84 @@ depth=4 = 29,151). Same data, split, optimizer, seeds. `ablation_sweep_v2.json`.
    revive the structure-vs-flat verdict. The ~2 h orientation regen is therefore **not** warranted for the structural
    question (it belongs to a coverage/Phase-2 attack, if pursued).
 
+## R12.1 closure checks — scoped-close of the static ranker (T1/T2/T3)
+
+Three bounded closure checks (per user directive) before banking the static-incidence ranker line — **no rescue
+campaign** — separating "structure doesn't help" from "under-powered / this panel can't pose the question / the offline
+metric isn't physical."
+
+### T1 — structure-use (correct vs degree-preserving scrambled incidence) ✅ mandatory
+
+Trained the structured HSiKANs with their intended incidence, then at inference swapped in degree-preserving scrambles
+(same per-node degree + edge sizes, random grouping) with the SAME weights — a weight-preserving intervention on the
+message-passing topology (shared edge/update fns, per-node encoders). 5 seeds × 8 scrambles. `scramble_test.json`.
+
+| model | panel | correct AUROC | scrambled AUROC | Δ AUROC | Δ top-1 |
+|---|---|---|---|---|---|
+| task-HSiKAN | E1 | 0.876 | 0.847 | **+0.029 ± 0.014** | **+0.077 ± 0.062** |
+| task-HSiKAN | E2 | 0.684 | 0.672 | +0.011 ± 0.022 | **+0.075 ± 0.047** |
+| Steiner | E1 | 0.879 | 0.872 | +0.007 ± 0.004 | −0.016 ± 0.047 |
+| Steiner | E2 | 0.685 | 0.674 | +0.010 ± 0.016 | +0.006 ± 0.067 |
+
+**Finding:** the task-contact HSiKAN genuinely **USES** its physical incidence — E1 Δ AUROC +0.029 and Δ top-1 +0.077
+both CI-exclude-0 vs scramble, and even E2's top-1 benefit (+0.075) excludes 0. The incidence is *load-bearing*, not
+inert. **Steiner is largely inert** (Δ ≈ 0.007–0.010, top-1 ≈ 0) — consistent with Steiner ≈ degree-matched. The
+more-informative reading the scramble test exists to draw: **the model reads the structure; it just buys no advantage
+over flat** — NOT "structure is inert."
+
+### T2 — orientation × architecture (premise probe) ⚠️ premise not met on this panel
+
+Before measuring Δ_HSiKAN − Δ_MLP under an added orientation feature, the premise must hold: object yaw must vary across
+the panel AND not be recoverable from the descriptor. Probed the object geom's world-frame yaw (joint-agnostic) across 4
+families × 6 scenarios × 2 seeds. `orientation_probe.log`.
+
+| family | yaw spread | reading |
+|---|---|---|
+| O0 coin | 0.36° | ~constant (rotationally symmetric) |
+| O1-L size | 0.59° | ~constant |
+| O2-M mass | 1.08° | barely varies |
+| O4-S box | 1.87° | varies most — still tiny |
+
+yaw ~ linear(coin-xy): R² = 0.117 → **not** recoverable from the descriptor (genuine new info). BUT certified straddle
+grasps **pin the object orientation to a ≤1.9° band even for the box.** So orientation is genuine-new-info *and*
+near-constant here. **The interaction is not well-posed on this panel** — with ~2° of variation both architectures gain
+≈0, so a measured "Δ≈0" would be an *underpowered null*, not evidence about structure. Honest statement: **the R11.7B
+handoff panel does not vary object orientation, so it cannot pose R12.2** (rotor/quaternion). This is precisely why
+R12.1's null says nothing about R12.2 — the current symmetric-grasp benchmark literally cannot ask the question. It
+needs orientation-*varying* handoffs (grasp-at-yaw / rotating transport), i.e. R12.2 proper, not a re-run here.
+
+### T3 — physical closed-loop top-1 for ALL FOUR (frozen panel) ✅ offline = physical
+
+Each of MLP / random-sparse / task-HSiKAN / Steiner ranks a handoff's pooled-θ candidates, picks its own top-1, and that
+θ is ROLLED OUT physically (`_delivery_signals`, fresh deterministic sim) on the identical frozen held-out panel. The
+dataset K6 labels are themselves physical rollouts, so a fresh roll must reproduce them — asserted as a reproduction
+check. 3 seeds. `closed_loop.json`. **Reproduction 1.000 of 229 fresh rollouts (89 E1 + 140 E2); per-model
+offline↔physical pick agreement 1.000** on every model, both panels.
+
+| model | E1 phys top-1 K6 (oracle 0.86) | E2 phys top-1 K6 (oracle 0.77) |
+|---|---|---|
+| A0 MLP | 0.571 ± 0.081 | 0.242 ± 0.030 |
+| A1 random-sparse | 0.643 ± 0.162 | **0.348 ± 0.030** |
+| A2 task-HSiKAN | 0.643 ± 0.081 | 0.258 ± 0.030 |
+| A3 Steiner | 0.619 ± 0.123 | 0.227 ± 0.089 |
+| A3c degree-matched | 0.619 ± 0.047 | 0.303 ± 0.059 |
+
+**Finding:** the offline top-1 K6 ordering survives physical rollout exactly — offline top-1 K6 **is** physical top-1 K6.
+The 4-way comparison is a *physical* deployment result, not a proxy: on E1 all incidences sit within overlapping CIs of
+the MLP; on the E2 gate the two highest are again the **unstructured** controls (random-sparse 0.348, degree-matched
+0.303) over task-HSiKAN 0.258 / Steiner 0.227. No structured incidence beats flat or its own control, physically.
+
+## R12 ladder — scope of this negative
+
+R12.1 is one rung. What it closes: **a fixed task-contact / Steiner incidence gives no ranker advantage over flat on the
+R11.7B transportability task.** What it does NOT touch (separate, physically-motivated, *unmeasured* hypotheses the
+rotationally-symmetric coin could not even pose): **R12.2** orientation-aware geometric model `(x,v,R,ω)` — T2 shows the
+current benchmark can't pose it; **R12.3** Rotor-Spike event-driven propagation; **R12.4** dynamic HyMeKo incidence
+(structure that changes with the contact graph / hybrid mode — R12.1's negative is *specifically about fixed*
+incidence); **R12.5** k-actor × n-critic tensor `Q_{a,c,p,h,μ,e}`; **R12.6** Steiner as actor↔critic↔mode↔spike routing
+(NOT static ranker topology — where Kato-sensei's block-design idea actually lives). A negative on R12.1 must never be
+written as closing R12.2–R12.6.
+
 ## Honest scope (not a first-pass over-claim)
 
 This is a *clean but scoped* negative for structure: **this** node/edge feature mapping, tested at **~6k and ~30k
@@ -119,20 +201,28 @@ degree-matched control on E2; and top-1 selection, not model capacity, is the ce
 
 ## Next options (for user steer)
 
-- **Phase 2 — closed-loop on the MLP.** Validate the learned critic *physically*: does its offline top-1 K6 (0.64 E1)
-  hold when the picked θ is actually rolled out? The learned critic is a real advance over retrieval regardless of the
-  structure null — worth confirming in the loop.
-- ~~**Diagnose the structure null**~~ **— DONE (Phase-1b).** Stronger message function + 5× budget ruled out the
-  "under-powered HSiKAN" confound; structure still does not beat flat. The null holds at ~30k params.
-- **Attack E2 as a data-coverage problem:** more train families (O3 ellipse) so cross-family has ≥4 families to
-  interpolate — the E2 top-1 ceiling looks coverage/information-bound (shared across all models, unmoved by capacity),
-  not representation-bound. This is now the highest-value structural lever left, *if* the goal is E2.
-- **Add object orientation to the descriptor** (~2 h regen): raises the shared E2 information ceiling for *all* models.
-  A ceiling lever, not a structure lever — pursue only under a coverage/Phase-2 goal, not to re-litigate structure.
+R12.1 is scoped-closed (verdict above); the closure checks are done (T1/T2/T3). The remaining moves are **rungs of the
+ladder**, not attempts to save R12.1:
+
+- ~~Diagnose the structure null~~ **DONE (Phase-1b + T1).** Under-powering ruled out; the task-HSiKAN provably uses its
+  incidence (T1) yet ties flat. ~~Validate the critic physically~~ **DONE (T3)** — offline top-1 K6 *is* physical
+  (reproduction 1.000, all 4 models). The learned critic beating retrieval on E1 is confirmed physical.
+- **R12.2 — orientation-varying handoffs (the natural next rung).** T2 showed the current benchmark pins object
+  orientation to ≤1.9°, so it cannot pose the rotor/quaternion hypothesis. To test it, generate handoffs that *vary*
+  object yaw (grasp-at-yaw / rotating transport) and add `(R,ω)` to state; then the orientation×architecture
+  interaction becomes well-posed. This is new physical work, not a re-run.
+- **Attack E2 as data coverage** (O3 ellipse as a 4th train family) — the E2 top-1 ceiling is shared across all models
+  and unmoved by 5× capacity, so it reads as coverage/information-bound. A ladder-agnostic lever that would help flat
+  and structured alike.
+- **Bank R12.1 and move up the ladder** (R12.3 Rotor-Spike / R12.4 dynamic HyMeKo incidence / R12.5 k-actor×n-critic) —
+  each is a distinct hypothesis the static ranker cannot refute.
 
 ## Provenance
 
-Env: Python 3.11.15, torch 2.12.0 (MPS), numpy 2.4.6, macOS (Apple Silicon), `OMP_NUM_THREADS=1`. Deterministic
-(seeds 0–4). Harness `hymeko_rl/experiments/r12_hsikan1_ablation.py`, models
-`hymeko_rl/coin_delivery/transportability_critic.py`. Phase-1a budget matched median 6097 (`ablation_sweep.json`);
-Phase-1b matched 29,151–30,045, ratio 1.03 (`ablation_sweep_v2.json`, `sweep_v2.log`, ~17 min wall). Leakage 0 both.
+Env: Python 3.11.15, torch 2.12.0 (MPS), mujoco 3.10.0, numpy 2.4.6, macOS (Apple Silicon), `OMP_NUM_THREADS=1`.
+Deterministic (seeds 0–4). Models `hymeko_rl/coin_delivery/transportability_critic.py` (unit tests
+`hymeko_rl/tests/test_r12_transportability_critic.py`). Harnesses: ablation `…/r12_hsikan1_ablation.py`, scramble
+`…/r12_hsikan1_scramble.py`, closed-loop `…/r12_hsikan1_closed_loop.py`, orientation probe
+`…/r12_hsikan1_orientation_probe.py`. Phase-1a budget matched median 6097 (`ablation_sweep.json`); Phase-1b matched
+29,151–30,045, ratio 1.03 (`ablation_sweep_v2.json`, ~17 min). Closure: `scramble_test.json`, `orientation_probe.log`,
+`closed_loop.json` (T3 3-seed both panels, 39.2 min, reproduction 1.000/229). Leakage 0 all splits.
