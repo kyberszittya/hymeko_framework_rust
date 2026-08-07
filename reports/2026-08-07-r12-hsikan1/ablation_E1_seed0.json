@@ -1,0 +1,51 @@
+{
+ "mode": "E1",
+ "seed": 0,
+ "epochs": 15,
+ "n_train": 7070,
+ "n_test": 1414,
+ "budget_matched_within_20pct": true,
+ "param_median": 6097.0,
+ "results": [
+  {
+   "model": "A0_mlp",
+   "params": 6241,
+   "auroc": 0.849,
+   "top1_k6": 0.714,
+   "oracle_k6": 0.857,
+   "regret": 0.143
+  },
+  {
+   "model": "A1_random_sparse",
+   "params": 6097,
+   "auroc": 0.869,
+   "top1_k6": 0.714,
+   "oracle_k6": 0.857,
+   "regret": 0.143
+  },
+  {
+   "model": "A2_task_hsikan",
+   "params": 6097,
+   "auroc": 0.833,
+   "top1_k6": 0.429,
+   "oracle_k6": 0.857,
+   "regret": 0.429
+  },
+  {
+   "model": "A3_steiner_hsikan",
+   "params": 6097,
+   "auroc": 0.872,
+   "top1_k6": 0.571,
+   "oracle_k6": 0.857,
+   "regret": 0.286
+  },
+  {
+   "model": "A3c_degree_matched",
+   "params": 6097,
+   "auroc": 0.827,
+   "top1_k6": 0.571,
+   "oracle_k6": 0.857,
+   "regret": 0.286
+  }
+ ]
+}
