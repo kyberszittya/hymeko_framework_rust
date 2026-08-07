@@ -1,0 +1,20 @@
+{
+ "variant": "O4-S",
+ "n_scenarios": 6,
+ "n_seeds": 3,
+ "n_theta": 30,
+ "n_handoffs": 13,
+ "n_pairs": 390,
+ "n_positive": 76,
+ "positive_rate": 0.1949,
+ "wall_s": 564.3,
+ "sec_per_pair": 1.447,
+ "scenarios": [
+  "bank_c2_+0.015_+0.000",
+  "bank_c2_+0.025_+0.000",
+  "bank_c3_r6_a+15",
+  "bank_c3_r7_a-15",
+  "bank_c2_+0.015_-0.015",
+  "bank_c1_+0.01_+0.00"
+ ]
+}
