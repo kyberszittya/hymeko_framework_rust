@@ -125,31 +125,41 @@ class MLPNet(nn.Module):
         self.net = _mlp([INPUT_DIM] + [hidden] * (depth - 1) + [1])
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.net(x).squeeze(-1)
+        out: torch.Tensor = self.net(x)
+        return out.squeeze(-1)
 
 
 class HypergraphNet(nn.Module):
-    """A1-A3 — hypergraph message-passing over an incidence. Per-node encoder → hyperedge messages (mean-pooled
-    member node embeddings → edge MLP) → node update (mean of incident edge messages) → mean readout → logit."""
+    """A1-A3 — hypergraph message-passing over an incidence. Stronger than the first pass: per-node encoder →
+    ``rounds`` message-passing layers (each: edge message from mean‖max of member node embeddings → per-node mean of
+    incident edge messages → residual) → CONCAT readout over all nodes → logit. Edge/update functions are SHARED
+    across edges, so params depend only on ``node_dim/hidden/rounds``, NOT the incidence (only structure varies)."""
 
-    def __init__(self, incidence: list[tuple[int, ...]], node_dim: int = 24, hidden: int = 64) -> None:
+    def __init__(self, incidence: list[tuple[int, ...]], node_dim: int = 28, hidden: int = 56, rounds: int = 2) -> None:
         super().__init__()
         self.incidence = incidence
-        self.node_enc = nn.ModuleList([_mlp([len(NODES[n]), node_dim]) for n in NODE_NAMES])
-        self.edge_fn = _mlp([node_dim, hidden, node_dim])                        # SHARED across edges ⇒ params
-        self.readout = _mlp([node_dim, hidden, 1])                               # independent of the incidence
+        self.rounds = rounds
+        n = len(NODE_NAMES)
+        self.node_enc = nn.ModuleList([_mlp([len(NODES[m]), node_dim]) for m in NODE_NAMES])
+        self.edge_fn = nn.ModuleList([_mlp([2 * node_dim, hidden, node_dim]) for _ in range(rounds)])  # mean‖max
+        self.upd_fn = nn.ModuleList([_mlp([2 * node_dim, node_dim]) for _ in range(rounds)])            # node‖msg
+        self.readout = _mlp([n * node_dim, hidden, 1])                                                  # concat, per-node
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        h = [enc(x[:, NODES[n]]) for enc, n in zip(self.node_enc, NODE_NAMES)]   # per-node embeddings
-        agg = [torch.zeros_like(h[0]) for _ in NODE_NAMES]
-        cnt = [0] * len(NODE_NAMES)
-        for e in self.incidence:
-            msg = self.edge_fn(torch.stack([h[v] for v in e], 0).mean(0))        # edge message from member nodes
-            for v in e:
-                agg[v] = agg[v] + msg
-                cnt[v] += 1
-        upd = [h[v] + (agg[v] / cnt[v] if cnt[v] else agg[v]) for v in range(len(NODE_NAMES))]
-        return self.readout(torch.stack(upd, 0).mean(0)).squeeze(-1)
+        h = [enc(x[:, NODES[m]]) for enc, m in zip(self.node_enc, NODE_NAMES)]
+        for r in range(self.rounds):
+            agg = [torch.zeros_like(h[0]) for _ in NODE_NAMES]
+            cnt = [0] * len(NODE_NAMES)
+            for e in self.incidence:
+                stack = torch.stack([h[v] for v in e], 0)
+                msg = self.edge_fn[r](torch.cat([stack.mean(0), stack.amax(0)], -1))   # mean‖max member pool
+                for v in e:
+                    agg[v] = agg[v] + msg
+                    cnt[v] += 1
+            h = [self.upd_fn[r](torch.cat([h[v], agg[v] / cnt[v] if cnt[v] else agg[v]], -1)) + h[v]
+                 for v in range(len(NODE_NAMES))]
+        out: torch.Tensor = self.readout(torch.cat(h, -1))
+        return out.squeeze(-1)
 
 
 def count_params(m: nn.Module) -> int:
@@ -160,20 +170,26 @@ def count_params(m: nn.Module) -> int:
 class MatchedModels:
     """A0-A3 sized to a matched parameter band. hidden/node_dim tuned so |params| are within ~15%."""
 
-    mlp_hidden: int = 60      # sized so the flat MLP matches the HSiKAN param budget (~6.1k) within ±20%
-    hg_node_dim: int = 24
-    hg_hidden: int = 64
+    # sized so the flat MLP matches the (stronger) HSiKAN param budget (~30k) within ±20%
+    mlp_hidden: int = 110
+    mlp_depth: int = 4
+    hg_node_dim: int = 28
+    hg_hidden: int = 56
+    hg_rounds: int = 2
+
+    def _hg(self, incidence: list[tuple[int, ...]]) -> "HypergraphNet":
+        return HypergraphNet(incidence, self.hg_node_dim, self.hg_hidden, self.hg_rounds)
 
     def build(self, seed: int) -> dict[str, nn.Module]:
         torch.manual_seed(seed)
         rng = np.random.default_rng(seed)
         task = task_incidence()
         return {
-            "A0_mlp": MLPNet(self.mlp_hidden),
-            "A1_random_sparse": HypergraphNet(random_sparse_incidence(rng, len(task)), self.hg_node_dim, self.hg_hidden),
-            "A2_task_hsikan": HypergraphNet(task, self.hg_node_dim, self.hg_hidden),
-            "A3_steiner_hsikan": HypergraphNet(steiner_incidence(), self.hg_node_dim, self.hg_hidden),
-            "A3c_degree_matched": HypergraphNet(degree_matched_incidence(rng, task), self.hg_node_dim, self.hg_hidden),
+            "A0_mlp": MLPNet(self.mlp_hidden, self.mlp_depth),
+            "A1_random_sparse": self._hg(random_sparse_incidence(rng, len(task))),
+            "A2_task_hsikan": self._hg(task),
+            "A3_steiner_hsikan": self._hg(steiner_incidence()),
+            "A3c_degree_matched": self._hg(degree_matched_incidence(rng, task)),
         }
 
 

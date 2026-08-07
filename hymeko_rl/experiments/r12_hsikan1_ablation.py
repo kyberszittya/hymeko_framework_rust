@@ -132,6 +132,7 @@ def main() -> int:
     if sys.argv[1:2] == ["sweep"]:
         epochs = int(sys.argv[2]) if len(sys.argv) > 2 else 80
         n_seeds = int(sys.argv[3]) if len(sys.argv) > 3 else 5
+        tag = sys.argv[4] if len(sys.argv) > 4 else ""      # output suffix — keeps v2 runs off the committed baseline
         dev = "mps" if torch.backends.mps.is_available() else "cpu"
         rows = _load()
         X, y, _ = _matrix(rows)
@@ -146,8 +147,9 @@ def main() -> int:
                       f"top1_K6 {a['top1_k6']:.3f}±{a['top1_k6_ci']:.3f}  regret {a['regret']:.3f} "
                       f"(oracle {a['oracle_k6']:.2f})", flush=True)
         _OUT.mkdir(parents=True, exist_ok=True)
-        (_OUT / "ablation_sweep.json").write_text(json.dumps(summary, indent=1))
-        print("\nwrote ablation_sweep.json", flush=True)
+        out_name = f"ablation_sweep{tag}.json"
+        (_OUT / out_name).write_text(json.dumps(summary, indent=1))
+        print(f"\nwrote {out_name}", flush=True)
         return 0
     # single run
     epochs = int(sys.argv[1]) if len(sys.argv) > 1 else 40
