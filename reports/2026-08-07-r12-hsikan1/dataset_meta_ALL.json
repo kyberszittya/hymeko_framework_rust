@@ -1,0 +1,60 @@
+{
+ "families": [
+  "O0",
+  "O1-L",
+  "O2-M",
+  "O4-S"
+ ],
+ "n_theta_pooled": 101,
+ "theta_src_counts": {
+  "O4-S": 75,
+  "O1-L": 9,
+  "O2-M": 7,
+  "O0": 10
+ },
+ "n_seeds": 5,
+ "scenarios": [
+  "bank_c2_+0.015_+0.000",
+  "bank_c2_+0.025_+0.000",
+  "bank_c3_r6_a+15",
+  "bank_c3_r7_a-15",
+  "bank_c2_+0.015_-0.015",
+  "bank_c1_+0.01_+0.00"
+ ],
+ "per_family": [
+  {
+   "family": "O0",
+   "n_handoffs": 20,
+   "n_pairs": 2020,
+   "n_positive": 438,
+   "positive_rate": 0.2168,
+   "wall_s": 1122.8
+  },
+  {
+   "family": "O1-L",
+   "n_handoffs": 23,
+   "n_pairs": 2323,
+   "n_positive": 813,
+   "positive_rate": 0.35,
+   "wall_s": 1195.9
+  },
+  {
+   "family": "O2-M",
+   "n_handoffs": 19,
+   "n_pairs": 1919,
+   "n_positive": 557,
+   "positive_rate": 0.2903,
+   "wall_s": 1082.3
+  },
+  {
+   "family": "O4-S",
+   "n_handoffs": 22,
+   "n_pairs": 2222,
+   "n_positive": 426,
+   "positive_rate": 0.1917,
+   "wall_s": 958.7
+  }
+ ],
+ "total_pairs": 8484,
+ "wall_s": 4359.7
+}
