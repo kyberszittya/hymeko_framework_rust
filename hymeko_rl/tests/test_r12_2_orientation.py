@@ -72,3 +72,16 @@ def test_straddle_rotated_zero_is_identity_and_shift() -> None:
     ang0 = math.atan2(p0.tip_left[1], p0.tip_left[0])
     ang45 = math.atan2(p45.tip_left[1], p45.tip_left[0])
     assert abs(math.degrees((ang45 - ang0 + math.pi) % (2 * math.pi) - math.pi) - 45.0) < 1e-6
+
+
+def test_o5r_rectangle_variant_from_hymeko() -> None:
+    """R12.2-A2: the O5-R rectangle loads from its HyMeKo scene as a 1.2:1 elongated box (radius≠radius_y), equal
+    projected area to the disk (⇒ mass = O0), so it isolates elongation/orientation. C2-symmetric ⇒ distinct
+    orientations span [0,180°) (vs the square's [0,45°])."""
+    from hymeko_rl.coin_delivery.object_curriculum import variant
+    from hymeko_rl.env.object_spec import Shape
+    spec = variant("O5-R").object_spec
+    assert spec.shape is Shape.BOX and spec.radius_y is not None
+    assert spec.radius > spec.radius_y                                   # genuinely elongated (not square)
+    assert abs(spec.radius / spec.radius_y - 1.2) < 1e-3                 # 1.2:1 aspect
+    assert abs(4 * spec.radius * spec.radius_y - math.pi * 0.02 ** 2) < 1e-6   # equal area to the disk

@@ -46,6 +46,9 @@ U6A_CURRICULUM: tuple[ObjectVariant, ...] = (
     ObjectVariant("O1-L", f"{_ROBOTICS}/galambos_env_o1_large.hymeko", "size"),
     ObjectVariant("O2-M", f"{_ROBOTICS}/galambos_env_o2_heavy.hymeko", "dynamics"),
     ObjectVariant("O4-S", f"{_ROBOTICS}/galambos_env_o4_square.hymeko", "shape"),
+    # R12.2-A2: an elongated (1.5:1) rectangle — 180° symmetry, so distinct orientations span [0,180°) (vs the
+    # square's [0,45°]); the object family for the orientation-aware geometric model. Equal area ⇒ mass = O0.
+    ObjectVariant("O5-R", f"{_ROBOTICS}/galambos_env_o5_rect.hymeko", "shape-elongated"),
 )
 
 

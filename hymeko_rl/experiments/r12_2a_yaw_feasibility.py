@@ -89,8 +89,9 @@ def main() -> int:
                "post_grasp_spread_deg": round(spread, 2), "slope": round(slope, 3) if not math.isnan(slope) else None,
                "gate_spread_deg": _GATE_SPREAD_DEG, "gate_pass": gate_pass, "wall_s": round(time.perf_counter() - t0, 1),
                "rows": rows}
-    (_OUT / "ga_yaw_feasibility.json").write_text(json.dumps(summary, indent=1))
-    print(f"\nwrote ga_yaw_feasibility.json ({summary['wall_s'] / 60:.1f} min)", flush=True)
+    out_name = "ga_yaw_feasibility.json" if fam == "O4-S" else f"ga_yaw_feasibility_{fam}.json"
+    (_OUT / out_name).write_text(json.dumps(summary, indent=1))
+    print(f"\nwrote {out_name} ({summary['wall_s'] / 60:.1f} min)", flush=True)
     return 0
 
 
