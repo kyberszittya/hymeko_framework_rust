@@ -81,7 +81,8 @@ def reach_capture_at_yaw(rig: dict[str, Any], scen: Any, seed: int, yaw: float, 
     ic = A.EXACT_ZERO_HOME_V1.certify(A.read_rollout_state(home.branch()))
     if not ic.valid or not A.coin_admissibility(rig, scen.coin_xy, cfg).admissible:
         return fail(CompositionOutcomeClass.INVALID_INITIAL_CONDITION)
-    reason, rcap = P._do_reach_and_capture(rig, scen, coin, home, cfg, conf, seed)
+    reason, rcap = P._do_reach_and_capture(rig, scen, coin, home, cfg, conf, seed,
+                                           straddle_yaw_deg=math.degrees(yaw))   # rotate straddle with the object
     if rcap is None:
         return fail(CompositionOutcomeClass.REACH_FAILURE, reach_reason=reason)
     if not rcap.handoff_admissible:

@@ -26,8 +26,8 @@ from hymeko_rl.experiments.coin_kinetic_capture_exploration_audit import _rig
 from hymeko_rl.experiments.r12_hsikan1_dataset import _SCENARIOS
 
 _OUT = Path("reports/2026-08-08-r12-2-orientation")
-_YAW_GRID_DEG = (0.0, 15.0, 30.0, 45.0)     # commanded placement yaws
-_GATE_SPREAD_DEG = 15.0                      # G_A: post-grasp yaw must span ≥ this across the grid
+_DEFAULT_YAW_GRID_DEG = (0.0, 15.0, 30.0, 45.0)     # axis-aligned straddle default grid (A, pre-widening)
+_GATE_SPREAD_DEG = 15.0                              # G_A: post-grasp yaw must span ≥ this across the grid
 
 
 def _slope(x: list[float], y: list[float]) -> float:
@@ -40,16 +40,17 @@ def main() -> int:
     fam = sys.argv[1] if len(sys.argv) > 1 else "O4-S"
     n_seeds = int(sys.argv[2]) if len(sys.argv) > 2 else 2
     n_scen = int(sys.argv[3]) if len(sys.argv) > 3 else 2
+    yaw_grid = tuple(float(v) for v in sys.argv[4].split(",")) if len(sys.argv) > 4 else _DEFAULT_YAW_GRID_DEG
     scenarios = _SCENARIOS[:n_scen]
     cfg, conf, obj = bc_context()
     rig = _rig(object_spec=variant(fam).object_spec)
     t0 = time.perf_counter()
-    print(f"G_A probe [{fam}]: yaw grid {_YAW_GRID_DEG}° × {len(scenarios)} scen × {n_seeds} seeds", flush=True)
+    print(f"G_A probe [{fam}]: yaw grid {yaw_grid}° × {len(scenarios)} scen × {n_seeds} seeds", flush=True)
 
-    per_yaw: dict[float, list[float]] = {y: [] for y in _YAW_GRID_DEG}   # placement yaw → post-grasp yaws (deg)
-    cert: dict[float, list[int]] = {y: [0, 0] for y in _YAW_GRID_DEG}    # placement yaw → [certified, attempts]
+    per_yaw: dict[float, list[float]] = {y: [] for y in yaw_grid}   # placement yaw → post-grasp yaws (deg)
+    cert: dict[float, list[int]] = {y: [0, 0] for y in yaw_grid}    # placement yaw → [certified, attempts]
     rows = []
-    for yaw_deg in _YAW_GRID_DEG:
+    for yaw_deg in yaw_grid:
         yaw = math.radians(yaw_deg)
         for sid in scenarios:
             scen = scenario_by_id(sid)
@@ -68,13 +69,13 @@ def main() -> int:
                       f"({time.perf_counter() - t0:.0f}s)", flush=True)
 
     means = {y: (float(np.mean(v)) if v else float("nan")) for y, v in per_yaw.items()}
-    valid = [(y, means[y]) for y in _YAW_GRID_DEG if not math.isnan(means[y])]
+    valid = [(y, means[y]) for y in yaw_grid if not math.isnan(means[y])]
     spread = (max(m for _, m in valid) - min(m for _, m in valid)) if len(valid) > 1 else 0.0
     slope = _slope([y for y, _ in valid], [m for _, m in valid])
     gate_pass = spread >= _GATE_SPREAD_DEG and (math.isnan(slope) or slope > 0.5)
 
     print("\nplace_yaw°  cert   mean_post_yaw°", flush=True)
-    for y in _YAW_GRID_DEG:
+    for y in yaw_grid:
         c = cert[y]
         print(f"  {y:6.1f}    {c[0]}/{c[1]}   {means[y]:8.2f}", flush=True)
     verdict = "G_A PASS — grasp PRESERVES varied yaw ⇒ R12.2 well-posed, A2/B may proceed" if gate_pass else \
@@ -83,8 +84,8 @@ def main() -> int:
     print(f"\npost-grasp yaw spread {spread:.2f}° (gate ≥{_GATE_SPREAD_DEG}°), slope {slope:.2f} → {verdict}", flush=True)
 
     _OUT.mkdir(parents=True, exist_ok=True)
-    summary = {"family": fam, "yaw_grid_deg": list(_YAW_GRID_DEG), "n_seeds": n_seeds, "scenarios": list(scenarios),
-               "per_yaw_mean_post_deg": means, "cert_rate": {y: cert[y][0] / max(1, cert[y][1]) for y in _YAW_GRID_DEG},
+    summary = {"family": fam, "yaw_grid_deg": list(yaw_grid), "n_seeds": n_seeds, "scenarios": list(scenarios),
+               "per_yaw_mean_post_deg": means, "cert_rate": {y: cert[y][0] / max(1, cert[y][1]) for y in yaw_grid},
                "post_grasp_spread_deg": round(spread, 2), "slope": round(slope, 3) if not math.isnan(slope) else None,
                "gate_spread_deg": _GATE_SPREAD_DEG, "gate_pass": gate_pass, "wall_s": round(time.perf_counter() - t0, 1),
                "rows": rows}

@@ -119,10 +119,12 @@ class _ReachCapture:
 
 
 def _do_reach_and_capture(rig: dict[str, Any], scenario: CoinTargetScenario, coin: np.ndarray, home: Any,
-                          cfg: pga.TransitConfig, config: PipelineConfig,
-                          seed: int) -> "tuple[Optional[str], Optional[_ReachCapture]]":
+                          cfg: pga.TransitConfig, config: PipelineConfig, seed: int,
+                          straddle_yaw_deg: float = 0.0) -> "tuple[Optional[str], Optional[_ReachCapture]]":
     """Run the deployed RRT reach (scenario zone injected) then one CEM capture. Returns (reason, None) on a reach failure
-    (``GOAL_SET_EMPTY`` / ``RRT_PLANNING_FAILURE``) or (None, _ReachCapture) on success."""
+    (``GOAL_SET_EMPTY`` / ``RRT_PLANNING_FAILURE``) or (None, _ReachCapture) on success. ``straddle_yaw_deg`` (R12.2-A')
+    rotates the straddle approach with a yaw-rotated object; the default 0.0 reproduces the frozen axis-aligned path
+    bit-for-bit."""
     stack = rig["cradle"].stack
     arm_l, arm_r = pga.build_arms(home, coin)
     rl = home.branch()
@@ -134,7 +136,10 @@ def _do_reach_and_capture(rig: dict[str, Any], scenario: CoinTargetScenario, coi
         return R._collision_free(q, coin, arm_l, arm_r, cfg)
 
     rng = np.random.default_rng(seed)
-    goals = R._straddle_goal_set(coin, arm_l, arm_r, pga.CoinStraddleTargets(coin=coin), coll)
+    base = pga.CoinStraddleTargets(coin=coin)
+    if straddle_yaw_deg:                                       # rotate the straddle to match a yaw-varied object
+        base = base.rotated(straddle_yaw_deg)
+    goals = R._straddle_goal_set(coin, arm_l, arm_r, base, coll)
     if not goals or not coll(np.zeros(4)):
         return "GOAL_SET_EMPTY", None
     t0 = time.perf_counter()
@@ -146,17 +151,19 @@ def _do_reach_and_capture(rig: dict[str, Any], scenario: CoinTargetScenario, coi
     probe = A.EnergyProbe()
     prev, minclr, pert = Z._servo(rl, qref, stack, lo, hi, cfg, coin, gl, gr, frame_hook=probe)
     rc = _assemble_reach(rig, rl, coin, arm_l, arm_r, gl, gr, qref, raw, prev, minclr, pert, probe,
-                         zone, honored, len(goals), planning_time_s, config, seed, stack)
+                         zone, honored, len(goals), planning_time_s, config, seed, stack, straddle_yaw_deg)
     return None, rc
 
 
 def _assemble_reach(rig: dict[str, Any], rl: Any, coin: np.ndarray, arm_l: pga.PlanarArm2R, arm_r: pga.PlanarArm2R,
                     gl: int, gr: int, qref: np.ndarray, raw: list, prev: np.ndarray, minclr: float, pert: float,
                     probe: Any, zone: tuple[float, float], honored: bool, n_goals: int, planning_time_s: float,
-                    config: PipelineConfig, seed: int, stack: Any) -> _ReachCapture:
-    """Build the reach metrics + handoff + measured ledger, then run one CEM capture (keeps the reach fn under budget)."""
+                    config: PipelineConfig, seed: int, stack: Any, straddle_yaw_deg: float = 0.0) -> _ReachCapture:
+    """Build the reach metrics + handoff + measured ledger, then run one CEM capture (keeps the reach fn under budget).
+    ``straddle_yaw_deg`` rotates the reference straddle used for the tip-error diagnostics (R12.2-A'); 0.0 is unchanged."""
     d = rl.inner.data
-    straddle = pga.CoinStraddleTargets(coin=coin).precontact()
+    _straddle = pga.CoinStraddleTargets(coin=coin)
+    straddle = (_straddle.rotated(straddle_yaw_deg) if straddle_yaw_deg else _straddle).precontact()
     tip_l, tip_r = np.asarray(d.geom_xpos[gl][:2], float), np.asarray(d.geom_xpos[gr][:2], float)
     reach = {"rrt_waypoints": float(len(raw)), "path_waypoints": float(len(qref)),
              "reach_qerr": round(float(np.linalg.norm(d.qpos[:4] - qref[-1])), 4),

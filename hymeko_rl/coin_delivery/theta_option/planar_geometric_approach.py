@@ -96,6 +96,15 @@ class CoinStraddleTargets:
         return cls(coin=coin, shell_dist=footprint_radius + fingertip_radius + margin,
                    side_left_deg=side_left_deg, side_right_deg=side_right_deg)
 
+    def rotated(self, yaw_deg: float) -> "CoinStraddleTargets":
+        """A copy with the straddle axis rotated by ``yaw_deg`` — both assigned-side angles shifted equally, so the tips
+        approach a yaw-rotated object along its rotated faces (R12.2-A': the axis-aligned straddle caps a rotated box at
+        ~30° certified; rotating the straddle with the object lifts that). # Postconditions: ``yaw_deg=0`` returns an
+        equal straddle, so the frozen yaw=0 acquisition is unchanged."""
+        return CoinStraddleTargets(coin=self.coin, shell_dist=self.shell_dist,
+                                   side_left_deg=self.side_left_deg + yaw_deg,
+                                   side_right_deg=self.side_right_deg + yaw_deg)
+
     def precontact(self) -> PrecontactTargets:
         al, ar = np.radians(self.side_left_deg), np.radians(self.side_right_deg)
         tip_l = self.coin + self.shell_dist * np.array([np.cos(al), np.sin(al)])
