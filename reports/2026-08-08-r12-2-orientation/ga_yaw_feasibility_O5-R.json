@@ -1,0 +1,196 @@
+{
+ "family": "O5-R",
+ "yaw_grid_deg": [
+  0.0,
+  30.0,
+  45.0,
+  60.0,
+  90.0
+ ],
+ "n_seeds": 2,
+ "scenarios": [
+  "bank_c2_+0.015_+0.000",
+  "bank_c2_+0.025_+0.000"
+ ],
+ "per_yaw_mean_post_deg": {
+  "0.0": 0.4256138509191233,
+  "30.0": 29.68351470804861,
+  "45.0": NaN,
+  "60.0": 59.71012808585223,
+  "90.0": 89.87563485603694
+ },
+ "cert_rate": {
+  "0.0": 0.25,
+  "30.0": 0.25,
+  "45.0": 0.0,
+  "60.0": 0.75,
+  "90.0": 1.0
+ },
+ "post_grasp_spread_deg": 89.45,
+ "slope": 0.995,
+ "gate_spread_deg": 15.0,
+ "gate_pass": true,
+ "wall_s": 539.1,
+ "rows": [
+  {
+   "placement_yaw_deg": 0.0,
+   "scenario": "bank_c2_+0.015_+0.000",
+   "seed": 0,
+   "certified": false,
+   "post_grasp_yaw_deg": NaN,
+   "fail": "capture_no_certified_grasp"
+  },
+  {
+   "placement_yaw_deg": 0.0,
+   "scenario": "bank_c2_+0.015_+0.000",
+   "seed": 1,
+   "certified": true,
+   "post_grasp_yaw_deg": 0.4256138509191233,
+   "fail": null
+  },
+  {
+   "placement_yaw_deg": 0.0,
+   "scenario": "bank_c2_+0.025_+0.000",
+   "seed": 0,
+   "certified": false,
+   "post_grasp_yaw_deg": NaN,
+   "fail": "capture_no_certified_grasp"
+  },
+  {
+   "placement_yaw_deg": 0.0,
+   "scenario": "bank_c2_+0.025_+0.000",
+   "seed": 1,
+   "certified": false,
+   "post_grasp_yaw_deg": NaN,
+   "fail": "capture_no_certified_grasp"
+  },
+  {
+   "placement_yaw_deg": 30.0,
+   "scenario": "bank_c2_+0.015_+0.000",
+   "seed": 0,
+   "certified": false,
+   "post_grasp_yaw_deg": NaN,
+   "fail": "capture_no_certified_grasp"
+  },
+  {
+   "placement_yaw_deg": 30.0,
+   "scenario": "bank_c2_+0.015_+0.000",
+   "seed": 1,
+   "certified": false,
+   "post_grasp_yaw_deg": NaN,
+   "fail": "capture_no_certified_grasp"
+  },
+  {
+   "placement_yaw_deg": 30.0,
+   "scenario": "bank_c2_+0.025_+0.000",
+   "seed": 0,
+   "certified": true,
+   "post_grasp_yaw_deg": 29.68351470804861,
+   "fail": null
+  },
+  {
+   "placement_yaw_deg": 30.0,
+   "scenario": "bank_c2_+0.025_+0.000",
+   "seed": 1,
+   "certified": false,
+   "post_grasp_yaw_deg": NaN,
+   "fail": "capture_no_certified_grasp"
+  },
+  {
+   "placement_yaw_deg": 45.0,
+   "scenario": "bank_c2_+0.015_+0.000",
+   "seed": 0,
+   "certified": false,
+   "post_grasp_yaw_deg": NaN,
+   "fail": "capture_no_certified_grasp"
+  },
+  {
+   "placement_yaw_deg": 45.0,
+   "scenario": "bank_c2_+0.015_+0.000",
+   "seed": 1,
+   "certified": false,
+   "post_grasp_yaw_deg": NaN,
+   "fail": "capture_no_certified_grasp"
+  },
+  {
+   "placement_yaw_deg": 45.0,
+   "scenario": "bank_c2_+0.025_+0.000",
+   "seed": 0,
+   "certified": false,
+   "post_grasp_yaw_deg": NaN,
+   "fail": "capture_no_certified_grasp"
+  },
+  {
+   "placement_yaw_deg": 45.0,
+   "scenario": "bank_c2_+0.025_+0.000",
+   "seed": 1,
+   "certified": false,
+   "post_grasp_yaw_deg": NaN,
+   "fail": "capture_no_certified_grasp"
+  },
+  {
+   "placement_yaw_deg": 60.0,
+   "scenario": "bank_c2_+0.015_+0.000",
+   "seed": 0,
+   "certified": true,
+   "post_grasp_yaw_deg": 59.52466825350537,
+   "fail": null
+  },
+  {
+   "placement_yaw_deg": 60.0,
+   "scenario": "bank_c2_+0.015_+0.000",
+   "seed": 1,
+   "certified": false,
+   "post_grasp_yaw_deg": NaN,
+   "fail": "capture_no_certified_grasp"
+  },
+  {
+   "placement_yaw_deg": 60.0,
+   "scenario": "bank_c2_+0.025_+0.000",
+   "seed": 0,
+   "certified": true,
+   "post_grasp_yaw_deg": 59.71416674640298,
+   "fail": null
+  },
+  {
+   "placement_yaw_deg": 60.0,
+   "scenario": "bank_c2_+0.025_+0.000",
+   "seed": 1,
+   "certified": true,
+   "post_grasp_yaw_deg": 59.89154925764834,
+   "fail": null
+  },
+  {
+   "placement_yaw_deg": 90.0,
+   "scenario": "bank_c2_+0.015_+0.000",
+   "seed": 0,
+   "certified": true,
+   "post_grasp_yaw_deg": 89.76719749558913,
+   "fail": null
+  },
+  {
+   "placement_yaw_deg": 90.0,
+   "scenario": "bank_c2_+0.015_+0.000",
+   "seed": 1,
+   "certified": true,
+   "post_grasp_yaw_deg": 89.89371564910182,
+   "fail": null
+  },
+  {
+   "placement_yaw_deg": 90.0,
+   "scenario": "bank_c2_+0.025_+0.000",
+   "seed": 0,
+   "certified": true,
+   "post_grasp_yaw_deg": 89.85613773826505,
+   "fail": null
+  },
+  {
+   "placement_yaw_deg": 90.0,
+   "scenario": "bank_c2_+0.025_+0.000",
+   "seed": 1,
+   "certified": true,
+   "post_grasp_yaw_deg": 89.9854885411918,
+   "fail": null
+  }
+ ]
+}
