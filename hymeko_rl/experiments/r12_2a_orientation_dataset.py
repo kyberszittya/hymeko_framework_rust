@@ -7,14 +7,14 @@ post-grasp yaw per handoff, and apply the pooled-θ bank to each → (K6, dtz, s
 Δ_HSiKAN − Δ_MLP interaction. Only certified handoffs (a stable straddle grasp) contribute rows; the certified yield
 per yaw is logged (no silent caps).
 
-Run:  python -m hymeko_rl.experiments.r12_2a_orientation_dataset [family] [n_seeds] [n_scen] [yaws] [n_theta]
+Run:  python -m hymeko_rl.experiments.r12_2a_orientation_dataset [family] [n_seeds] [n_scen] [yaws] [bank_path]
 
-⚠️ FINDING (2026-08-10, first bounded run, O5-R): the POOLED θ bank is axis-aligned-tuned, so it delivers the rotated
-rectangle ONLY near yaw≈0 — 17 positives all from yaw 0/early-30, ZERO at yaw 30/60/90 (confirmed 3× at handoffs
-5/10/15). With yaw-0 θ, K6 collapses to a trivial "is-yaw-near-0" indicator ⇒ a DEGENERATE, confounded basis for the
-R12.2-B interaction test. FIX: this generator needs ORIENTATION-AWARE θ — a per-yaw delivering-θ search (teacher/CEM
-at each orientation) so that "which θ delivers" depends on orientation (the orientation×θ structure R12.2-B tests).
-Do NOT run this at scale with the pooled bank; wire in a per-yaw θ source first.
+θ SOURCE = the ORIENTATION-AWARE bank (`r12_2b_orientation_bank`), NOT the pooled bank. History (2026-08-10): the
+pooled bank is axis-aligned-tuned, so it delivers the rotated rectangle ONLY near yaw≈0 (17 positives all at yaw 0,
+ZERO at 30/60/90) ⇒ K6 collapsed to a trivial "is-yaw-0" indicator, a DEGENERATE basis for the ranker test. The
+feasibility probe (`r12_2b_theta_feasibility`, GO) then showed orientation-specific delivering θ DO exist; the bank
+collects them, so applied across handoffs K6 depends non-trivially on orientation×θ. `theta_family` = each θ's
+tuning-yaw provenance.
 """
 from __future__ import annotations
 
@@ -33,10 +33,22 @@ from hymeko_rl.coin_delivery.exact_zero_composition import _delivery_signals
 from hymeko_rl.coin_delivery.object_curriculum import variant
 from hymeko_rl.coin_delivery.r12_orientation import object_yaw, reach_capture_at_yaw
 from hymeko_rl.experiments.coin_kinetic_capture_exploration_audit import _rig
-from hymeko_rl.experiments.r12_hsikan1_dataset import _SCENARIOS, _pooled_thetas
+from hymeko_rl.experiments.r12_2b_theta_feasibility import _TARGETS   # the bank's tuning scenarios (θ are target-specific)
 
 _OUT = Path("reports/2026-08-08-r12-2-orientation")
 _DEFAULT_YAWS = (0.0, 30.0, 45.0, 60.0, 90.0)     # commanded placement yaws (cert yield uneven; kept for coverage)
+
+
+def _load_bank(path: str) -> "tuple[np.ndarray, list[str]]":
+    """Load the ORIENTATION-AWARE θ bank (`r12_2b_orientation_bank`). Each θ carries the yaw it was tuned for as
+    provenance, so `theta_family` labels the θ's home orientation — the substrate R12.2-B needs (a θ delivers near its
+    tuning-yaw, fails far from it). Falls back with a loud error if the bank is missing."""
+    p = Path(path)
+    if not p.exists():
+        raise FileNotFoundError(f"orientation bank not found: {path} — run `r12_2b_orientation_bank` first "
+                                "(the pooled bank is degenerate for this dataset, see module docstring)")
+    d = json.loads(p.read_text())
+    return np.asarray(d["thetas"], np.float64), [f"yaw{int(pr['tuning_yaw'])}" for pr in d["provenance"]]
 
 
 def _gen(fam: str, thetas: np.ndarray, theta_src: list[str], yaws: tuple[float, ...], scenarios: tuple[str, ...],
@@ -83,11 +95,9 @@ def main() -> int:
     n_seeds = int(sys.argv[2]) if len(sys.argv) > 2 else 3
     n_scen = int(sys.argv[3]) if len(sys.argv) > 3 else 4
     yaws = tuple(float(v) for v in sys.argv[4].split(",")) if len(sys.argv) > 4 else _DEFAULT_YAWS
-    n_theta = int(sys.argv[5]) if len(sys.argv) > 5 else 0        # 0 ⇒ full pooled bank
-    scenarios = _SCENARIOS[:n_scen]
-    thetas, theta_src = _pooled_thetas()
-    if n_theta:
-        thetas, theta_src = thetas[:n_theta], theta_src[:n_theta]
+    bank_path = sys.argv[5] if len(sys.argv) > 5 else str(_OUT / f"orientation_bank_{fam}.json")
+    scenarios = _TARGETS[:n_scen]           # align with the bank's tuning scenarios (θ are (yaw,target)-specific)
+    thetas, theta_src = _load_bank(bank_path)
     cfg, conf, obj = bc_context()
     print(f"R12.2-A2 dataset [{fam}]: yaws {yaws}° × {len(scenarios)} scen × {n_seeds} seeds × {len(thetas)}θ", flush=True)
     meta = _gen(fam, thetas, theta_src, yaws, scenarios, n_seeds, cfg, conf, obj)

@@ -89,6 +89,26 @@ def test_build_input_row_layout() -> None:
     assert row[36:41] == object_features("O0")
 
 
+def test_orientation_variant_is_additive_and_matched() -> None:
+    """R12.2-B: the orientation feature is PURELY additive — [sin,cos] yaw appended at 41,42 (the ORI object_state
+    node's slice); the 41-D default row/models are untouched (regression vs R12.1); the ORI models are param-matched."""
+    from hymeko_rl.coin_delivery.transportability_critic import MatchedModels, ORI_INPUT_DIM, ORI_NODES
+    from hymeko_rl.coin_delivery.transportability_critic import NODES as _NODES
+    assert ORI_INPUT_DIM == INPUT_DIM + 2
+    assert ORI_NODES["object_state"][-2:] == [INPUT_DIM, INPUT_DIM + 1]      # orientation on object_state
+    assert ORI_NODES["left_arm"] == _NODES["left_arm"] and len(ORI_NODES) == len(_NODES)   # incidence unchanged (10 nodes)
+    base = build_input_row(list(range(30)), [0.1] * 6, "O5-R")
+    ori = build_input_row(list(range(30)), [0.1] * 6, "O5-R", yaw_deg=90.0)
+    assert len(base) == INPUT_DIM and len(ori) == ORI_INPUT_DIM
+    assert ori[:INPUT_DIM] == base                                          # additive: first 41 dims identical
+    assert abs(ori[41] - 1.0) < 1e-9 and abs(ori[42] - 0.0) < 1e-9          # sin90, cos90
+    ps = [count_params(m) for m in MatchedModels(orientation=True).build(0).values()]
+    assert max(ps) / min(ps) < 1.2
+    x = torch.randn(3, ORI_INPUT_DIM)
+    for m in MatchedModels(orientation=True).build(0).values():
+        assert m(x).shape == (3,)
+
+
 def test_object_features_shape_encoding() -> None:
     assert object_features("O0")[:2] == [1.0, 0.0]      # cylinder one-hot
     assert object_features("O4-S")[:2] == [0.0, 1.0]    # box one-hot

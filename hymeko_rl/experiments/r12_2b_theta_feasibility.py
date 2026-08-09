@@ -43,30 +43,43 @@ def _score(sig: Any) -> float:
     return (_K6_BONUS if sig.k6 else 0.0) - float(sig.dtz_mm)
 
 
-def _cem_theta(snap: Any, pop: int, iters: int, restarts: int, rng: np.random.Generator) -> dict[str, Any]:
-    """CEM over the 6-D certified θ-box from a certified handoff snap. Returns the best θ + its delivery signals."""
+def _entry(score: float, theta: list[float], sig: Any) -> dict[str, Any]:
+    return {"score": float(score), "theta": theta, "k6": bool(sig.k6), "dtz_mm": float(sig.dtz_mm),
+            "gap_closed": float(sig.gap_closed), "contact_lost_steps": int(sig.contact_lost_steps),
+            "safe": bool(sig.safe)}
+
+
+def _cem_search(snap: Any, pop: int, iters: int, restarts: int, rng: np.random.Generator,
+                keep: int = 1) -> "tuple[list[dict[str, Any]], int]":
+    """CEM over the 6-D certified θ-box from a certified handoff snap. Elites steer each iteration's Gaussian; ALL
+    evaluated θ are pooled and the top-``keep`` by score are returned (K6-first, then min dtz). Returns (topk, n_eval).
+    ``keep=1`` yields the single best (the feasibility probe); larger ``keep`` builds an orientation-aware θ bank."""
     dim = int(THETA_LO.shape[0])
-    best: dict[str, Any] = {"score": -math.inf}
+    pooled: list[tuple[float, list[float], Any]] = []
     n_eval = 0
     for _r in range(restarts):
         mu, sigma = np.full(dim, 0.5), np.full(dim, 0.35)               # unit-space Gaussian
         for _it in range(iters):
             z = np.clip(rng.normal(mu, sigma, size=(pop, dim)), 0.0, 1.0)
-            evals = []
+            iterev = []
             for zi in z:
                 sig = _delivery_signals(snap, _from01(zi))
                 n_eval += 1
                 s = _score(sig)
-                evals.append((s, zi, sig))
-                if s > best["score"]:
-                    best = {"score": s, "theta": _from01(zi).tolist(), "k6": bool(sig.k6),
-                            "dtz_mm": float(sig.dtz_mm), "gap_closed": float(sig.gap_closed),
-                            "contact_lost_steps": int(sig.contact_lost_steps), "safe": bool(sig.safe)}
-            evals.sort(key=lambda e: e[0], reverse=True)
-            elite = np.array([e[1] for e in evals[:max(2, pop // 4)]])
+                iterev.append((s, zi))
+                pooled.append((s, _from01(zi).tolist(), sig))
+            iterev.sort(key=lambda e: e[0], reverse=True)
+            elite = np.array([e[1] for e in iterev[:max(2, pop // 4)]])
             mu, sigma = elite.mean(0), elite.std(0) + 1e-3
-    best["n_eval"] = n_eval
-    return best
+    pooled.sort(key=lambda e: e[0], reverse=True)
+    return [_entry(*p) for p in pooled[:keep]], n_eval
+
+
+def _cem_theta(snap: Any, pop: int, iters: int, restarts: int, rng: np.random.Generator) -> dict[str, Any]:
+    """Single best θ from the CEM search (feasibility probe wrapper over :func:`_cem_search`)."""
+    top, n_eval = _cem_search(snap, pop, iters, restarts, rng, keep=1)
+    top[0]["n_eval"] = n_eval
+    return top[0]
 
 
 def _certified_handoff(rig: dict[str, Any], scen: Any, yaw: float, cfg: Any, conf: Any, obj: Any,

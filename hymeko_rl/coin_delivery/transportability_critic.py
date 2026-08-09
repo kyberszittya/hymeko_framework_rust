@@ -11,6 +11,7 @@ incidence connects them into hyperedges. Torch, CPU/MPS (no CUDA needed).
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -36,6 +37,12 @@ NODES: dict[str, list[int]] = {
 NODE_NAMES = list(NODES)
 INPUT_DIM = 41
 
+# orientation-aware variant (R12.2-B): +2 input dims [sin(yaw), cos(yaw)] appended to the OBJECT_STATE node's feature
+# slice (orientation IS object state), so a structured model routes it through the physical object↔contact↔target↔θ
+# edges via message passing. The incidence is UNCHANGED (still 10 nodes) ⇒ the default 41-D R12.1 path is bit-identical.
+ORI_INPUT_DIM = INPUT_DIM + 2
+ORI_NODES: dict[str, list[int]] = {**NODES, "object_state": [*NODES["object_state"], INPUT_DIM, INPUT_DIM + 1]}
+
 # task-derived contact hyperedges (physical interactions), as node-name tuples
 TASK_EDGES: list[tuple[str, ...]] = [
     ("left_arm", "left_contact", "object_state"),
@@ -50,6 +57,7 @@ _OBJECT_FEATURES = {  # shape_cyl, shape_box, radius, radius_y, mass_ratio
     "O1-L": [1.0, 0.0, 0.024, 0.024, 1.0],
     "O2-M": [1.0, 0.0, 0.020, 0.020, 2.0],
     "O4-S": [0.0, 1.0, 0.0177, 0.0177, 1.0],
+    "O5-R": [0.0, 1.0, 0.0194, 0.0162, 1.0],   # R12.2-B elongated rectangle (radius≠radius_y)
 }
 
 
@@ -118,11 +126,11 @@ def _mlp(sizes: list[int]) -> nn.Sequential:
 
 
 class MLPNet(nn.Module):
-    """A0 — flat MLP over the 41-D input."""
+    """A0 — flat MLP over the input (41-D by default; 43-D with the orientation feature appended)."""
 
-    def __init__(self, hidden: int = 96, depth: int = 3) -> None:
+    def __init__(self, hidden: int = 96, depth: int = 3, input_dim: int = INPUT_DIM) -> None:
         super().__init__()
-        self.net = _mlp([INPUT_DIM] + [hidden] * (depth - 1) + [1])
+        self.net = _mlp([input_dim] + [hidden] * (depth - 1) + [1])
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out: torch.Tensor = self.net(x)
@@ -135,21 +143,24 @@ class HypergraphNet(nn.Module):
     incident edge messages → residual) → CONCAT readout over all nodes → logit. Edge/update functions are SHARED
     across edges, so params depend only on ``node_dim/hidden/rounds``, NOT the incidence (only structure varies)."""
 
-    def __init__(self, incidence: list[tuple[int, ...]], node_dim: int = 28, hidden: int = 56, rounds: int = 2) -> None:
+    def __init__(self, incidence: list[tuple[int, ...]], node_dim: int = 28, hidden: int = 56, rounds: int = 2,
+                 nodes: "dict[str, list[int]] | None" = None) -> None:
         super().__init__()
         self.incidence = incidence
         self.rounds = rounds
-        n = len(NODE_NAMES)
-        self.node_enc = nn.ModuleList([_mlp([len(NODES[m]), node_dim]) for m in NODE_NAMES])
+        self.nodes = nodes if nodes is not None else NODES     # ORI_NODES extends object_state with [sin,cos] yaw
+        self.node_names = list(self.nodes)
+        n = len(self.node_names)
+        self.node_enc = nn.ModuleList([_mlp([len(self.nodes[m]), node_dim]) for m in self.node_names])
         self.edge_fn = nn.ModuleList([_mlp([2 * node_dim, hidden, node_dim]) for _ in range(rounds)])  # mean‖max
         self.upd_fn = nn.ModuleList([_mlp([2 * node_dim, node_dim]) for _ in range(rounds)])            # node‖msg
         self.readout = _mlp([n * node_dim, hidden, 1])                                                  # concat, per-node
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        h = [enc(x[:, NODES[m]]) for enc, m in zip(self.node_enc, NODE_NAMES)]
+        h = [enc(x[:, self.nodes[m]]) for enc, m in zip(self.node_enc, self.node_names)]
         for r in range(self.rounds):
-            agg = [torch.zeros_like(h[0]) for _ in NODE_NAMES]
-            cnt = [0] * len(NODE_NAMES)
+            agg = [torch.zeros_like(h[0]) for _ in self.node_names]
+            cnt = [0] * len(self.node_names)
             for e in self.incidence:
                 stack = torch.stack([h[v] for v in e], 0)
                 msg = self.edge_fn[r](torch.cat([stack.mean(0), stack.amax(0)], -1))   # mean‖max member pool
@@ -157,7 +168,7 @@ class HypergraphNet(nn.Module):
                     agg[v] = agg[v] + msg
                     cnt[v] += 1
             h = [self.upd_fn[r](torch.cat([h[v], agg[v] / cnt[v] if cnt[v] else agg[v]], -1)) + h[v]
-                 for v in range(len(NODE_NAMES))]
+                 for v in range(len(self.node_names))]
         out: torch.Tensor = self.readout(torch.cat(h, -1))
         return out.squeeze(-1)
 
@@ -176,16 +187,19 @@ class MatchedModels:
     hg_node_dim: int = 28
     hg_hidden: int = 56
     hg_rounds: int = 2
+    orientation: bool = False       # R12.2-B: 43-D input + object_state node carries [sin,cos] yaw (incidence unchanged)
 
     def _hg(self, incidence: list[tuple[int, ...]]) -> "HypergraphNet":
-        return HypergraphNet(incidence, self.hg_node_dim, self.hg_hidden, self.hg_rounds)
+        nodes = ORI_NODES if self.orientation else NODES
+        return HypergraphNet(incidence, self.hg_node_dim, self.hg_hidden, self.hg_rounds, nodes=nodes)
 
     def build(self, seed: int) -> dict[str, nn.Module]:
         torch.manual_seed(seed)
         rng = np.random.default_rng(seed)
         task = task_incidence()
+        in_dim = ORI_INPUT_DIM if self.orientation else INPUT_DIM
         return {
-            "A0_mlp": MLPNet(self.mlp_hidden, self.mlp_depth),
+            "A0_mlp": MLPNet(self.mlp_hidden, self.mlp_depth, input_dim=in_dim),
             "A1_random_sparse": self._hg(random_sparse_incidence(rng, len(task))),
             "A2_task_hsikan": self._hg(task),
             "A3_steiner_hsikan": self._hg(steiner_incidence()),
@@ -193,6 +207,13 @@ class MatchedModels:
         }
 
 
-def build_input_row(x: list[float], theta: list[float], handoff_family: str) -> list[float]:
-    """Assemble the 41-D input from a dataset row."""
-    return list(x) + list(theta) + object_features(handoff_family)
+def build_input_row(x: list[float], theta: list[float], handoff_family: str,
+                    yaw_deg: "float | None" = None) -> list[float]:
+    """Assemble the input from a dataset row: 41-D (x ++ θ ++ object-features) by default; 43-D with ``[sin, cos]`` of
+    the handoff yaw appended when ``yaw_deg`` is given (R12.2-B orientation feature, landing at indices 41,42 = the
+    ORI object_state node's orientation slice)."""
+    row = list(x) + list(theta) + object_features(handoff_family)
+    if yaw_deg is not None:
+        r = math.radians(yaw_deg)
+        row += [math.sin(r), math.cos(r)]
+    return row
