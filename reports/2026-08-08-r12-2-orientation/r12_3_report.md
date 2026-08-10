@@ -124,7 +124,64 @@ meaningfully distinguish the rotor hypothesis from a well-chosen relative-angle 
 an angle; rotations commute; a rectangle merely slides). So the next step is a **new physical benchmark, not more
 feature engineering.**
 
+### Official transition (the one sentence to carry forward)
+
+> **The planar substrate cannot meaningfully distinguish the rotor hypothesis from a symmetry-aware relative-angle
+> representation; a fair rotor test requires genuinely non-commutative 3-D manipulation physics.**
+
+This single line defends both directions at once: it protects the negative R12.1–R12.3 results (nothing was mis-claimed),
+and it establishes that moving to 3-D is **not an escape** from a null — it is *constructing the physical preconditions the
+hypothesis actually requires*. The rotor program begins for real only once the substrate forces SO(3).
+
 ## R12.4 — 3-D non-commutative manipulation substrate (next session; a new build, deliberately)
+
+**The next session opens on this spec, not on a model.** First a mechanical task that *forces* SO(3); the rotor program
+begins only after it passes.
+
+```
+R12.4A — Canonical SO(3) Manipulation Substrate
+
+Goal:
+  Construct a minimal 3-D manipulation task in which orientation
+  and angular dynamics are causally necessary for success.
+
+Before any neural architecture work, prove by state ablation:
+
+  position-only
+    <  x,v
+      <  x,v,R
+        <  x,v,R,ω
+
+or otherwise demonstrate that removing R / ω destroys
+predictive or control sufficiency.
+
+Required physics:
+  - non-axisymmetric object
+  - non-commuting rotations
+  - face → edge → corner contact transitions
+  - orientation-dependent stability
+  - angular velocity / momentum relevance
+  - target pose or mode sequence that cannot be solved
+    by translation alone
+
+HALT if orientation is not load-bearing.
+```
+
+Only after R12.4A **PASS**:
+
+```
+R12.4B  quaternion-as-coordinates
+        vs rotor-as-geometric-operator
+
+R12.4C  Rotor Spike
+
+R12.5   dynamic HyMeKo incidence
+
+R12.6   k-actor × n-critic tensor RL
+        + Steiner / block-design routing
+```
+
+The prose below expands each rung; the block above is the binding contract.
 
 **First deliverable is NOT a neural model** — it is a canonical 3-D mechanical task that is *provably* one where
 rotor/orientation dynamics are load-bearing. The substrate must by CONSTRUCTION force what planar could not:
