@@ -55,38 +55,58 @@ def _gen(fam: str, thetas: np.ndarray, theta_src: list[str], yaws: tuple[float, 
          n_seeds: int, cfg: Any, conf: Any, obj: Any) -> dict[str, Any]:
     t0 = time.perf_counter()
     rig = _rig(object_spec=variant(fam).object_spec)
-    rows: list[dict[str, Any]] = []
-    n_handoff = n_deliv = n_attempt = 0
-    cert_by_yaw: dict[float, list[int]] = {y: [0, 0] for y in yaws}
-    for yaw_deg in yaws:
-        yaw = math.radians(yaw_deg)
-        for sid in scenarios:
-            scen = scenario_by_id(sid)
-            for seed in range(n_seeds):
-                n_attempt += 1
-                cert_by_yaw[yaw_deg][1] += 1
-                h = reach_capture_at_yaw(rig, scen, seed, yaw, cfg, conf, obj)
-                if h.record is not None:
-                    continue
-                cert_by_yaw[yaw_deg][0] += 1
-                n_handoff += 1
-                post_yaw = math.degrees(object_yaw(h.snap))
-                x = [float(v) for v in np.asarray(h.x, np.float64)]
-                for ti, th in enumerate(thetas):
-                    s = _delivery_signals(h.snap, clip_theta(th))
-                    n_deliv += int(s.k6)
-                    rows.append({"handoff_family": fam, "scenario": sid, "seed": seed, "yaw_deg": yaw_deg,
-                                 "post_grasp_yaw_deg": round(post_yaw, 4), "theta_idx": ti, "theta_family": theta_src[ti],
-                                 "x": x, "theta": [float(t) for t in th], "k6": bool(s.k6), "dtz_mm": s.dtz_mm,
-                                 "gap_closed": s.gap_closed, "safe": bool(s.safe)})
-                print(f"[{fam} y{yaw_deg:4.0f}° {sid:20s} s{seed}] handoff#{n_handoff}: {len(thetas)}θ pos={n_deliv} "
-                      f"({time.perf_counter() - t0:.0f}s)", flush=True)
+    out_path = _OUT / f"orientation_dataset_{fam}.jsonl"
+    attempted_path = _OUT / f"orientation_dataset_{fam}.attempted.tsv"
+    # RESUME/EXTEND: skip EVERY prior attempt (certified→jsonl, uncertified→attempted sidecar); each new handoff is
+    # written+flushed immediately (checkpointed) so a crashed or seed-extended multi-hour run continues without
+    # re-acquiring anything already tried.
     _OUT.mkdir(parents=True, exist_ok=True)
-    with (_OUT / f"orientation_dataset_{fam}.jsonl").open("w") as f:
-        for r in rows:
-            f.write(json.dumps(r) + "\n")
-    return {"family": fam, "n_attempts": n_attempt, "n_handoffs": n_handoff, "n_pairs": len(rows),
-            "n_positive": n_deliv, "positive_rate": round(n_deliv / max(1, len(rows)), 4),
+    attempted: set[tuple[float, str, int]] = set()
+    n_prior = 0
+    if out_path.exists():
+        for ln in out_path.read_text().splitlines():
+            r = json.loads(ln)
+            attempted.add((float(r["yaw_deg"]), r["scenario"], int(r["seed"])))
+            n_prior += 1
+    if attempted_path.exists():
+        for ln in attempted_path.read_text().splitlines():
+            y, sid, sd = ln.split("\t")
+            attempted.add((float(y), sid, int(sd)))
+    n_handoff = n_deliv = n_attempt = n_pairs = 0
+    cert_by_yaw: dict[float, list[int]] = {y: [0, 0] for y in yaws}
+    with out_path.open("a") as f, attempted_path.open("a") as af:
+        for yaw_deg in yaws:
+            yaw = math.radians(yaw_deg)
+            for sid in scenarios:
+                scen = scenario_by_id(sid)
+                for seed in range(n_seeds):
+                    if (yaw_deg, sid, seed) in attempted:
+                        continue                              # already tried (resume/extend)
+                    af.write(f"{yaw_deg}\t{sid}\t{seed}\n")
+                    af.flush()
+                    n_attempt += 1
+                    cert_by_yaw[yaw_deg][1] += 1
+                    h = reach_capture_at_yaw(rig, scen, seed, yaw, cfg, conf, obj)
+                    if h.record is not None:
+                        continue
+                    cert_by_yaw[yaw_deg][0] += 1
+                    n_handoff += 1
+                    post_yaw = math.degrees(object_yaw(h.snap))
+                    x = [float(v) for v in np.asarray(h.x, np.float64)]
+                    for ti, th in enumerate(thetas):
+                        s = _delivery_signals(h.snap, clip_theta(th))
+                        n_deliv += int(s.k6)
+                        n_pairs += 1
+                        f.write(json.dumps({"handoff_family": fam, "scenario": sid, "seed": seed, "yaw_deg": yaw_deg,
+                                            "post_grasp_yaw_deg": round(post_yaw, 4), "theta_idx": ti,
+                                            "theta_family": theta_src[ti], "x": x, "theta": [float(t) for t in th],
+                                            "k6": bool(s.k6), "dtz_mm": s.dtz_mm, "gap_closed": s.gap_closed,
+                                            "safe": bool(s.safe)}) + "\n")
+                    f.flush()
+                    print(f"[{fam} y{yaw_deg:4.0f}° {sid:20s} s{seed}] handoff#{n_handoff}: {len(thetas)}θ pos={n_deliv} "
+                          f"({time.perf_counter() - t0:.0f}s)", flush=True)
+    return {"family": fam, "n_attempts": n_attempt, "n_new_handoffs": n_handoff, "n_new_pairs": n_pairs,
+            "n_new_positive": n_deliv, "n_prior_pairs": n_prior, "n_total_pairs": n_prior + n_pairs,
             "cert_by_yaw": {y: cert_by_yaw[y] for y in yaws}, "wall_s": round(time.perf_counter() - t0, 1)}
 
 
@@ -103,9 +123,10 @@ def main() -> int:
     meta = _gen(fam, thetas, theta_src, yaws, scenarios, n_seeds, cfg, conf, obj)
     (_OUT / f"orientation_dataset_meta_{fam}.json").write_text(json.dumps(meta, indent=1))
     cert = {y: f"{c[0]}/{c[1]}" for y, c in meta["cert_by_yaw"].items()}
-    print(f"\nR12.2-A2 DONE [{fam}]: {meta['n_pairs']} pairs from {meta['n_handoffs']}/{meta['n_attempts']} certified "
-          f"handoffs, {round(meta['positive_rate'] * 100)}% positive, cert-by-yaw {cert}, "
-          f"{meta['wall_s'] / 60:.1f} min", flush=True)
+    pr = round(100 * meta["n_new_positive"] / max(1, meta["n_new_pairs"]))
+    print(f"\nR12.2-A2 DONE [{fam}]: +{meta['n_new_pairs']} new pairs ({meta['n_total_pairs']} total) from "
+          f"{meta['n_new_handoffs']}/{meta['n_attempts']} new certified handoffs, {pr}% positive (new), cert-by-yaw "
+          f"{cert}, {meta['wall_s'] / 60:.1f} min", flush=True)
     return 0
 
 
