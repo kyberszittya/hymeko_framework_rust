@@ -1,0 +1,35 @@
+{
+ "family": "O5-R",
+ "epochs": 80,
+ "n_seeds": 12,
+ "per_encoding": {
+  "none": {
+   "auroc": 0.681,
+   "auroc_ci": 0.037
+  },
+  "raw": {
+   "auroc": 0.677,
+   "auroc_ci": 0.037
+  },
+  "sincos": {
+   "auroc": 0.682,
+   "auroc_ci": 0.037
+  },
+  "sincos2": {
+   "auroc": 0.684,
+   "auroc_ci": 0.041
+  },
+  "quat": {
+   "auroc": 0.664,
+   "auroc_ci": 0.036
+  },
+  "rotor": {
+   "auroc": 0.664,
+   "auroc_ci": 0.036
+  }
+ },
+ "quat_minus_sincos": -0.018,
+ "quat_minus_sincos_ci": 0.014,
+ "sincos2_minus_sincos": 0.002,
+ "sincos2_minus_sincos_ci": 0.029
+}
