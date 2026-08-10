@@ -66,15 +66,31 @@ did not lift the critic above chance.** 73 positives with ~3 delivering θ per h
 R12.1 scale (2234 positives, 26%) at which this critic learned (AUROC ~0.85). The K6 label is too sparse to learn a
 handoff→θ ranker from, at bounded acquisition cost.
 
-## Next (decision, not assumed)
+## Dense-signal ranker (dtz regression) — also underpowered
 
-- **Dense-signal ranker (cheap, recommended first).** Train the critic to regress **dtz** (how close each θ gets — a
-  DENSE target present on all 1300 pairs) instead of the sparse binary K6, then rank θ by predicted dtz. This gives the
-  critic 1300 informative examples instead of 73, so it can plausibly learn above chance and make Δ_HSiKAN − Δ_MLP
-  resolvable — WITHOUT more acquisition. ~20 min (ranker change + re-run). Directly attacks the sparsity root cause.
-- **R12.1-scale acquisition** (many more handoffs → thousands of positives): the brute-force powered test, but ~hours
-  of acquisition (R12.1's 8484 pairs was itself borderline).
-- **Accept the feasibility GO** and defer the modeling/representation comparison to a dedicated larger run.
+Per the user's steer, converted the ranker to regress the **dense normalized dtz** (present on all 1300 pairs) instead
+of the sparse binary K6, ranking θ by predicted dtz. This gives the critic 1300 informative examples instead of 73.
+Result (12 split-seeds): AUROC **~0.51–0.57** — marginally above the K6-classifier's chance but still near it; Δ_AUROC
+(orient) noisy with mixed signs; interaction **Δ_task-HSiKAN − Δ_MLP = −0.063 ± 0.128 → still INCONCLUSIVE**.
+
+**So both cheap levers — widen the bank (θ-density) and densify the target (dtz vs K6) — failed, for the SAME reason:
+the bottleneck is not label sparsity, it is the number of HANDOFFS.** With only 20 certified handoffs (~14 train / 6
+held-out), the held-out metric is too high-variance to resolve a Δ of order 0.03–0.06, whatever the target. (A
+single-seed run can hit AUROC 0.78; the 12-seed mean sits near chance — that variance IS the diagnosis.) The cheap
+in-place levers are exhausted.
+
+## Verdict + next (decision, not assumed)
+
+`R12_2B_FEASIBILITY_GO_BUT_RANKER_UNDERPOWERED` stands, now with the cause pinned: **too few handoffs**. The
+durable result is the **feasibility GO** — the rectangle's delivery has genuine orientation-specific θ structure. The
+modeling question (does a structured model exploit it better than flat) is **not resolvable at 20 handoffs** and no
+θ-density / target-density trick fixes it.
+
+- **R12.1-scale acquisition** — the only real path to a powered interaction test: many more handoffs (more scenarios ×
+  seeds; the bank already spans yaws) → the held-out set is large enough to resolve Δ_HSiKAN − Δ_MLP. ~hours of
+  acquisition (R12.1's 8484-pair scale was itself borderline).
+- **Accept the feasibility GO** and defer the modeling/representation comparison (raw-yaw / sin-cos / quaternion / rotor
+  — R12.3) to a dedicated larger effort. Clean, fully-committed state.
 
 ## Provenance
 

@@ -2,8 +2,10 @@
 
 On the orientation-varying dataset (`r12_2a_orientation_dataset` fed by the orientation-aware bank), train each of
 MLP / random-sparse / task-HSiKAN / Steiner / degree-matched WITH and WITHOUT the orientation feature ([sin,cos] yaw,
-appended to the object_state node for the HSiKANs). The metric that matters is the per-handoff top-1 K6 (rank a
-handoff's candidate θ by predicted P, take top-1, read its K6), and the quantity of interest is the INTERACTION
+appended to the object_state node for the HSiKANs). The critic REGRESSES the dense normalized dtz (present on every
+pair — the K6 label is too sparse ~6% to learn a ranker from) and ranks a handoff's candidate θ by predicted dtz. The
+metric that matters is the per-handoff top-1 K6 (take the top-ranked θ, read its K6) plus AUROC of (−predicted dtz vs
+K6); the quantity of interest is the INTERACTION
 
     Δ_arch = top1K6(with orientation) − top1K6(without) ,   then  Δ_task-HSiKAN − Δ_MLP .
 
@@ -21,22 +23,43 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from torch import nn
 
 from hymeko_rl.coin_delivery.transportability_critic import MatchedModels, build_input_row, count_params
-from hymeko_rl.experiments.r12_hsikan1_ablation import _auroc, _train
+from hymeko_rl.experiments.r12_hsikan1_ablation import _auroc
 
 _OUT = Path("reports/2026-08-08-r12-2-orientation")
+_DTZ_SCALE = 200.0        # mm cap for the normalized dense regression target (dtz in [0, 1], low = delivered)
 
 
 def _load(fam: str) -> list[dict]:
     return [json.loads(ln) for ln in (_OUT / f"orientation_dataset_{fam}.jsonl").read_text().splitlines()]
 
 
-def _matrix(rows: list[dict], orientation: bool) -> "tuple[np.ndarray, np.ndarray]":
+def _matrix(rows: list[dict], orientation: bool) -> "tuple[np.ndarray, np.ndarray, np.ndarray]":
+    """X, the K6 eval label, and the DENSE dtz regression target (present on ALL pairs, unlike the ~6% K6 positives —
+    this is what lets the critic learn above chance at this data scale)."""
     X = np.asarray([build_input_row(r["x"], r["theta"], r["handoff_family"],
                                     r["post_grasp_yaw_deg"] if orientation else None) for r in rows], np.float32)
     y = np.asarray([float(r["k6"]) for r in rows], np.float32)
-    return X, y
+    dtz = np.asarray([min(float(r["dtz_mm"]), _DTZ_SCALE) / _DTZ_SCALE for r in rows], np.float32)
+    return X, y, dtz
+
+
+def _train_reg(model: nn.Module, Xtr: torch.Tensor, target: torch.Tensor, epochs: int, dev: str) -> None:
+    """Regress the dense normalized-dtz target (MSE). The critic then ranks θ by predicted dtz (ascending)."""
+    opt = torch.optim.Adam(model.parameters(), lr=2e-3, weight_decay=1e-4)
+    lossf = nn.MSELoss()
+    model.train()
+    n = len(target)
+    for _ep in range(epochs):
+        perm = torch.randperm(n, device=dev)
+        for b in range(0, n, 256):
+            bi = perm[b:b + 256]
+            opt.zero_grad()
+            loss = lossf(model(Xtr[bi]), target[bi])
+            loss.backward()
+            opt.step()
 
 
 def _handoff_key(r: dict) -> tuple:
@@ -83,20 +106,20 @@ def _run_seed(rows: list[dict], seed: int, epochs: int, dev: str) -> dict:
     assert not (tk & ek), f"LEAKAGE: {len(tk & ek)} handoffs in both splits"
     out: dict = {}
     for orientation in (False, True):
-        X, y = _matrix(rows, orientation)
+        X, y, dtz = _matrix(rows, orientation)
         mu, sd = X[tr].mean(0), X[tr].std(0) + 1e-6
         Xn = (X - mu) / sd
-        Xtr, ytr = torch.tensor(Xn[tr], device=dev), torch.tensor(y[tr], device=dev)
-        pos_w = float((y[tr] == 0).sum() / max(1, (y[tr] == 1).sum()))
+        Xtr, dtz_tr = torch.tensor(Xn[tr], device=dev), torch.tensor(dtz[tr], device=dev)
         for name, model in MatchedModels(orientation=orientation).build(seed).items():
             model.to(dev)
-            _train(model, Xtr, ytr, epochs, pos_w, dev)
+            _train_reg(model, Xtr, dtz_tr, epochs, dev)                 # regress dense dtz
             model.eval()
             with torch.no_grad():
-                p_te = model(torch.tensor(Xn[te], device=dev)).cpu().numpy()
-            top1, oracle = _top1_k6(rows, te, p_te)
+                pred_dtz = model(torch.tensor(Xn[te], device=dev)).cpu().numpy()
+            score = -pred_dtz                                           # low predicted dtz ⇒ high rank
+            top1, oracle = _top1_k6(rows, te, score)
             out.setdefault(name, {})["with" if orientation else "without"] = top1
-            out[name]["auroc_" + ("with" if orientation else "without")] = _auroc(y[te], p_te)
+            out[name]["auroc_" + ("with" if orientation else "without")] = _auroc(y[te], score)
             out[name]["params"] = count_params(model)
             out[name]["oracle"] = oracle
     return out
