@@ -66,10 +66,39 @@ artifact (rel_sym is a well-conditioned sin/cos feature). The larger geometric s
 static ranker can't reach: **contact-relative frames**, **3-D rotor composition** (SO(3), a tumbling object), or the
 **dynamic Rotor-Spike** (R12.4).
 
-## Next (decision, not assumed)
-- **R12.3B-contacts** — add object↔left/right-contact relative angles (needs FK from the arm joints in the descriptor)
-  to see if the contact-relative frames carry more than the transport-relative one. Cheap on the same dataset.
-- **R12.3C — rotor-aware structured critic** — wire rel_sym (+ contact-relative) into the HSiKAN's object node/edges and
-  test if STRUCTURE exploits the small relative signal better than flat. (Given the signal is ~0.017, likely also small.)
-- **R12.4 — Rotor-Spike / 3-D** — the genuine rotor-composition advantage needs SO(3); the static planar substrate has
-  now been characterized (small relative-geometry signal, no clean structural win).
+## R12.3B-contacts — object↔contact relative frames (last planar control)
+
+The one relation not yet tested: the object's orientation relative to the CONTACT frames. Left/right contact bearings
+computed from the arm joints `q[0:4]` via analytic 2R FK (`PlanarArm2R.link_points`, verified: tips ~30 mm from the coin
+at bearings ~122°/−120°, matching the straddle), π-symmetry-folded where they involve object yaw. Same MLP / dataset /
+split / seeds / budget. `b_contacts.json`.
+
+| encoding | AUROC (24 seeds) | Δ vs none (paired) |
+|---|---|---|
+| none | 0.685 ± 0.033 | — |
+| rel_sym (transport-relative) | 0.711 ± 0.031 | +0.027 ± 0.017 (CI-excl-0) |
+| contacts (object↔contact + contact↔transport) | 0.696 ± 0.033 | +0.011 ± 0.020 (incl 0) |
+| rel_sym + contacts | 0.713 ± 0.033 | +0.028 ± 0.023 |
+
+`contacts − rel_sym = −0.015 ± 0.018` (incl 0). Contact-relative frames add **no more** than the transport-relative
+whisper: `contacts` alone is weaker (+0.011, not significant), and stacking them onto rel_sym gives no lift
+(+0.028 ≈ +0.027). No contact jump ⇒ no structure test warranted (closure rule).
+
+## CLOSURE — `R12_3_PLANAR_RELATIVE_GEOMETRY_SMALL_SIGNAL_ONLY`
+
+The **planar static representation rung is closed**. Summary across A + B + B-contacts:
+- **Encoding is neutral** (A): raw/sin-cos/quaternion/rotor all ≈; quat==rotor; no encoding beats none.
+- **A small geometric signal exists** (B): the symmetry-aware **transport-relative** orientation (object axis vs
+  transport, mod the rectangle's 180°) is the only feature that clears none — **~+0.02–0.03 AUROC**, real but small.
+- **Contact-relative frames add nothing more** (B-contacts): +0.011 (incl 0), no lift over rel_sym.
+- **No clean structural win** anywhere; no planar HSiKAN-C warranted.
+
+⇒ On this planar static substrate, relative geometry is a *real but small* signal — too small to carry the big
+structural claim. The genuine rotor program moves to **3-D / SO(3)** (R12.4), where the honest preconditions hold:
+a non-circular **tumbling / edge-contact** object where rotations do NOT commute, orientation genuinely reshapes the
+contact, there are real **face→edge→corner** mode transitions, and ω / angular momentum matter — the setting where a
+rotor is not merely another encoding of an angle, and where the **Rotor-Spike** (large relative-rotor change,
+contact-frame transition, angular-velocity reversal, hybrid-mode switch) finally has genuine events to fire on.
+
+**Next program (3-D):** R12.4A SO(3) orientation benchmark · R12.4B relative rotor geometry · R12.4C Rotor-Spike ·
+R12.5 dynamic HyMeKo incidence · R12.6 k-actor × n-critic tensor.
