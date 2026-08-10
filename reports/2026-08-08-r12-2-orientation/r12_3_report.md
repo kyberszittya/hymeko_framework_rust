@@ -102,3 +102,54 @@ contact-frame transition, angular-velocity reversal, hybrid-mode switch) finally
 
 **Next program (3-D):** R12.4A SO(3) orientation benchmark · R12.4B relative rotor geometry · R12.4C Rotor-Spike ·
 R12.5 dynamic HyMeKo incidence · R12.6 k-actor × n-critic tensor.
+
+---
+
+## R12 PLANAR ARC — CLOSED (banked, do not reopen)
+
+The whole planar line is characterized; every important confound was removed and the verdict is clean:
+
+```
+STATIC INCIDENCE (R12.1):  structure is USED but gives no flat-baseline advantage
+PLANAR ORIENTATION (R12.2): orientation-specific physics EXISTS (feasibility GO)
+ABSOLUTE ORIENTATION:       mostly REDUNDANT with the handoff descriptor
+RELATIVE GEOMETRY (R12.3B): a small REAL signal (symmetry-aware transport-relative, ~+0.02-0.03 AUROC)
+ENCODING (R12.3A):          sin-cos ≈ quaternion ≈ rotor in SO(2)
+CONTACT-RELATIVE (B-cont):  no additional useful signal
+VERDICT: the planar static substrate is INSUFFICIENT for a non-trivial rotor claim
+```
+
+**The key result is NOT "the rotor did not work" — it is the opposite and more correct:** *a planar substrate cannot
+meaningfully distinguish the rotor hypothesis from a well-chosen relative-angle representation* (in SO(2) a rotor **is**
+an angle; rotations commute; a rectangle merely slides). So the next step is a **new physical benchmark, not more
+feature engineering.**
+
+## R12.4 — 3-D non-commutative manipulation substrate (next session; a new build, deliberately)
+
+**First deliverable is NOT a neural model** — it is a canonical 3-D mechanical task that is *provably* one where
+rotor/orientation dynamics are load-bearing. The substrate must by CONSTRUCTION force what planar could not:
+real SO(3) orientation · non-commuting rotations (R₂R₁ ≠ R₁R₂) · a non-circular / non-spherical object · face/edge/corner
+contact · orientation-dependent stability · ω (and ideally angular momentum) · a goal that is NOT reachable by the same
+translation from a different orientation. Canonical example: a **box or wedge** whose task is
+`initial pose → face contact → controlled tipping → edge-supported rotation → settle into target pose`.
+
+- **R12.4A — the benchmark itself (FIRST GATE).** Not yet rotor-vs-quaternion. First: *is there a physically stable
+  task where orientation and rotation-sequence are load-bearing?* Control by state ablation on the SAME task:
+  `position-only` vs `x,v` vs `x,v,R` vs `x,v,R,ω`. **If adding R and ω does not matter, the benchmark is wrong** —
+  rebuild it. This gate must pass before any representation question.
+- **R12.4B — quaternion vs rotor (only if orientation is load-bearing).** Guard: a plain quaternion and a rotor
+  coefficient vector still carry near-identical info. The genuine rotor hypothesis needs the rotor as a GEOMETRIC
+  OPERATOR — relative rotor composition, frame-to-frame transforms, geometric product, bivector-plane info, explicit
+  rotor ACTION on the vector/contact features — i.e. `quaternion-as-coordinates` vs `rotor-as-operator`, not
+  `4 floats vs 4 other floats`.
+- **R12.4C — Rotor-Spike.** Event-driven (not per-timestep): face→edge, edge→corner, contact-normal crosses the object
+  principal axis, large ΔR, ω sign reversal, angular-momentum redistribution, mode switch, unexpected rotational-energy
+  jump. Payload: relative-rotor delta, contact-frame transition, angular-momentum delta, structural surprise,
+  confidence change, hybrid-mode transition. (Highway-Spike-like.)
+- **R12.5 — dynamic HyMeKo incidence.** The hypergraph is no longer static: face-contact → one incidence pattern,
+  edge-contact → another, corner/tumbling → another; the structure FOLLOWS the physical mode. A much stronger test than
+  R12.1's fixed-task-graph-vs-random-sparse.
+- **R12.6 — k-actor × n-critic tensor.** Actors: push / tip / rotate / catch / stabilize / release. Critics:
+  translation / orientation / contact-stability / angular-momentum / energy / safety / target-pose. Then
+  `Q_{a,c,p,h,μ,e}(s)` genuinely has things to separate. **Steiner returns here as a routing / incidence architecture**
+  (not the R12.1 static-ranker role where it scored zero).
