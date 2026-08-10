@@ -53,12 +53,28 @@ The **feasibility GO is the durable result**: the rectangle's delivery has a gen
 resolvable**: at 52 positives the critic is near chance, so we cannot say whether a structured model exploits orientation
 better than flat. Reporting "structure is a shared lever" here would be a false negative from an underpowered test.
 
+## Widen-bank attempt (v3) — improved the dataset, did NOT power the ranker
+
+Per the user's steer ("widen the bank first"), re-ran the CEM on **2 certified handoffs per (yaw×target) cell** (was 1),
+keep-12 (was 8): bank **46 → 65 θ**, and the yaw90 coverage jumped **5 → 14** (well-balanced now, {0:18,30:16,60:17,
+90:14}). Regenerated the dataset: **1300 pairs, 73 positives (+40% over v1's 52)**, yaw90 no longer starved.
+
+Ranker on the v3 dataset (12 split-seeds): AUROC still **~0.44–0.49 (at/below chance)**; Δ_AUROC(orient) small/noisy
+(+0.01..+0.05); interaction **Δ_task-HSiKAN − Δ_MLP = +0.034 ± 0.080 → still INCONCLUSIVE**. (A first re-run hit a
+stale-file race — it read the v1 jsonl mid-write; corrected.) **Conclusion: widening the bank enriched the dataset but
+did not lift the critic above chance.** 73 positives with ~3 delivering θ per handoff (of 65) is still ~30× below the
+R12.1 scale (2234 positives, 26%) at which this critic learned (AUROC ~0.85). The K6 label is too sparse to learn a
+handoff→θ ranker from, at bounded acquisition cost.
+
 ## Next (decision, not assumed)
 
-- **Scale the dataset** for a powered interaction test: more handoffs (more scenarios × seeds; the bank already spans
-  yaws) → thousands of pairs / hundreds of positives, like R12.1's 8484. Then the critic can learn (AUROC ≫ chance) and
-  Δ_HSiKAN − Δ_MLP becomes resolvable. ~1–2 h of dataset compute.
-- **Or** accept the feasibility result and defer the ranker/representation comparison to a dedicated larger run.
+- **Dense-signal ranker (cheap, recommended first).** Train the critic to regress **dtz** (how close each θ gets — a
+  DENSE target present on all 1300 pairs) instead of the sparse binary K6, then rank θ by predicted dtz. This gives the
+  critic 1300 informative examples instead of 73, so it can plausibly learn above chance and make Δ_HSiKAN − Δ_MLP
+  resolvable — WITHOUT more acquisition. ~20 min (ranker change + re-run). Directly attacks the sparsity root cause.
+- **R12.1-scale acquisition** (many more handoffs → thousands of positives): the brute-force powered test, but ~hours
+  of acquisition (R12.1's 8484 pairs was itself borderline).
+- **Accept the feasibility GO** and defer the modeling/representation comparison to a dedicated larger run.
 
 ## Provenance
 

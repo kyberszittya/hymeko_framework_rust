@@ -11,6 +11,7 @@ Run:  python -m hymeko_rl.experiments.r12_2b_orientation_bank [family] [keep] [p
 from __future__ import annotations
 
 import json
+import math
 import sys
 import time
 from pathlib import Path
@@ -21,8 +22,9 @@ import numpy as np
 from hymeko_rl.coin_delivery.delivery_bc.dataset import bc_context, scenario_by_id
 from hymeko_rl.coin_delivery.delivery_bc.models import THETA_HI, THETA_LO
 from hymeko_rl.coin_delivery.object_curriculum import variant
+from hymeko_rl.coin_delivery.r12_orientation import reach_capture_at_yaw
 from hymeko_rl.experiments.coin_kinetic_capture_exploration_audit import _rig
-from hymeko_rl.experiments.r12_2b_theta_feasibility import _TARGETS, _YAWS, _cem_search, _certified_handoff
+from hymeko_rl.experiments.r12_2b_theta_feasibility import _TARGETS, _YAWS, _cem_search
 
 _OUT = Path("reports/2026-08-08-r12-2-orientation")
 
@@ -39,39 +41,46 @@ def _dedup(entries: list[dict[str, Any]], tol: float) -> list[dict[str, Any]]:
 
 def main() -> int:
     fam = sys.argv[1] if len(sys.argv) > 1 else "O5-R"
-    keep = int(sys.argv[2]) if len(sys.argv) > 2 else 8
+    keep = int(sys.argv[2]) if len(sys.argv) > 2 else 12
     pop = int(sys.argv[3]) if len(sys.argv) > 3 else 14
     iters = int(sys.argv[4]) if len(sys.argv) > 4 else 5
     restarts = int(sys.argv[5]) if len(sys.argv) > 5 else 3
     max_seeds = int(sys.argv[6]) if len(sys.argv) > 6 else 6
+    n_bank_seeds = int(sys.argv[7]) if len(sys.argv) > 7 else 2   # CEM on this many certified handoffs per (yaw,target)
     cfg, conf, obj = bc_context()
     rig = _rig(object_spec=variant(fam).object_spec)
     t0 = time.perf_counter()
-    print(f"R12.2-B orientation-aware bank [{fam}]: {len(_YAWS)}×{len(_TARGETS)} cells, keep {keep} K6 θ/cell", flush=True)
+    print(f"R12.2-B orientation-aware bank [{fam}]: {len(_YAWS)}×{len(_TARGETS)} cells × {n_bank_seeds} handoff-seeds, "
+          f"keep {keep} K6 θ/handoff", flush=True)
 
     raw: list[dict[str, Any]] = []
     for yaw in _YAWS:
         for ti, sid in enumerate(_TARGETS):
-            snap, _seed = _certified_handoff(rig, scenario_by_id(sid), yaw, cfg, conf, obj, max_seeds)
-            if snap is None:
-                print(f"  [y{yaw:4.0f}° {sid:20s}] no certified handoff", flush=True)
-                continue
-            rng = np.random.default_rng(int(yaw) * 100 + ti)
-            top, n_eval = _cem_search(snap, pop, iters, restarts, rng, keep=keep)
-            k6s = [t for t in top if t["k6"]]
-            chosen = k6s if k6s else top[:2]              # delivering θ; if the cell can't deliver, its 2 nearest
-            for t in chosen:
-                raw.append({"theta": t["theta"], "tuning_yaw": yaw, "target": sid, "k6": bool(t["k6"]),
-                            "dtz_mm": round(float(t["dtz_mm"]), 1)})
-            print(f"  [y{yaw:4.0f}° {sid:20s}] kept {len(chosen)} (K6={len(k6s)}) of {keep} "
-                  f"({n_eval} evals, {time.perf_counter() - t0:.0f}s)", flush=True)
+            scen = scenario_by_id(sid)
+            n_done = 0
+            for seed in range(max_seeds):
+                if n_done >= n_bank_seeds:
+                    break
+                h = reach_capture_at_yaw(rig, scen, seed, math.radians(yaw), cfg, conf, obj)
+                if h.record is not None:
+                    continue                                       # skip uncertified — study delivery where a grasp exists
+                rng = np.random.default_rng(int(yaw) * 1000 + ti * 100 + seed)
+                top, n_eval = _cem_search(h.snap, pop, iters, restarts, rng, keep=keep)
+                k6s = [t for t in top if t["k6"]]
+                chosen = k6s if k6s else top[:2]                   # delivering θ; if the cell can't deliver, its 2 nearest
+                for t in chosen:
+                    raw.append({"theta": t["theta"], "tuning_yaw": yaw, "target": sid, "seed": seed, "k6": bool(t["k6"]),
+                                "dtz_mm": round(float(t["dtz_mm"]), 1)})
+                n_done += 1
+                print(f"  [y{yaw:4.0f}° {sid:20s} s{seed}] kept {len(chosen)} (K6={len(k6s)}) of {keep} "
+                      f"({n_eval} evals, {time.perf_counter() - t0:.0f}s)", flush=True)
 
     box_diag = float(np.linalg.norm(THETA_HI - THETA_LO))
     bank = _dedup(raw, 0.03 * box_diag)                   # 3%-of-box distinctness
     by_yaw = {int(y): sum(1 for b in bank if b["tuning_yaw"] == y) for y in _YAWS}
     n_k6 = sum(1 for b in bank if b["k6"])
     summary = {"family": fam, "n_theta": len(bank), "n_k6": n_k6, "by_tuning_yaw": by_yaw,
-               "keep": keep, "cem": {"pop": pop, "iters": iters, "restarts": restarts},
+               "keep": keep, "n_bank_seeds": n_bank_seeds, "cem": {"pop": pop, "iters": iters, "restarts": restarts},
                "thetas": [b["theta"] for b in bank], "provenance": bank, "wall_s": round(time.perf_counter() - t0, 1)}
     _OUT.mkdir(parents=True, exist_ok=True)
     (_OUT / f"orientation_bank_{fam}.json").write_text(json.dumps(summary, indent=1))
