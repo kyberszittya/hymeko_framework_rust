@@ -3,8 +3,14 @@
 **Date:** 2026-08-10 · **Branch:** `feature/r11-4a-target-conditioned-delivery-teacher`
 **Verdict:** `R12_2B_FEASIBILITY_GO_BUT_RANKER_UNDERPOWERED` — the physics has a real orientation×θ interaction
 (feasibility GO), but the ranker test on the bounded orientation-varying dataset cannot resolve whether a structured
-model exploits it: the critic is near chance on the thin data, so the interaction Δ_task-HSiKAN − Δ_MLP = +0.013±0.081
-is **inconclusive**. This is a power limit, NOT a "structure doesn't help" result.
+model exploits it: the critic is near chance, so the interaction Δ_task-HSiKAN − Δ_MLP is **inconclusive** (a power
+limit — too few handoffs — NOT a "structure doesn't help" result).
+
+**BANKED (user decision, 2026-08-10):** R12.2-B is closed on the durable **feasibility GO**. The structure-vs-flat
+ranker interaction and the orientation-representation comparison (raw-yaw / sin-cos / quaternion / rotor — **R12.3**) are
+deferred to a dedicated R12.1-scale acquisition effort; no cheap in-place lever powers them (widen-bank and dense-dtz
+both confirmed the bottleneck is handoff count). The orientation-aware infrastructure (adapter, bank, dataset, critic,
+ranker) is committed and ready to re-run at scale when that effort is funded.
 
 ## The chain
 
