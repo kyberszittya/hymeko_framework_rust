@@ -6,11 +6,12 @@
 model exploits it: the critic is near chance, so the interaction Δ_task-HSiKAN − Δ_MLP is **inconclusive** (a power
 limit — too few handoffs — NOT a "structure doesn't help" result).
 
-**BANKED (user decision, 2026-08-10):** R12.2-B is closed on the durable **feasibility GO**. The structure-vs-flat
-ranker interaction and the orientation-representation comparison (raw-yaw / sin-cos / quaternion / rotor — **R12.3**) are
-deferred to a dedicated R12.1-scale acquisition effort; no cheap in-place lever powers them (widen-bank and dense-dtz
-both confirmed the bottleneck is handoff count). The orientation-aware infrastructure (adapter, bank, dataset, critic,
-ranker) is committed and ready to re-run at scale when that effort is funded.
+**POWERED UPDATE (2026-08-10):** the acquisition WAS scaled (20 → **76 handoffs**, ~25 held-out), which resolved the
+power problem: the critic now learns (**AUROC ~0.67**, was ~0.46–0.53 at chance) and the interaction CI halved. Powered
+verdict — **with a sin-cos orientation encoding, explicit orientation gives NO model (flat or structured) a meaningful
+ranking advantage** (Δ_AUROC(orient) ~0 for all; interaction Δ_task-HSiKAN − Δ_MLP = **+0.013 ± 0.045**, CI includes 0).
+This is now a real (near-null) measurement, not an underpowered one. It is the clean **baseline for R12.3**: does a
+quaternion/rotor orientation encoding beat sin-cos on the same powered dataset? See the "Powered test" section below.
 
 ## The chain
 
@@ -97,6 +98,42 @@ modeling question (does a structured model exploit it better than flat) is **not
   acquisition (R12.1's 8484-pair scale was itself borderline).
 - **Accept the feasibility GO** and defer the modeling/representation comparison (raw-yaw / sin-cos / quaternion / rotor
   — R12.3) to a dedicated larger effort. Clean, fully-committed state.
+
+## Powered test (76 handoffs) — the resolving run
+
+Per "mehet", scaled the acquisition on the diagnosed lever (handoffs). Made the dataset generator **checkpointed +
+resumable** (per-handoff flush + an `attempted.tsv` sidecar) so the ~1 h run was safe, and **extended** the v3 base
+(reused its 20 handoffs, added seeds 3–11 on the same 3 targets × 4 yaws with the existing 65-θ bank). Result:
+**4940 pairs, 249 positives, 76 handoffs** (was 20), now yaw-balanced (yaw90: 5 → 27 handoffs, 50 positives).
+
+Ranker (dtz-regression, 12 split-seeds, stratified handoff split, ~25 held-out):
+
+| model | AUROC without→with | Δ_AUROC(orient) |
+|---|---|---|
+| A0 MLP | 0.669→0.667 | −0.002 ± 0.037 |
+| A1 random-sparse | 0.656→0.666 | +0.010 ± 0.032 |
+| A2 task-HSiKAN | 0.670→0.681 | +0.011 ± 0.020 |
+| A3 Steiner | 0.669→0.656 | −0.013 ± 0.048 |
+| A3c degree-matched | 0.653→0.659 | +0.006 ± 0.024 |
+
+**Interaction Δ_task-HSiKAN − Δ_MLP = +0.013 ± 0.045** (CI includes 0).
+
+**Findings:**
+1. **Powering worked.** AUROC jumped from ~0.46–0.53 (chance, at 20 handoffs) to **~0.67** — the critic now learns the
+   transportability ranking. The underpowering was, as diagnosed, purely handoff count. The interaction CI halved
+   (±0.081 → ±0.045) as expected with ~4× the held-out units.
+2. **A sin-cos orientation feature adds ~nothing** — Δ_AUROC(orient) ≈ 0 for *every* model. Since the flat MLP also gets
+   sin-cos and also gains ~0, this is not a wiring failure of the HSiKAN's orientation node: the handoff descriptor
+   (contact geometry) + θ already carry the predictive signal, so explicit sin-cos yaw is redundant.
+3. **Structure ≈ flat on orientation** — the interaction is a tight near-zero. At this (now-learnable) scale, the
+   physical contact-hypergraph extracts no more from orientation than a flat model. (Consistent with R12.1's static-
+   ranker null — structure doesn't beat flat here either.)
+
+**This is a genuine powered result, not an underpowered one.** It does NOT prove orientation is irrelevant to the
+*physics* (the feasibility GO stands — orientation-specific θ exist); it shows a **sin-cos encoding + this structure**
+don't turn that into ranker skill. That is exactly the **R12.3 baseline**: swap the orientation encoding to
+**quaternion / rotor** on this same powered dataset (no new acquisition) and test whether a richer geometric
+representation beats sin-cos. Now well-posed — the ranker is learnable and sin-cos is the measured baseline.
 
 ## Provenance
 
