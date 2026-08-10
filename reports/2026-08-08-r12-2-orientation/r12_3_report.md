@@ -37,6 +37,39 @@ R12.3B tests the substantive geometric hypothesis that survives in 2-D: **do REL
 direction, object vs contact frames) carry ranking signal that ABSOLUTE yaw does not?** The full rotor-vs-scalar test
 is deferred to a 3-D orientation substrate (a later rung).
 
-Ablation (same dataset/split/seeds/budget): B0 base · B1 +absolute sin/cos yaw · B2 +symmetry-aware · B3 +relative
-angle(s) object↔transport (and object↔contact where extractable) · [B4/B5 rotor-of-relative = reparam of B3 in 2-D,
-run only as a control].
+Ablation (flat MLP, same dataset/split/seeds/budget, `b_relative_frames.json`; transport frame =
+`atan2(req_transport)` = direction of target−coin, verified, and it varies across handoffs so `rel = yaw − transport`
+is genuinely distinct from absolute yaw). **PAIRED Δ vs none across 24 seeds** (paired to cancel seed variance — an
+unpaired test like R12.2-B's has a ~±0.037 noise floor that buries a ~0.01 effect):
+
+| encoding | AUROC | Δ vs none (paired) |
+|---|---|---|
+| none | 0.682 ± 0.033 | — |
+| abs (sin/cos yaw) | 0.687 ± 0.032 | +0.005 ± 0.007 (CI-excl-0) |
+| rel (sin/cos(yaw−transport)) | 0.689 ± 0.034 | +0.007 ± 0.014 |
+| **rel_sym (sin/cos(2·rel))** | 0.700 ± 0.030 | **+0.017 ± 0.016 (CI-excl-0)** |
+| abs_rel | 0.695 ± 0.030 | +0.012 ± 0.014 |
+
+`rel_sym − abs = +0.012 ± 0.015` (includes 0).
+
+**Verdict (disciplined, no over-claim):**
+1. **Orientation is NOT fully redundant.** With a paired test, even absolute yaw carries a tiny real gain (+0.005*),
+   and rel_sym +0.017*. R12.2-B's "adds ~0" was an *unpaired* power artifact, not zero signal.
+2. **rel_sym (symmetry-aware relative) is the largest and beats none** (+0.017, CI just clears 0) — the physically-right
+   feature (object axis relative to transport, folded by the rectangle's 180° symmetry). NOT a rotor/encoding win (A
+   showed encodings are neutral) — a symmetry-group + relative-frame effect.
+3. **But it does NOT conclusively beat absolute yaw** (rel_sym − abs = +0.012±0.015, includes 0), and the effect
+   *shrank* 0.024→0.017 from 12→24 seeds (honest regression to the mean).
+⇒ a **small (~1–2% AUROC) geometric signal exists**; the symmetry-aware relative encoding is its best candidate, but
+the STATIC PLANAR ranker extracts only a little of the (real) orientation physics — not a clean structural win. No
+artifact (rel_sym is a well-conditioned sin/cos feature). The larger geometric signal, if any, is where the planar
+static ranker can't reach: **contact-relative frames**, **3-D rotor composition** (SO(3), a tumbling object), or the
+**dynamic Rotor-Spike** (R12.4).
+
+## Next (decision, not assumed)
+- **R12.3B-contacts** — add object↔left/right-contact relative angles (needs FK from the arm joints in the descriptor)
+  to see if the contact-relative frames carry more than the transport-relative one. Cheap on the same dataset.
+- **R12.3C — rotor-aware structured critic** — wire rel_sym (+ contact-relative) into the HSiKAN's object node/edges and
+  test if STRUCTURE exploits the small relative signal better than flat. (Given the signal is ~0.017, likely also small.)
+- **R12.4 — Rotor-Spike / 3-D** — the genuine rotor-composition advantage needs SO(3); the static planar substrate has
+  now been characterized (small relative-geometry signal, no clean structural win).
