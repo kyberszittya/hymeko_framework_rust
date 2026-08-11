@@ -13,6 +13,9 @@ Later single-axis SHAPE ablations reuse the existing ``compose_planar_scene`` br
   * **O5-R** SHAPE-elongated — 1.5:1 rectangle (``radius_y``), 180°-symmetric; the orientation family (R12.2).
   * **O6-T** SHAPE-corner — equilateral triangular prism, equal projected area ⇒ mass = O0; the first
     manipuland with SHARP CORNERS (footprint circumradius ≈ 31 mm > the coin's 20 mm). Track A2, 2026-08-12.
+  * **O7-P / O8-H** SHAPE-corner-count — regular pentagonal (n=5) / hexagonal (n=6) prisms, equal area ⇒
+    mass = O0. Together with O6-T (n=3) they span the corner-count axis 3→5→6→…→circle, all from the one
+    ``compose_planar_scene`` "ngon" generator (triangle = its n=3 special case). Track A2, 2026-08-12.
 O3 (ellipse/capsule) is intentionally parked until the others run clean (it needs a new ``Shape`` member + a
 ``compose_planar_scene`` geom branch — an architectural change we do not want to make mid-measurement).
 """
@@ -57,6 +60,10 @@ U6A_CURRICULUM: tuple[ObjectVariant, ...] = (
     # area ⇒ mass = O0. Three sharp vertices; footprint circumradius ≈ 31 mm (> coin 20 mm). Reuses the existing
     # compose_planar_scene "triangle" branch (Shape.TRIANGLE), no new geometry code.
     ObjectVariant("O6-T", f"{_ROBOTICS}/galambos_env_o6_triangle.hymeko", "shape-corner"),
+    # Track A2 N-gon family (2026-08-12): pentagon (n=5) + hexagon (n=6), equal area ⇒ mass = O0. With O6-T (n=3)
+    # they span the corner-count axis via the unified Shape.NGON "ngon" generator. Footprints ~23.0 mm / ~22.0 mm.
+    ObjectVariant("O7-P", f"{_ROBOTICS}/galambos_env_o7_pentagon.hymeko", "shape-corner-count"),
+    ObjectVariant("O8-H", f"{_ROBOTICS}/galambos_env_o8_hexagon.hymeko", "shape-corner-count"),
 )
 
 

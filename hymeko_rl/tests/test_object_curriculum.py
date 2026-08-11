@@ -29,8 +29,10 @@ def _model_of(variant_id: str):
 
 def test_all_variants_load_from_hymeko_with_stable_handle() -> None:
     # Intentional-membership pin: the curriculum is deliberately THIS set of single-axis ablations.
-    # (Was stale at ["O0","O1-L","O2-M","O4-S"] after O5-R was added for R12.2; corrected + extended with O6-T.)
-    assert [v.variant_id for v in U6A_CURRICULUM] == ["O0", "O1-L", "O2-M", "O4-S", "O5-R", "O6-T"]
+    # (Was stale at ["O0","O1-L","O2-M","O4-S"] after O5-R was added for R12.2; corrected + extended with O6-T,
+    # then the O7-P/O8-H N-gon family.)
+    assert [v.variant_id for v in U6A_CURRICULUM] == \
+        ["O0", "O1-L", "O2-M", "O4-S", "O5-R", "O6-T", "O7-P", "O8-H"]
     for v in U6A_CURRICULUM:
         spec = v.object_spec                      # read from the .hymeko scene
         assert spec.radius > 0.0
@@ -80,6 +82,21 @@ def test_o6_triangle_is_corner_prism_at_o0_mass() -> None:
     # equal-area equilateral circumradius = sqrt(pi r^2 / (3√3/4)) ≈ 1.5554 r > r; strictly exceeds the coin.
     assert spec.footprint_radius() == pytest.approx(0.031102, abs=1e-5)
     assert spec.footprint_radius() > variant("O0").object_spec.footprint_radius()
+
+
+@pytest.mark.parametrize("vid,n_sides,footprint_mm", [("O7-P", 5, 22.99), ("O8-H", 6, 21.99)])
+def test_ngon_family_pentagon_hexagon_at_o0_mass(vid: str, n_sides: int, footprint_mm: float) -> None:
+    # SHAPE-corner-count ablation: regular n-gon prism (mesh), equal projected area ⇒ mass = O0. Footprint
+    # shrinks toward the coin as corners increase (triangle 31mm > pentagon 23mm > hexagon 22mm > coin 20mm).
+    spec = variant(vid).object_spec
+    assert spec.shape is Shape.NGON and spec.polygon_sides() == n_sides and spec.radius == pytest.approx(0.02)
+    m, bid, gid = _model_of(vid)
+    assert int(m.geom_type[gid]) == int(mujoco.mjtGeom.mjGEOM_MESH), f"{vid} must be a convex MESH prism"
+    assert m.body_mass[bid] == pytest.approx(_M0, abs=_MTOL), f"{vid} must match O0 mass (equal-area, equal-thickness)"
+    assert spec.footprint_radius() * 1000 == pytest.approx(footprint_mm, abs=0.05)
+    coin_fp = variant("O0").object_spec.footprint_radius()
+    tri_fp = variant("O6-T").object_spec.footprint_radius()
+    assert coin_fp < spec.footprint_radius() < tri_fp   # between the coin and the triangle on the corner-count axis
 
 
 def test_variant_lookup_unknown_raises() -> None:

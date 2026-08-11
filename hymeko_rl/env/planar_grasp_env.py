@@ -25,6 +25,7 @@ from gymnasium import spaces
 
 from hymeko_rl.env.arm_world import actuated_dof_addrs, emit_arm_mjcf, with_collision_floor
 from hymeko_rl.env.collision_contract import apply_collision_contract
+from hymeko_rl.env.object_spec import equal_area_regular_ngon_circumradius
 from hymeko_rl.env.constants import Collision, Physics
 from hymeko_rl.env.contact_legality import (
     ContactLegalitySpec, ContactLegalityState, ContactMode, classify_contacts,
@@ -475,11 +476,15 @@ def with_arm_coin_collision(arm_mjcf: str) -> str:
     return ET.tostring(root, encoding="unicode") if changed else arm_mjcf
 
 
-def _tri_prism_vertices(circumradius: float, half_z: float) -> str:
-    """The 6 vertices (flat 'x y z …' string) of an equilateral triangular prism: an equilateral triangle at
-    ``circumradius`` (apex up), extruded to ±``half_z``. Centroid at the origin. # Postconditions 18 numbers; the convex
-    hull is the prism MuJoCo derives mass/COM/inertia from."""
-    angs = [math.pi / 2 + k * 2 * math.pi / 3 for k in range(3)]
+def _regular_prism_vertices(n_sides: int, circumradius: float, half_z: float) -> str:
+    """The ``2·n_sides`` vertices (flat 'x y z …' string) of a regular ``n_sides``-gon prism: a regular polygon
+    at ``circumradius`` (apex up), extruded to ±``half_z``. Centroid at the origin; the convex hull is the prism
+    MuJoCo derives mass/COM/inertia from.
+
+    # Preconditions ``n_sides >= 3``; ``circumradius > 0``.
+    # Postconditions ``6·n_sides`` numbers. For ``n_sides == 3`` the string is byte-identical to the former
+      equilateral-triangle output (same apex-up angles ``π/2 + k·2π/n``, same ``(-half_z, half_z)`` extrusion order)."""
+    angs = [math.pi / 2 + k * 2 * math.pi / n_sides for k in range(n_sides)]
     verts = [f"{circumradius * math.cos(a):.6f} {circumradius * math.sin(a):.6f} {z:.6f}"
              for z in (-half_z, half_z) for a in angs]
     return " ".join(verts)
@@ -490,7 +495,7 @@ def compose_planar_scene(arm_mjcf: str, *, disk_radius: float = 0.035, disk_half
                          plane_z: float = _PLANE_Z, coin_damping: float = 2.5,
                          coin_density: float | None = None, coin_shape: str = "cylinder",
                          spin_damping: float = 0.8, coin_frictionloss: float = 0.0,
-                         disk_radius_y: float | None = None) -> str:
+                         disk_radius_y: float | None = None, disk_n_sides: int | None = None) -> str:
     """Inject a planar table object (slide-x/slide-y/hinge-z, confined to the arms' plane; placed, not
     dropped) + a target-zone marker site into a two-arm MJCF. Appended before ``</worldbody>``.
 
@@ -519,16 +524,20 @@ def compose_planar_scene(arm_mjcf: str, *, disk_radius: float = 0.035, disk_half
     elif coin_shape == "cylinder":
         geom = (f'<geom name="disk" type="cylinder" size="{disk_radius:g} {disk_half:g}" '
                 f'rgba="0.85 0.3 0.2 1" friction="1.0 0.05 0.001"{dens}{cc}/>')
-    elif coin_shape == "triangle":
-        # O3: an equilateral triangular PRISM, EQUAL-AREA to the disk_radius cylinder ((3√3/4)R² = π·disk_radius²), a
-        # convex mesh centred at its centroid. MuJoCo DENSITY-derives the correct mass, COM (at origin) and inertia
-        # tensor from the mesh volume — no hand-authored inertial (verified: equal-area mass parity to the cylinder).
-        _tri_R = math.sqrt(math.pi * disk_radius * disk_radius / (3.0 * math.sqrt(3.0) / 4.0))
-        mesh_asset = f'<asset><mesh name="disk_mesh" vertex="{_tri_prism_vertices(_tri_R, disk_half)}"/></asset>'
+    elif coin_shape in ("triangle", "ngon"):
+        # A regular n-gon PRISM, EQUAL-AREA to the disk_radius cylinder, a convex mesh centred at its centroid.
+        # MuJoCo DENSITY-derives the correct mass, COM (at origin) and inertia tensor from the mesh volume — no
+        # hand-authored inertial (verified: equal-area mass parity to the cylinder). "triangle" is the n=3 special
+        # case (kept for back-compat); "ngon" reads the corner count from disk_n_sides.
+        n = 3 if coin_shape == "triangle" else disk_n_sides
+        if n is None:
+            raise ValueError("coin_shape='ngon' requires disk_n_sides (the corner count)")
+        _R = equal_area_regular_ngon_circumradius(disk_radius, n)
+        mesh_asset = f'<asset><mesh name="disk_mesh" vertex="{_regular_prism_vertices(n, _R, disk_half)}"/></asset>'
         geom = (f'<geom name="disk" type="mesh" mesh="disk_mesh" '
                 f'rgba="0.85 0.3 0.2 1" friction="1.0 0.05 0.001"{dens}{cc}/>')
     else:
-        raise ValueError(f"coin_shape must be 'cylinder', 'box' or 'triangle'; got {coin_shape!r}")
+        raise ValueError(f"coin_shape must be 'cylinder', 'box', 'triangle' or 'ngon'; got {coin_shape!r}")
     # `frictionloss` is DRY (Coulomb) friction on the slide joints — a FORCE THRESHOLD, not a rate: the coin does
     # not move until the applied push exceeds it. Set between one arm's and two arms' push force → a SINGLE arm
     # cannot move the coin, only two together (Galambos 2026-07-03: "két robot ereje kelljen a henger
@@ -693,7 +702,8 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
                  robot_source: str | None = None,
                  scene_source: str | None = None,
                  disk_radius_override: float | None = None,
-                 disk_radius_y_override: float | None = None) -> None:
+                 disk_radius_y_override: float | None = None,
+                 disk_n_sides_override: int | None = None) -> None:
         super().__init__()
         if frame_skip < 1 or max_steps < 1:
             raise ValueError("frame_skip/max_steps must be >= 1")
@@ -788,7 +798,8 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
                                     zone_half=env.zone_half, disk_radius=env.disk_radius,
                                     coin_damping=coin_damping, coin_density=coin_density,
                                     coin_shape=coin_shape, spin_damping=spin_damping,
-                                    coin_frictionloss=coin_frictionloss, disk_radius_y=disk_radius_y_override)
+                                    coin_frictionloss=coin_frictionloss, disk_radius_y=disk_radius_y_override,
+                                    disk_n_sides=disk_n_sides_override)
         # COIN_ARM_COLLISION_CONTRACT: replace the arm/coin/floor masks with the explicit per-side category masks
         # (LEFT=1/RIGHT=2/COIN=4/WORLD=8) so same-arm geoms are ISOLATED by mask (not just the adjacent-link excludes),
         # left↔right and every arm↔coin collide. Masks-only; geometry/dynamics/graph unchanged. Applied to every planar

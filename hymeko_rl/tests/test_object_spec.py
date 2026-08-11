@@ -15,15 +15,20 @@ import mujoco
 import pytest
 
 from hymeko_rl.env.env_spec import EnvSpec
-from hymeko_rl.env.object_spec import COIN_OBJECT, ObjectSpec, Shape
-from hymeko_rl.env.planar_grasp_env import compose_planar_scene
+from hymeko_rl.env.object_spec import (
+    COIN_OBJECT,
+    ObjectSpec,
+    Shape,
+    equal_area_regular_ngon_circumradius,
+)
+from hymeko_rl.env.planar_grasp_env import _regular_prism_vertices, compose_planar_scene
 
 _SCENE = "data/robotics/galambos_env.hymeko"
 
 
 # --- Shape (string-at-boundary → enum) -------------------------------------------------------------
 @pytest.mark.parametrize("text,expected", [
-    ("cylinder", Shape.CYLINDER), ("box", Shape.BOX), ("triangle", Shape.TRIANGLE),
+    ("cylinder", Shape.CYLINDER), ("box", Shape.BOX), ("triangle", Shape.TRIANGLE), ("ngon", Shape.NGON),
     ("  CyLiNdEr ", Shape.CYLINDER),   # trimmed + case-insensitive
 ])
 def test_shape_from_str_valid(text: str, expected: Shape) -> None:
@@ -117,6 +122,45 @@ def test_footprint_radius_by_shape() -> None:
     assert box == pytest.approx(math.hypot(0.03, 0.04))
     tri = ObjectSpec(shape=Shape.TRIANGLE, radius=0.02).footprint_radius()
     assert tri > 0.02  # circumradius of an equal-area equilateral cross-section exceeds the disk radius
+
+
+# --- regular N-gon prism family (unify: triangle = n=3 special case) --------------------------------
+def test_equal_area_circumradius_reduces_to_triangle_at_n3() -> None:
+    # The shared helper must reproduce the former triangle-only formula bit-identically at n=3 (parity anchor).
+    r = 0.02
+    legacy_tri = math.sqrt(math.pi * r * r / (3.0 * math.sqrt(3.0) / 4.0))
+    assert equal_area_regular_ngon_circumradius(r, 3) == pytest.approx(legacy_tri, abs=0.0, rel=0.0)
+
+
+def test_polygon_sides_and_ngon_footprint_shrinks_toward_circle() -> None:
+    assert ObjectSpec(shape=Shape.CYLINDER, radius=0.02).polygon_sides() is None
+    assert ObjectSpec(shape=Shape.BOX, radius=0.02, radius_y=0.02).polygon_sides() is None
+    assert ObjectSpec(shape=Shape.TRIANGLE, radius=0.02).polygon_sides() == 3
+    assert ObjectSpec(shape=Shape.NGON, radius=0.02, n_sides=5).polygon_sides() == 5
+    # equal-area circumradius strictly decreases with more corners, all > the coin radius, → radius as n→∞.
+    f3 = ObjectSpec(shape=Shape.TRIANGLE, radius=0.02).footprint_radius()
+    f5 = ObjectSpec(shape=Shape.NGON, radius=0.02, n_sides=5).footprint_radius()
+    f6 = ObjectSpec(shape=Shape.NGON, radius=0.02, n_sides=6).footprint_radius()
+    assert 0.02 < f6 < f5 < f3
+    assert f5 == pytest.approx(equal_area_regular_ngon_circumradius(0.02, 5))
+
+
+def test_ngon_requires_n_sides_and_rejects_degenerate() -> None:
+    with pytest.raises(AssertionError, match="NGON requires n_sides"):
+        ObjectSpec(shape=Shape.NGON, radius=0.02)                     # missing corner count
+    with pytest.raises(AssertionError, match="n_sides must be >= 3"):
+        ObjectSpec(shape=Shape.NGON, radius=0.02, n_sides=2)          # degenerate polygon
+
+
+def test_triangle_mesh_is_byte_identical_after_ngon_refactor() -> None:
+    # Regression / parity: the generalized generator at n=3 must emit exactly the former triangle vertex string,
+    # so the committed O6-T geometry is provably unchanged by the unification.
+    r, half = 0.02, 0.02
+    tri_R = math.sqrt(math.pi * r * r / (3.0 * math.sqrt(3.0) / 4.0))
+    angs = [math.pi / 2 + k * 2 * math.pi / 3 for k in range(3)]
+    legacy = " ".join(f"{tri_R * math.cos(a):.6f} {tri_R * math.sin(a):.6f} {z:.6f}"
+                      for z in (-half, half) for a in angs)
+    assert _regular_prism_vertices(3, equal_area_regular_ngon_circumradius(r, 3), half) == legacy
 
 
 # --- O0-unchanged invariant: the scene sources the coin, disk_radius regression -----------------

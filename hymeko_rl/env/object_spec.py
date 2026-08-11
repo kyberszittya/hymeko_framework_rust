@@ -13,8 +13,26 @@ string-at-boundary/enum-internally rule. The object handle in the compiled MuJoC
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from enum import Enum
+
+
+def equal_area_regular_ngon_circumradius(equal_area_radius: float, n_sides: int) -> float:
+    """Circumradius of a regular ``n_sides``-gon whose area equals a disk of ``equal_area_radius``.
+
+    A regular ``n``-gon with circumradius ``R`` has area ``½·n·R²·sin(2π/n)``; setting it equal to
+    ``π·r²`` gives ``R = sqrt(2π r² / (n·sin(2π/n)))``. This is the single source of truth shared by
+    :meth:`ObjectSpec.footprint_radius` and ``compose_planar_scene``'s prism mesh generator, so the
+    footprint standoff and the built geometry can never drift.
+
+    # Preconditions ``equal_area_radius > 0``; ``n_sides >= 3``.
+    # Postconditions ``> 0``; for ``n_sides == 3`` this equals ``sqrt(π r²/(3√3/4))`` bit-identically.
+    """
+    assert equal_area_radius > 0.0, f"equal_area_radius must be > 0, got {equal_area_radius}"
+    assert n_sides >= 3, f"n_sides must be >= 3, got {n_sides}"
+    return math.sqrt(2.0 * math.pi * equal_area_radius * equal_area_radius
+                     / (n_sides * math.sin(2.0 * math.pi / n_sides)))
 
 
 class Shape(Enum):
@@ -23,7 +41,8 @@ class Shape(Enum):
 
     CYLINDER = "cylinder"   # the original round coin — rolls out of a straddle unless squeezed
     BOX = "box"             # a rectangular prism (``radius_y`` ⇒ rectangle) — flat faces, clamp-holdable
-    TRIANGLE = "triangle"   # an equal-area equilateral triangular prism
+    TRIANGLE = "triangle"   # equal-area equilateral prism — the n=3 special case of NGON (kept for back-compat)
+    NGON = "ngon"           # equal-area regular n-gon prism; ``n_sides`` picks the corner count (3→∞≈circle)
 
     @classmethod
     def from_str(cls, text: str) -> "Shape":
@@ -68,6 +87,7 @@ class ObjectSpec:
     frictionloss: float = 0.0
     slide_damping: float = _COIN_SLIDE_DAMPING
     spin_damping: float = _COIN_SPIN_DAMPING
+    n_sides: int | None = None      # NGON: corner count (>= 3); ignored for other shapes (TRIANGLE implies 3)
 
     def __post_init__(self) -> None:
         # Preconditions (DbC): a violated precondition is a bug in the caller / scene author.
@@ -77,6 +97,22 @@ class ObjectSpec:
         assert self.density is None or self.density > 0.0, f"ObjectSpec.density must be > 0 or None, got {self.density}"
         assert self.frictionloss >= 0.0, f"ObjectSpec.frictionloss must be >= 0, got {self.frictionloss}"
         assert self.slide_damping >= 0.0 and self.spin_damping >= 0.0, "dampings must be >= 0"
+        assert self.n_sides is None or self.n_sides >= 3, f"ObjectSpec.n_sides must be >= 3 or None, got {self.n_sides}"
+        # An NGON needs its corner count declared; other shapes must not smuggle one in.
+        if self.shape is Shape.NGON:
+            assert self.n_sides is not None, "ObjectSpec.shape=NGON requires n_sides (the corner count)"
+
+    def polygon_sides(self) -> int | None:
+        """Corner count if this is a regular-polygon prism, else ``None``.
+
+        # Postconditions 3 for TRIANGLE (its fixed corner count), ``n_sides`` for NGON, ``None`` for
+          CYLINDER/BOX. Invariant: the return is ``None`` or ``>= 3``.
+        """
+        if self.shape is Shape.TRIANGLE:
+            return 3
+        if self.shape is Shape.NGON:
+            return self.n_sides
+        return None
 
     @classmethod
     def from_fields(cls, fields: dict[str, float | tuple[float, ...] | str]) -> "ObjectSpec":
@@ -95,6 +131,10 @@ class ObjectSpec:
             v = fields.get(name)
             return float(v) if isinstance(v, (int, float)) else None
 
+        def _opt_int(name: str) -> int | None:
+            v = fields.get(name)
+            return int(v) if isinstance(v, (int, float)) else None
+
         shape_raw = fields.get("shape")
         shape = Shape.from_str(shape_raw) if isinstance(shape_raw, str) else Shape.CYLINDER
         family_raw = fields.get("family")
@@ -109,6 +149,7 @@ class ObjectSpec:
             frictionloss=_f("frictionloss", 0.0),
             slide_damping=_f("damping", _COIN_SLIDE_DAMPING),
             spin_damping=_f("spin_damping", _COIN_SPIN_DAMPING),
+            n_sides=_opt_int("n_sides"),
         )
 
     def compose_kwargs(self) -> dict[str, object]:
@@ -129,6 +170,7 @@ class ObjectSpec:
             "spin_damping": self.spin_damping,
             "coin_frictionloss": self.frictionloss,
             "disk_radius_y": self.radius_y,
+            "disk_n_sides": self.polygon_sides(),
         }
 
     def planar_env_kwargs(self) -> dict[str, object]:
@@ -144,6 +186,7 @@ class ObjectSpec:
             "coin_shape": self.shape.value,
             "disk_radius_override": self.radius,
             "disk_radius_y_override": self.radius_y,
+            "disk_n_sides_override": self.polygon_sides(),
             "coin_density": self.density,
             "coin_frictionloss": self.frictionloss,
             "coin_damping": self.slide_damping,
@@ -153,22 +196,20 @@ class ObjectSpec:
     def footprint_radius(self) -> float:
         """The in-plane circumscribing radius of the object's footprint — the standoff a straddle
         approach must clear. For a cylinder this is ``radius``; for a rectangle it is the diagonal
-        half-extent; for the equal-area triangular prism it is the circumradius of the equilateral
-        cross-section. Used by the capture straddle-target placement (U3) to generalize off the
+        half-extent; for a regular-polygon prism (TRIANGLE / NGON) it is the equal-area circumradius
+        of the cross-section. Used by the capture straddle-target placement (U3) to generalize off the
         coin-radius hard-code.
 
         # Postconditions ``> 0``.
         """
-        import math
-
-        if self.shape is Shape.CYLINDER:
-            return self.radius
         if self.shape is Shape.BOX:
             hy = self.radius if self.radius_y is None else self.radius_y
             return math.hypot(self.radius, hy)
-        # TRIANGLE: compose_planar_scene builds an equal-area equilateral prism whose side s satisfies
-        # (3√3/4)·(s/√3)²… ; its circumradius equals the equal-area radius parameter R = √(π r² /(3√3/4)).
-        return math.sqrt(math.pi * self.radius * self.radius / (3.0 * math.sqrt(3.0) / 4.0))
+        sides = self.polygon_sides()
+        if sides is not None:
+            # Shared with compose_planar_scene's mesh generator ⇒ standoff and geometry cannot drift.
+            return equal_area_regular_ngon_circumradius(self.radius, sides)
+        return self.radius     # CYLINDER (and any future round shape)
 
 
 # The reference coin (OBJ_O0) as a module constant — matches galambos_env.hymeko's @dsk declaration.

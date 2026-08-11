@@ -1,0 +1,22 @@
+%% plan.mmd — regular-N-gon prism family: build + parity gate (Mermaid).
+flowchart TD
+    subgraph CORE["CORE.YAML check: object_spec + planar_grasp_env are hymeko_rl (non-core); no new caller of compose_planar_scene; no dep change"]
+    end
+
+    A["object_spec.py: Shape.NGON + n_sides field + polygon_sides()<br/>+ shared equal_area_regular_ngon_circumradius(r,n)"] --> B
+    B["planar_grasp_env.py: _tri_prism_vertices -> _regular_prism_vertices(n,R,half)<br/>+ disk_n_sides kwarg; triangle|ngon -> general generator"] --> P
+
+    P{"PARITY GATE: n=3 mesh byte-identical?<br/>O6-T mass + geom unchanged?"}
+    P -- no --> HALT["HALT - refactor altered the triangle; do not proceed"]
+    P -- yes --> S
+
+    S["scenes: galambos_env_o7_pentagon (n_sides 5) + o8_hexagon (n_sides 6)"] --> C
+    C["object_curriculum.py: ObjectVariant O7-P, O8-H"] --> T
+
+    T["tests: parity + NGON footprint/mass/from_str/precondition<br/>+ pentagon/hexagon intent + membership; ruff + mypy + ownership-guard"] --> SM
+
+    SM{"generation smoke over 8-variant curriculum<br/>0 contract fails? O0-O6 counts UNCHANGED? O7/O8 certify?"}
+    SM -- pass --> R["report + commit + push"]
+    SM -- fail --> HALT2["HALT + report"]
+
+    note["scope: generation+capture only; no teacher/RL/delivery; ellipse/capsule = separate later plan"]

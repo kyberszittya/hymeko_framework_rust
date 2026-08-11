@@ -1,0 +1,118 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\title{Plan: regular-$N$-gon prism family --- unify the triangle, add pentagon + hexagon}
+\author{HyMeKo manipulation program (Track A2, shapes)}
+\date{2026-08-12}
+\begin{document}
+\maketitle
+
+\section{Scope and goal}
+Generalize the one-off triangular-prism branch into a \textbf{parametric regular-$N$-gon prism}
+generator, and add \textbf{O7-P} (pentagon, $n=5$) and \textbf{O8-H} (hexagon, $n=6$) to the
+curriculum. The corner count $n$ becomes a shape axis: $n=3$ (triangle) $\to 5 \to 6 \to \cdots \to
+\infty$ (circle). Chosen by the user over per-shape branches precisely because it is the
+\S6.5-clean move: one generator, no per-polygon \texttt{elif} growth.
+
+\paragraph{Why unify (\S6.1/\S6.5).} \texttt{compose\_planar\_scene} already special-cases
+\texttt{"triangle"}; adding pentagon/hexagon as more \texttt{elif} branches would be a Cartesian
+per-shape dispatch. Instead a single \texttt{\_regular\_prism\_vertices(n\_sides, R, half)} plus one
+equal-area circumradius helper serve all $n$. The triangle becomes the $n=3$ special case.
+
+\section{Key invariant --- triangle bit-parity}
+The equal-area circumradius of a regular $n$-gon (area $=\tfrac12 n R^2\sin\tfrac{2\pi}{n}$ set equal
+to $\pi r^2$) is
+\[
+  R_{\mathrm{eq}}(r,n)=\sqrt{\dfrac{2\pi r^2}{\,n\,\sin(2\pi/n)\,}}.
+\]
+For $n=3$ this equals the existing triangle expression $\sqrt{\pi r^2/(\tfrac{3\sqrt3}{4})}$
+\textbf{bit-identically} (verified: $|\Delta|<10^{-15}$). The vertex generator uses the same apex-up
+angle set $\{\pi/2 + k\,2\pi/n\}$ and the same extrusion loop order, so for $n=3$ the emitted MJCF
+mesh string is \textbf{byte-identical} to today's. $\Rightarrow$ the committed O6-T result is
+unchanged; a parity test enforces this.
+
+Footprints (equal area to the coin, $r=0.02$): $n{=}3\to31.10$\,mm, $n{=}5\to22.99$\,mm,
+$n{=}6\to21.99$\,mm, $\to 20$\,mm as $n\to\infty$.
+
+\section{Affected files (full list)}
+\begin{itemize}[nosep]
+  \item \texttt{hymeko\_rl/env/object\_spec.py}: add \texttt{Shape.NGON = "ngon"} (keep
+    \texttt{TRIANGLE} as a backward-compat alias); add \texttt{n\_sides: int | None} field +
+    \texttt{\_\_post\_init\_\_} precondition (NGON $\Rightarrow n\_sides\ge 3$); add
+    \texttt{polygon\_sides()} (3 for TRIANGLE, \texttt{n\_sides} for NGON, else None); add a pure
+    module helper \texttt{equal\_area\_regular\_ngon\_circumradius(r, n)} (single source of truth);
+    generalize \texttt{footprint\_radius}; thread \texttt{n\_sides} through
+    \texttt{compose\_kwargs}/\texttt{planar\_env\_kwargs}/\texttt{from\_fields}.
+  \item \texttt{hymeko\_rl/env/planar\_grasp\_env.py}: rename/generalize
+    \texttt{\_tri\_prism\_vertices} $\to$ \texttt{\_regular\_prism\_vertices(n\_sides, R, half\_z)};
+    add a \texttt{disk\_n\_sides} kwarg; route \texttt{coin\_shape} $\in\{$triangle, ngon$\}$ through
+    the general generator using the shared circumradius helper (imported from \texttt{object\_spec};
+    no import cycle --- verified).
+  \item \textbf{NEW} \texttt{data/robotics/galambos\_env\_o7\_pentagon.hymeko},
+    \texttt{\ldots\_o8\_hexagon.hymeko}: \texttt{@dsk shape "ngon"; n\_sides 5|6; radius 0.02}.
+  \item \texttt{hymeko\_rl/coin\_delivery/object\_curriculum.py}: add \texttt{O7-P}, \texttt{O8-H}.
+  \item \texttt{hymeko\_rl/tests/test\_object\_spec.py},
+    \texttt{hymeko\_rl/tests/test\_object\_curriculum.py}: parity + intent + membership.
+  \item \textbf{NEW} \texttt{reports/2026-08-12-ngon-prism-family/}, this plan dir.
+\end{itemize}
+
+\section{CORE.YAML items touched}
+\textbf{None.} \texttt{object\_spec.py} and \texttt{planar\_grasp\_env.py} are \texttt{hymeko\_rl/**}
+(Python), not core (core = the Rust crates, \texttt{docs/spec/*}, \texttt{rtl/*}, pinned deps).
+\texttt{compose\_planar\_scene} is the \emph{sanctioned} builder (the ownership guard forbids only
+\emph{new callers}, not edits to the builder itself). No dependency added.
+
+\section{Interface changes}
+Additive. \texttt{ObjectSpec} gains an optional \texttt{n\_sides} field (default \texttt{None} $\Rightarrow$
+every existing spec unchanged). \texttt{compose\_planar\_scene} gains an optional \texttt{disk\_n\_sides}
+kwarg (default \texttt{None} $\Rightarrow$ existing calls unchanged). \texttt{Shape} gains \texttt{NGON};
+\texttt{TRIANGLE} is retained. No existing signature is broken.
+
+\section{Test strategy (by layer)}
+\begin{itemize}[nosep]
+  \item \textbf{Parity (regression)}: the emitted triangle mesh vertex string via the generalized
+    generator is byte-identical to a frozen reference (the $n=3$ path); the compiled O6-T mass +
+    geom-type are unchanged. This would fail if the refactor altered the triangle.
+  \item \textbf{Unit} (\texttt{object\_spec}): \texttt{Shape.from\_str("ngon")}; NGON \texttt{n\_sides}
+    precondition (missing / $<3$ asserts); \texttt{polygon\_sides()}; \texttt{footprint\_radius} for
+    $n=5,6$ equals $R_{\mathrm{eq}}$; the shared helper reduces to the triangle at $n=3$.
+  \item \textbf{Unit} (\texttt{object\_curriculum}): membership incl.\ O7-P/O8-H; pentagon/hexagon
+    geom \texttt{MESH}, mass $\approx$ O0, footprint between the coin and the triangle.
+  \item \textbf{Integration}: generation smoke over the full 8-variant curriculum --- 0 model/contract
+    failures, O0--O6 certified-capture counts \emph{unchanged} vs the prior run (regression), O7/O8
+    generate + certify straddle.
+  \item \textbf{Static}: \texttt{ruff}, \texttt{mypy --strict} on changed non-test code; the
+    ownership-guard tests stay green.
+  \item \textbf{Performance}: peak RSS $<$ 2\,GB; record wall.
+\end{itemize}
+
+\section{Performance budget}
+Peak RSS $<$ 2\,GB (hard cap 16\,GB). Wall: 8-variant smoke $\approx 30$\,min CPU (36 $\to$ 48
+rollouts; the O6-T run was 36 rollouts / 21\,min). No GPU. Seeds fixed.
+
+\section{Risk anticipation}
+\begin{itemize}[nosep]
+  \item \textbf{Triangle regression} --- highest risk (edits the frozen builder path). Mitigated by the
+    bit-parity test + the smoke regression (O0--O6 counts must match). If parity breaks: halt, do not
+    proceed.
+  \item \textbf{Mass parity for $n=5,6$}: MuJoCo density-derives mass from the convex mesh; the intent
+    test asserts $\approx$ O0 within $10^{-4}$. If off, the object is not a clean shape-only ablation.
+  \item \textbf{Convexity / degenerate mesh}: regular polygons are convex for all $n\ge3$; no risk.
+    A \texttt{n\_sides $<$ 3} precondition rejects degenerate input at the boundary.
+  \item \textbf{Import direction}: \texttt{planar\_grasp\_env} $\to$ \texttt{object\_spec} for the
+    circumradius helper; verified no cycle (\texttt{object\_spec} is a leaf).
+  \item \textbf{Worst-case input}: full 8-variant curriculum $\times$ positions $\times$ seeds through
+    the smoke; no training. Within budget.
+\end{itemize}
+
+\section{Rollback path}
+Single commit. Revert restores \texttt{\_tri\_prism\_vertices}, drops \texttt{Shape.NGON} /
+\texttt{n\_sides} / the two scenes / the two curriculum entries. No state mutation, no checkpoints.
+
+\section{Out of scope}
+No teacher-bank / retrieval / RL / delivery. Generation + capture characterization only, as with O6-T.
+The round family (ellipse / capsule) is a \emph{separate} later plan.
+\end{document}

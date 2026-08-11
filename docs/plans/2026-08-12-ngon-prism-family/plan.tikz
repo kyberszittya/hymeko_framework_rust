@@ -1,0 +1,44 @@
+% plan.tikz — regular-N-gon prism unification: the refactor + the corner-count axis.
+\documentclass[tikz,border=8pt]{standalone}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds}
+\begin{document}
+\begin{tikzpicture}[
+  font=\small,
+  box/.style={draw,rounded corners,align=center,minimum height=9mm,inner sep=4pt},
+  old/.style={box,fill=red!8,draw=red!50},
+  new/.style={box,fill=green!12,draw=green!55!black,thick},
+  keep/.style={box,fill=blue!7,draw=blue!45},
+  flow/.style={-{Stealth[length=3mm]},thick},
+]
+% --- refactor row ---
+\node[old] (tri) {\texttt{\_tri\_prism\_vertices}\\(hard $n{=}3$)};
+\node[new,right=10mm of tri] (gen) {\texttt{\_regular\_prism\_vertices}\\\texttt{(n\_sides, R, half)}};
+\draw[flow] (tri) -- node[above,font=\scriptsize]{generalize (bit-parity @ $n{=}3$)} (gen);
+
+\node[new,below=7mm of gen] (helper) {\texttt{equal\_area\_regular\_ngon}\\\texttt{\_circumradius(r,n)} (shared)};
+\draw[flow] (helper) -- (gen);
+\node[keep,left=10mm of helper] (foot) {\texttt{footprint\_radius}\\(uses helper)};
+\draw[flow] (helper) -- (foot);
+
+% --- shape enum ---
+\node[keep,above=7mm of tri] (shp) {\texttt{Shape}: CYLINDER, BOX,\\TRIANGLE(alias)\;$+$\;\textbf{NGON}\\$+$ \texttt{n\_sides} field};
+\draw[flow] (shp) -- (tri);
+
+% --- corner-count axis (equal-area, r=0.02) ---
+\begin{scope}[shift={(0,-3.4)}]
+  \node[font=\bfseries] at (0,1.2) {corner-count axis (equal area $\Rightarrow$ mass $=$ O0)};
+  \foreach \n/\x/\lbl in {3/0/{O6-T\\31.1mm}, 5/2.2/{O7-P\\23.0mm}, 6/4.4/{O8-H\\22.0mm}} {
+    \node[regular polygon, regular polygon sides=\n, draw=green!55!black, thick, minimum size=1.1cm] (p\n) at (\x,0) {};
+    \node[font=\scriptsize, align=center] at (\x,-1.0) {\lbl};
+  }
+  \draw[dashed,gray] (6.6,0) circle (0.5);
+  \node[font=\scriptsize,gray,align=center] at (6.6,-1.0) {$n\to\infty$\\coin 20mm};
+  \draw[flow,gray] (5.0,0) -- (6.1,0);
+\end{scope}
+
+\begin{scope}[on background layer]
+  \node[draw=green!45!black,dashed,rounded corners,fit=(shp)(gen)(helper),inner sep=7pt,
+        label=above right:{NEW: one generator, no per-polygon branch}] {};
+\end{scope}
+\end{tikzpicture}
+\end{document}
