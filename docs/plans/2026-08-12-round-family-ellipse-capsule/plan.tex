@@ -1,0 +1,91 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\title{Plan: the round family --- ellipse (O3-E) + capsule/stadium (O9-K)}
+\author{HyMeKo manipulation program (Track A2, shapes)}
+\date{2026-08-12}
+\begin{document}
+\maketitle
+
+\section{Scope and goal}
+Add the \textbf{round / smooth-non-circular} shape family --- the complement of the polygon corner family:
+\textbf{O3-E}, a flat elliptical prism, and \textbf{O9-K}, a flat stadium (discorectangle) prism = the
+planar analogue of a capsule. Both are smooth-rimmed (no corners), orientation-dependent, and equal-area
+to the coin (mass $=$ O0). O3-E fills the roadmap's long-parked ``O3 ellipse'' slot.
+
+\paragraph{Key recon result --- native geoms are wrong here.} MuJoCo's native \texttt{ellipsoid} and
+\texttt{capsule} are 3-D rounded bodies that \emph{bulge in $z$}; matched in the plane they still have a
+different \emph{volume} than the flat coin cylinder, so they do \textbf{not} give mass parity
+(measured: ellipsoid $0.0335$, capsule $0.0344$ vs coin $0.0503$\,kg). They also break the flat-topped-puck
+invariant every existing shape shares. $\Rightarrow$ both round shapes are built as \textbf{flat mesh
+prisms} (a 2-D smooth boundary extruded to $\pm$half-thickness), exactly like the polygon prisms --- giving
+equal-area mass parity and consistent flat-face contact.
+
+\section{Geometry (verified numerically)}
+\begin{itemize}[nosep]
+  \item \textbf{Ellipse} O3-E: boundary $(\,r_x\cos t,\ r_y\sin t\,)$, $N{=}128$ segments, extruded. Semi-axes
+    $r_x{=}$\texttt{radius}, $r_y{=}$\texttt{radius\_y}. Equal-area when $r_x r_y = r^2$. Chosen
+    $r_x{=}0.025,\ r_y{=}0.016$ ($r_xr_y{=}4\times10^{-4}{=}r^2$, aspect $1.56{:}1$): mass $0.050246$
+    ($\Delta_{O0}{=}2.0\times10^{-5}$), footprint $25.0$\,mm.
+  \item \textbf{Capsule / stadium} O9-K: a rectangle with two semicircular caps of radius $b$; half-length
+    $a$, $\rho{=}a/b$. Area $4(a{-}b)b + \pi b^2 = \pi r^2 \Rightarrow b = r\sqrt{\pi/(4(\rho{-}1)+\pi)}$.
+    For $\rho{=}2$: $a{=}0.026533,\ b{=}0.013266$; $n_{\text{cap}}{=}48$ arc segments/cap: mass $0.050250$
+    ($\Delta_{O0}{=}1.6\times10^{-5}$), footprint $26.5$\,mm. Flat sides + round ends (distinct from the
+    all-curved ellipse).
+\end{itemize}
+Both $\Delta_{O0} < 10^{-4}$ (the mass-parity tolerance) --- clean shape-only ablations.
+
+\section{Affected files}
+\begin{itemize}[nosep]
+  \item \texttt{hymeko\_rl/env/object\_spec.py}: \texttt{Shape.ELLIPSE}, \texttt{Shape.CAPSULE}; preconditions
+    (both require \texttt{radius\_y}; capsule requires \texttt{radius > radius\_y}, i.e.\ $a>b$); footprint
+    branches (ellipse $\to\max(r_x,r_y)$, capsule $\to a{=}$\texttt{radius}). \textbf{No new field} --- both
+    reuse the existing \texttt{radius}/\texttt{radius\_y} (already threaded via \texttt{compose\_kwargs}).
+  \item \texttt{hymeko\_rl/env/planar\_grasp\_env.py}: \texttt{\_ellipse\_prism\_vertices},
+    \texttt{\_stadium\_prism\_vertices}; \texttt{compose\_planar\_scene} branches \texttt{"ellipse"} /
+    \texttt{"capsule"} (reuse \texttt{disk\_radius\_y}; \textbf{no new kwarg}).
+  \item \textbf{NEW} \texttt{data/robotics/galambos\_env\_o3\_ellipse.hymeko},
+    \texttt{\ldots\_o9\_capsule.hymeko}.
+  \item \texttt{hymeko\_rl/coin\_delivery/object\_curriculum.py}: add \texttt{O3-E}, \texttt{O9-K}.
+  \item tests (\texttt{test\_object\_spec.py}, \texttt{test\_object\_curriculum.py}); this plan; report dir.
+\end{itemize}
+
+\section{CORE.YAML items touched}
+\textbf{None.} \texttt{object\_spec.py}/\texttt{planar\_grasp\_env.py} are non-core; \texttt{compose\_planar\_scene}
+is the sanctioned builder (no new caller). No dependency added.
+
+\section{Interface changes}
+Additive: two new \texttt{Shape} members + two new geom branches. \textbf{No signature change} (ellipse/capsule
+reuse \texttt{radius}/\texttt{radius\_y}). Existing shapes' code paths are untouched (new \texttt{elif}
+branches only) --- so the regression risk is lower than the N-gon refactor.
+
+\section{Test strategy}
+\begin{itemize}[nosep]
+  \item Unit (object\_spec): \texttt{from\_str} ellipse/capsule; preconditions (missing \texttt{radius\_y}
+    asserts; capsule $a\le b$ asserts); \texttt{polygon\_sides()} is \texttt{None}; footprint values.
+  \item Unit (object\_curriculum): membership (10); O3-E/O9-K geom \texttt{MESH}, mass $\approx$ O0, footprint.
+  \item Integration: generation smoke over the full 10-variant curriculum --- 0 model/contract failures,
+    \textbf{O0--O8 certified-capture counts unchanged} vs the N-gon run (the new branches must not perturb
+    existing shapes), O3-E/O9-K generate + certify straddle.
+  \item Static: \texttt{ruff}, \texttt{mypy --strict} on object\_spec; ownership-guard green.
+  \item Performance: peak RSS $<$ 2\,GB; record wall.
+\end{itemize}
+
+\section{Performance budget \& risk}
+Peak RSS $<$ 2\,GB (cap 16\,GB). Wall: 10-variant smoke $\approx 40$\,min CPU (60 rollouts). Risks:
+(i) mass parity --- the mesh is an $N$-segment approximation; mitigated by $N{=}128$/$n_{\text{cap}}{=}48$
+(measured $\Delta<2\times10^{-5}$) and asserted $<10^{-4}$. (ii) Existing-shape regression --- low (additive
+branches); the smoke's O0--O8 count match is the gate; halt if any drifts. (iii) Capsule degeneracy
+($a\le b$) rejected by precondition. (iv) Worst-case input: full 10-variant smoke, no training.
+
+\section{Rollback}
+Single commit; revert drops the two \texttt{Shape} members, the two generators + branches, the two scenes,
+the two curriculum entries. No state mutation.
+
+\section{Out of scope}
+No teacher / retrieval / RL / delivery --- generation + capture characterization only. Higher-eccentricity
+ellipses / other stadia are trivial follow-ups (just new scene literals).
+\end{document}

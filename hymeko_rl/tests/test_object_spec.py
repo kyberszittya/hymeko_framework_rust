@@ -29,6 +29,7 @@ _SCENE = "data/robotics/galambos_env.hymeko"
 # --- Shape (string-at-boundary → enum) -------------------------------------------------------------
 @pytest.mark.parametrize("text,expected", [
     ("cylinder", Shape.CYLINDER), ("box", Shape.BOX), ("triangle", Shape.TRIANGLE), ("ngon", Shape.NGON),
+    ("ellipse", Shape.ELLIPSE), ("capsule", Shape.CAPSULE),
     ("  CyLiNdEr ", Shape.CYLINDER),   # trimmed + case-insensitive
 ])
 def test_shape_from_str_valid(text: str, expected: Shape) -> None:
@@ -161,6 +162,26 @@ def test_triangle_mesh_is_byte_identical_after_ngon_refactor() -> None:
     legacy = " ".join(f"{tri_R * math.cos(a):.6f} {tri_R * math.sin(a):.6f} {z:.6f}"
                       for z in (-half, half) for a in angs)
     assert _regular_prism_vertices(3, equal_area_regular_ngon_circumradius(r, 3), half) == legacy
+
+
+# --- round family (ellipse + capsule/stadium): smooth, no corners --------------------------------
+def test_round_family_footprint_and_polygon_sides() -> None:
+    ell = ObjectSpec(shape=Shape.ELLIPSE, radius=0.025, radius_y=0.016)
+    assert ell.polygon_sides() is None
+    assert ell.footprint_radius() == pytest.approx(0.025)         # the larger semi-axis
+    cap = ObjectSpec(shape=Shape.CAPSULE, radius=0.0265, radius_y=0.0133)
+    assert cap.polygon_sides() is None
+    assert cap.footprint_radius() == pytest.approx(0.0265)        # the stadium half-length (its farthest point)
+
+
+def test_round_family_requires_radius_y_and_capsule_needs_length_gt_radius() -> None:
+    with pytest.raises(AssertionError, match="ELLIPSE requires radius_y"):
+        ObjectSpec(shape=Shape.ELLIPSE, radius=0.02)
+    with pytest.raises(AssertionError, match="CAPSULE requires radius_y"):
+        ObjectSpec(shape=Shape.CAPSULE, radius=0.02)
+    with pytest.raises(AssertionError, match="half-length.*> radius_y"):
+        ObjectSpec(shape=Shape.CAPSULE, radius=0.01, radius_y=0.02)  # a <= b degenerate stadium
+    # (compiled-model mass parity for O3-E/O9-K is exercised in test_object_curriculum via the real build path)
 
 
 # --- O0-unchanged invariant: the scene sources the coin, disk_radius regression -----------------

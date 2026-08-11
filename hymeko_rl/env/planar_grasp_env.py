@@ -490,6 +490,37 @@ def _regular_prism_vertices(n_sides: int, circumradius: float, half_z: float) ->
     return " ".join(verts)
 
 
+def _ellipse_prism_vertices(rx: float, ry: float, n_seg: int, half_z: float) -> str:
+    """The ``2·n_seg`` vertices of a flat elliptical prism: an ``n_seg``-point ellipse boundary
+    ``(rx·cos t, ry·sin t)`` extruded to ±``half_z``. Centroid at the origin, convex hull = the prism.
+
+    # Preconditions ``rx, ry > 0``; ``n_seg >= 8``.
+    # Postconditions the inscribed-polygon area → ``π·rx·ry`` as ``n_seg`` grows (n_seg=128 ⇒ within ~2e-4
+      of the true ellipse, so equal-area mass parity holds to < 1e-4 for a coin-scale disk)."""
+    verts = [f"{rx * math.cos(2 * math.pi * k / n_seg):.6f} {ry * math.sin(2 * math.pi * k / n_seg):.6f} {z:.6f}"
+             for z in (-half_z, half_z) for k in range(n_seg)]
+    return " ".join(verts)
+
+
+def _stadium_prism_vertices(half_length: float, cap_radius: float, n_cap: int, half_z: float) -> str:
+    """The vertices of a flat stadium (discorectangle) prism — the planar analogue of a capsule: two
+    semicircular caps of radius ``cap_radius`` centred at ``x = ±(half_length − cap_radius)``, joined by
+    straight sides, extruded to ±``half_z``. Centroid at the origin, convex hull = the prism.
+
+    # Preconditions ``half_length > cap_radius > 0``; ``n_cap >= 8`` (arc segments per cap).
+    # Postconditions area → ``4·(half_length−cap_radius)·cap_radius + π·cap_radius²`` as ``n_cap`` grows."""
+    s = half_length - cap_radius
+    ring = []
+    for k in range(n_cap + 1):          # right cap, centre (+s, 0), angles −90°→+90°
+        t = -math.pi / 2 + math.pi * k / n_cap
+        ring.append((s + cap_radius * math.cos(t), cap_radius * math.sin(t)))
+    for k in range(n_cap + 1):          # left cap, centre (−s, 0), angles +90°→+270°
+        t = math.pi / 2 + math.pi * k / n_cap
+        ring.append((-s + cap_radius * math.cos(t), cap_radius * math.sin(t)))
+    verts = [f"{x:.6f} {y:.6f} {z:.6f}" for z in (-half_z, half_z) for (x, y) in ring]
+    return " ".join(verts)
+
+
 def compose_planar_scene(arm_mjcf: str, *, disk_radius: float = 0.035, disk_half: float = 0.02,
                          zone_x: float = 0.0, zone_y: float = 0.16, zone_half: float = 0.055,
                          plane_z: float = _PLANE_Z, coin_damping: float = 2.5,
@@ -536,8 +567,22 @@ def compose_planar_scene(arm_mjcf: str, *, disk_radius: float = 0.035, disk_half
         mesh_asset = f'<asset><mesh name="disk_mesh" vertex="{_regular_prism_vertices(n, _R, disk_half)}"/></asset>'
         geom = (f'<geom name="disk" type="mesh" mesh="disk_mesh" '
                 f'rgba="0.85 0.3 0.2 1" friction="1.0 0.05 0.001"{dens}{cc}/>')
+    elif coin_shape in ("ellipse", "capsule"):
+        # The round family: a flat mesh prism with a SMOOTH boundary (no corners). Native ellipsoid/capsule geoms
+        # bulge in z ⇒ different volume ⇒ no equal-area mass parity, so both are flat mesh prisms like the polygons.
+        # radius/radius_y are the two semi-axes (ellipse) or half-length/cap-radius (capsule/stadium).
+        if disk_radius_y is None:
+            raise ValueError(f"coin_shape={coin_shape!r} requires disk_radius_y (the second semi-axis / cap radius)")
+        if coin_shape == "ellipse":
+            verts = _ellipse_prism_vertices(disk_radius, disk_radius_y, 128, disk_half)
+        else:                                                   # stadium (planar capsule): half-length a > cap b
+            verts = _stadium_prism_vertices(disk_radius, disk_radius_y, 48, disk_half)
+        mesh_asset = f'<asset><mesh name="disk_mesh" vertex="{verts}"/></asset>'
+        geom = (f'<geom name="disk" type="mesh" mesh="disk_mesh" '
+                f'rgba="0.85 0.3 0.2 1" friction="1.0 0.05 0.001"{dens}{cc}/>')
     else:
-        raise ValueError(f"coin_shape must be 'cylinder', 'box', 'triangle' or 'ngon'; got {coin_shape!r}")
+        raise ValueError(
+            f"coin_shape must be 'cylinder', 'box', 'triangle', 'ngon', 'ellipse' or 'capsule'; got {coin_shape!r}")
     # `frictionloss` is DRY (Coulomb) friction on the slide joints — a FORCE THRESHOLD, not a rate: the coin does
     # not move until the applied push exceeds it. Set between one arm's and two arms' push force → a SINGLE arm
     # cannot move the coin, only two together (Galambos 2026-07-03: "két robot ereje kelljen a henger

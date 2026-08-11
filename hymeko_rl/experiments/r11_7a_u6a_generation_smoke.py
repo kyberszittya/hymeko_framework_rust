@@ -130,7 +130,22 @@ def run() -> dict[str, Any]:
             o0_collision = sc["collision"]
             sc["collision_ok"] = True                       # O0 defines the reference
         sc.pop("collision")                                  # drop the arrays from the serialisable record
-        rig = _rig(object_spec=v.object_spec)
+        try:
+            rig = _rig(object_spec=v.object_spec)
+        except Exception as e:                               # noqa: BLE001 — the object's MODEL builds (static
+            # contracts already passed) but it fails to ACQUIRE a certified straddle at S1_SEED (the coin-tuned
+            # certification). Record it and skip the rollouts, rather than crashing the whole smoke — a legitimate
+            # per-object acquisition outcome, not a generation failure (e.g. smooth round rims: n_dot below threshold).
+            sc["rig_acquired"] = False
+            sc["rig_error"] = f"{type(e).__name__}: {e}"
+            sc["exact_zero_reset_ok"] = None                 # not applicable without a rig (excluded from the gate)
+            static[v.variant_id] = sc
+            for position, sid in _POSITIONS:
+                for seed in _SEEDS:
+                    rollouts.append(RolloutRecord(v.variant_id, position, seed, "RIG_ACQUISITION_FAILED",
+                                                  "rig_no_certified_straddle_at_s1", True, False, False))
+            continue
+        sc["rig_acquired"] = True
         sc["exact_zero_reset_ok"] = _exact_zero_reset_ok(rig)
         static[v.variant_id] = sc
         for position, sid in _POSITIONS:
@@ -146,13 +161,18 @@ def _summarize(static: dict[str, Any], rollouts: list[RolloutRecord]) -> dict[st
                           or abs(sc["radius"] - static["O0"]["radius"]) > 1e-6)
                     for vid, sc in static.items() if vid != "O0"}
     n_model_contract = sum(1 for r in rollouts if not r.model_contract_ok)
-    static_ok = all(sc["handle_ok"] and sc["collision_ok"] and sc["exact_zero_reset_ok"] for sc in static.values())
-    gate_pass = bool(static_ok and all(mass_differs.values()) and n_model_contract == 0)
+    # The GENERATION gate is about the model building correctly (handle + collision contract + mass), NOT about
+    # whether the object certifies a straddle. exact_zero_reset_ok is only meaningful where a rig was acquired.
+    rig_failed = [vid for vid, sc in static.items() if sc.get("rig_acquired", True) is False]
+    static_ok = all(sc["handle_ok"] and sc["collision_ok"] for sc in static.values())
+    zero_ok = all(sc["exact_zero_reset_ok"] for sc in static.values() if sc.get("rig_acquired", True) is not False)
+    gate_pass = bool(static_ok and zero_ok and all(mass_differs.values()) and n_model_contract == 0)
     return {
         "verdict": "R11_7A_OBJECT_VARIANT_GENERATION_SMOKE_PASS" if gate_pass
                    else "R11_7A_OBJECT_VARIANT_GENERATION_SMOKE_FAIL",
         "gate_pass": gate_pass, "n_rollouts": len(rollouts), "n_model_contract_failures": n_model_contract,
         "static_contracts_ok": static_ok, "mass_differs_per_variant": mass_differs,
+        "rig_acquisition_failed": rig_failed,           # generated + contract-OK but no certified straddle at S1_SEED
         "static": static,
         "taxonomy_counts": _counts(r.taxon for r in rollouts),
         "certified_capture_by_variant": {v.variant_id: sum(

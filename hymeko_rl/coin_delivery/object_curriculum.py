@@ -16,8 +16,9 @@ Later single-axis SHAPE ablations reuse the existing ``compose_planar_scene`` br
   * **O7-P / O8-H** SHAPE-corner-count — regular pentagonal (n=5) / hexagonal (n=6) prisms, equal area ⇒
     mass = O0. Together with O6-T (n=3) they span the corner-count axis 3→5→6→…→circle, all from the one
     ``compose_planar_scene`` "ngon" generator (triangle = its n=3 special case). Track A2, 2026-08-12.
-O3 (ellipse/capsule) is intentionally parked until the others run clean (it needs a new ``Shape`` member + a
-``compose_planar_scene`` geom branch — an architectural change we do not want to make mid-measurement).
+  * **O3-E / O9-K** SHAPE-round — the smooth (no-corner) family: a flat elliptical prism (semi-axes) and a
+    flat stadium/capsule-profile prism, both equal area ⇒ mass = O0. Built as flat mesh prisms (native
+    ellipsoid/capsule bulge in z ⇒ no mass parity). Complements the N-gon corner family. Track A2, 2026-08-12.
 """
 from __future__ import annotations
 
@@ -64,6 +65,11 @@ U6A_CURRICULUM: tuple[ObjectVariant, ...] = (
     # they span the corner-count axis via the unified Shape.NGON "ngon" generator. Footprints ~23.0 mm / ~22.0 mm.
     ObjectVariant("O7-P", f"{_ROBOTICS}/galambos_env_o7_pentagon.hymeko", "shape-corner-count"),
     ObjectVariant("O8-H", f"{_ROBOTICS}/galambos_env_o8_hexagon.hymeko", "shape-corner-count"),
+    # Track A2 round family (2026-08-12): the smooth no-corner complement. O3-E flat elliptical prism (semi-axes
+    # 0.025/0.016, footprint 25 mm); O9-K flat stadium/capsule-profile prism (a=0.0265, b=0.0133, footprint 26.5 mm).
+    # Both equal area ⇒ mass = O0, built as flat mesh prisms (native ellipsoid/capsule bulge in z ⇒ no mass parity).
+    ObjectVariant("O3-E", f"{_ROBOTICS}/galambos_env_o3_ellipse.hymeko", "shape-round"),
+    ObjectVariant("O9-K", f"{_ROBOTICS}/galambos_env_o9_capsule.hymeko", "shape-round"),
 )
 
 

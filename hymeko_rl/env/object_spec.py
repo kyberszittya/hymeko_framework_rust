@@ -43,6 +43,8 @@ class Shape(Enum):
     BOX = "box"             # a rectangular prism (``radius_y`` ⇒ rectangle) — flat faces, clamp-holdable
     TRIANGLE = "triangle"   # equal-area equilateral prism — the n=3 special case of NGON (kept for back-compat)
     NGON = "ngon"           # equal-area regular n-gon prism; ``n_sides`` picks the corner count (3→∞≈circle)
+    ELLIPSE = "ellipse"     # flat elliptical prism (``radius``=r_x, ``radius_y``=r_y) — smooth, no corners
+    CAPSULE = "capsule"     # flat stadium/discorectangle prism (``radius``=half-length a, ``radius_y``=cap radius b)
 
     @classmethod
     def from_str(cls, text: str) -> "Shape":
@@ -101,6 +103,12 @@ class ObjectSpec:
         # An NGON needs its corner count declared; other shapes must not smuggle one in.
         if self.shape is Shape.NGON:
             assert self.n_sides is not None, "ObjectSpec.shape=NGON requires n_sides (the corner count)"
+        # The round family reuses radius/radius_y as the two semi-axes; both need radius_y (the y extent).
+        if self.shape in (Shape.ELLIPSE, Shape.CAPSULE):
+            assert self.radius_y is not None, f"ObjectSpec.shape={self.shape.name} requires radius_y"
+            if self.shape is Shape.CAPSULE:
+                # Stadium: half-length a=radius must exceed cap radius b=radius_y (non-negative straight section).
+                assert self.radius > self.radius_y, "ObjectSpec.shape=CAPSULE requires radius (half-length) > radius_y (cap radius)"
 
     def polygon_sides(self) -> int | None:
         """Corner count if this is a regular-polygon prism, else ``None``.
@@ -205,11 +213,16 @@ class ObjectSpec:
         if self.shape is Shape.BOX:
             hy = self.radius if self.radius_y is None else self.radius_y
             return math.hypot(self.radius, hy)
+        if self.shape is Shape.ELLIPSE:
+            # Circumscribing radius = the larger semi-axis (radius_y guaranteed by the precondition).
+            return max(self.radius, self.radius_y if self.radius_y is not None else self.radius)
+        if self.shape is Shape.CAPSULE:
+            return self.radius     # the stadium's half-length a is its farthest point (a > b)
         sides = self.polygon_sides()
         if sides is not None:
             # Shared with compose_planar_scene's mesh generator ⇒ standoff and geometry cannot drift.
             return equal_area_regular_ngon_circumradius(self.radius, sides)
-        return self.radius     # CYLINDER (and any future round shape)
+        return self.radius     # CYLINDER
 
 
 # The reference coin (OBJ_O0) as a module constant — matches galambos_env.hymeko's @dsk declaration.

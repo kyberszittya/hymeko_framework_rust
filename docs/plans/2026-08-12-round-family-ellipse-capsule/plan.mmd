@@ -1,0 +1,16 @@
+%% plan.mmd — round family (ellipse + capsule): decision + build + gate.
+flowchart TD
+    R{"native ellipsoid/capsule?"}
+    R -- "bulge in z -> wrong volume -> NO mass parity (0.033/0.034 vs coin 0.050)" --> M["REJECT native"]
+    M --> F["flat MESH prism (smooth boundary extruded, like polygon prisms)"]
+
+    F --> A["object_spec.py: Shape.ELLIPSE + Shape.CAPSULE<br/>preconditions (need radius_y; capsule radius>radius_y)<br/>footprint branches; REUSE radius/radius_y (no new field)"]
+    A --> B["planar_grasp_env.py: _ellipse_prism_vertices + _stadium_prism_vertices<br/>compose branches ellipse|capsule (reuse disk_radius_y, no new kwarg)<br/>existing branches UNTOUCHED (additive)"]
+    B --> S["scenes: galambos_env_o3_ellipse (rx0.025 ry0.016) + o9_capsule (a0.02653 b0.01327)"]
+    S --> C["curriculum: O3-E, O9-K (equal area => mass=O0)"]
+    C --> T["tests: from_str + precondition + footprint + mass=O0 intent + membership-10<br/>ruff + mypy + ownership-guard"]
+    T --> SM{"generation smoke over 10-variant curriculum<br/>0 contract fails? O0-O8 counts UNCHANGED? O3-E/O9-K certify?"}
+    SM -- pass --> RP["report + commit + push"]
+    SM -- fail --> H["HALT + report"]
+
+    note["scope: generation+capture only; no teacher/RL; higher-eccentricity ellipses/other stadia = trivial follow-ups"]
