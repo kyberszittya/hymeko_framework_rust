@@ -1,0 +1,31 @@
+%% plan.mmd — O6-T triangle: sequence of the build+gate (Mermaid).
+sequenceDiagram
+    autonumber
+    actor Dev as Claude Code
+    participant Scene as galambos_env_o6_triangle.hymeko (NEW)
+    participant Cur as object_curriculum.py (EDIT)
+    participant Spec as ObjectSpec / compose_planar_scene (EXISTING)
+    participant Smoke as u6a_generation_smoke.py (REUSED)
+    participant Tests as pytest
+    participant Rep as report
+
+    Note over Dev,Rep: CORE.YAML checked - all targets non-core, no dep change
+
+    Dev->>Scene: declare @dsk shape "triangle" radius 0.02 (equal-area -> mass=O0)
+    Dev->>Cur: add ObjectVariant("O6-T", scene, "shape-corner")
+    Cur->>Spec: from_hymeko -> Shape.TRIANGLE -> compose_kwargs (pre-wired)
+
+    Dev->>Tests: baseline was 1 red (O5-R membership) + 27 green
+    Dev->>Tests: fix membership (incl O5-R + O6-T) + triangle intent (MESH, mass=O0, footprint>coin)
+    Tests-->>Dev: unit GREEN (regression: membership would fail on prior tree)
+
+    Dev->>Smoke: run full curriculum (now incl O6-T), fixed seeds
+    Smoke->>Spec: build rig per variant, exact-zero reset, certified straddle, rollouts
+    Smoke-->>Dev: 0 model/contract fail? certified straddle? certified-capture count?
+
+    alt gate PASS (0 fail AND triangle certifies straddle)
+        Dev->>Rep: write benchmark row + failure taxonomy + RSS/wall
+    else gate FAIL (contract trip or mass parity off)
+        Dev->>Dev: HALT and report (do not proceed)
+    end
+    Note over Dev,Rep: no teacher-bank / no RL / no state mutation in this step

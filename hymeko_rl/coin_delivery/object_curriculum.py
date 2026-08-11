@@ -9,7 +9,11 @@ First round (user-scoped): O0 reference coin + three single-axis ablations, one 
   * **O1-L** SIZE — radius 1.20x, mass+friction held = O0 (density lowered), inertia recomputed from geometry.
   * **O2-M** DYNAMICS — geometry = O0, mass 2x (density doubled), friction = O0.
   * **O4-S** SHAPE — square prism, equal projected area ⇒ mass = O0, friction = O0.
-O3 (ellipse/capsule) is intentionally parked until O1/O2/O4 run clean (it needs a new ``Shape`` member + a
+Later single-axis SHAPE ablations reuse the existing ``compose_planar_scene`` branches (no new geom code):
+  * **O5-R** SHAPE-elongated — 1.5:1 rectangle (``radius_y``), 180°-symmetric; the orientation family (R12.2).
+  * **O6-T** SHAPE-corner — equilateral triangular prism, equal projected area ⇒ mass = O0; the first
+    manipuland with SHARP CORNERS (footprint circumradius ≈ 31 mm > the coin's 20 mm). Track A2, 2026-08-12.
+O3 (ellipse/capsule) is intentionally parked until the others run clean (it needs a new ``Shape`` member + a
 ``compose_planar_scene`` geom branch — an architectural change we do not want to make mid-measurement).
 """
 from __future__ import annotations
@@ -49,6 +53,10 @@ U6A_CURRICULUM: tuple[ObjectVariant, ...] = (
     # R12.2-A2: an elongated (1.5:1) rectangle — 180° symmetry, so distinct orientations span [0,180°) (vs the
     # square's [0,45°]); the object family for the orientation-aware geometric model. Equal area ⇒ mass = O0.
     ObjectVariant("O5-R", f"{_ROBOTICS}/galambos_env_o5_rect.hymeko", "shape-elongated"),
+    # Track A2 (2026-08-12): the first corner-bearing object — an equilateral triangular prism, equal projected
+    # area ⇒ mass = O0. Three sharp vertices; footprint circumradius ≈ 31 mm (> coin 20 mm). Reuses the existing
+    # compose_planar_scene "triangle" branch (Shape.TRIANGLE), no new geometry code.
+    ObjectVariant("O6-T", f"{_ROBOTICS}/galambos_env_o6_triangle.hymeko", "shape-corner"),
 )
 
 

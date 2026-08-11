@@ -28,7 +28,9 @@ def _model_of(variant_id: str):
 
 
 def test_all_variants_load_from_hymeko_with_stable_handle() -> None:
-    assert [v.variant_id for v in U6A_CURRICULUM] == ["O0", "O1-L", "O2-M", "O4-S"]
+    # Intentional-membership pin: the curriculum is deliberately THIS set of single-axis ablations.
+    # (Was stale at ["O0","O1-L","O2-M","O4-S"] after O5-R was added for R12.2; corrected + extended with O6-T.)
+    assert [v.variant_id for v in U6A_CURRICULUM] == ["O0", "O1-L", "O2-M", "O4-S", "O5-R", "O6-T"]
     for v in U6A_CURRICULUM:
         spec = v.object_spec                      # read from the .hymeko scene
         assert spec.radius > 0.0
@@ -65,6 +67,19 @@ def test_o4_square_is_box_at_o0_mass() -> None:
     m, bid, gid = _model_of("O4-S")
     assert int(m.geom_type[gid]) == int(mujoco.mjtGeom.mjGEOM_BOX)
     assert m.body_mass[bid] == pytest.approx(_M0, abs=_MTOL), "O4-S must match O0 mass (equal-area, equal-thickness)"
+
+
+def test_o6_triangle_is_corner_prism_at_o0_mass() -> None:
+    # SHAPE-corner ablation: equilateral triangular prism (mesh), equal projected area ⇒ mass = O0, with a
+    # LARGER footprint (circumradius) than the coin — the first sharp-cornered manipuland.
+    spec = variant("O6-T").object_spec
+    assert spec.shape is Shape.TRIANGLE and spec.radius == pytest.approx(0.02)
+    m, bid, gid = _model_of("O6-T")
+    assert int(m.geom_type[gid]) == int(mujoco.mjtGeom.mjGEOM_MESH), "O6-T must be a convex MESH prism"
+    assert m.body_mass[bid] == pytest.approx(_M0, abs=_MTOL), "O6-T must match O0 mass (equal-area, equal-thickness)"
+    # equal-area equilateral circumradius = sqrt(pi r^2 / (3√3/4)) ≈ 1.5554 r > r; strictly exceeds the coin.
+    assert spec.footprint_radius() == pytest.approx(0.031102, abs=1e-5)
+    assert spec.footprint_radius() > variant("O0").object_spec.footprint_radius()
 
 
 def test_variant_lookup_unknown_raises() -> None:

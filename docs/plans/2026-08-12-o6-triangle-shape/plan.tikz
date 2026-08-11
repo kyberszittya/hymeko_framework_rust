@@ -1,0 +1,52 @@
+% plan.tikz — O6-T triangle: dataflow (scene → ObjectSpec → rig → smoke) and the geometry.
+% Standalone-compilable; also \input-able into plan.tex.
+\documentclass[tikz,border=8pt]{standalone}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds}
+\begin{document}
+\begin{tikzpicture}[
+  font=\small,
+  box/.style={draw,rounded corners,align=center,minimum height=9mm,inner sep=4pt},
+  new/.style={box,fill=green!12,draw=green!55!black,thick},
+  exist/.style={box,fill=blue!7,draw=blue!45},
+  test/.style={box,fill=orange!12,draw=orange!60!black},
+  flow/.style={-{Stealth[length=3mm]},thick},
+]
+% --- dataflow row ---
+\node[new]   (scene) {\texttt{galambos\_env\_o6\_triangle}\\\texttt{.hymeko} \;(@dsk: triangle)};
+\node[new,right=8mm of scene]   (cur) {\texttt{ObjectVariant}\\\texttt{"O6-T"} (curriculum)};
+\node[exist,right=8mm of cur]   (spec){\texttt{ObjectSpec}\\\texttt{from\_hymeko}};
+\node[exist,right=8mm of spec]  (rig) {\texttt{compose\_planar\_scene}\\\texttt{"triangle"} branch};
+\node[exist,right=8mm of rig]   (smoke){\texttt{u6a\_generation}\\\texttt{\_smoke} (reused)};
+
+\draw[flow] (scene) -- (cur);
+\draw[flow] (cur) -- (spec);
+\draw[flow] (spec) -- (rig);
+\draw[flow] (rig) -- (smoke);
+
+% --- outputs / gate ---
+\node[box,below=9mm of smoke,fill=gray!8] (out)
+  {0 model/contract fail \;$\wedge$\; certified straddle\\$\wedge$\; certified-capture count (char.\ row)};
+\draw[flow] (smoke) -- (out);
+
+% --- tests attach ---
+\node[test,below=14mm of spec] (t1) {unit: \texttt{footprint}, \texttt{MESH}, mass$=$O0};
+\node[test,left=8mm of t1]      (t0) {unit: curriculum membership\\(fix pre-existing red + O6-T)};
+\draw[flow,dashed] (t0) -- (cur);
+\draw[flow,dashed] (t1) -- (spec);
+
+% --- geometry inset: equilateral prism cross-section vs disk ---
+\begin{scope}[shift={(0,-3.6)}]
+  \node[font=\bfseries] at (2.2,1.1) {equal-area cross-section};
+  \draw[dashed,gray] (2.2,0) circle (0.55);           % disk r=0.02 (scaled)
+  \node[gray] at (2.2,-0.75) {disk $r$};
+  % equilateral triangle, circumradius ~1.555 * r  (apex up)
+  \draw[green!55!black,thick]
+     (2.2,0.855) -- ({2.2-0.74},{-0.4275}) -- ({2.2+0.74},{-0.4275}) -- cycle;
+  \node[green!55!black] at (4.2,0.2) {tri $R_c\!\approx\!1.56\,r$};
+\end{scope}
+
+\begin{scope}[on background layer]
+  \node[draw=green!45!black,dashed,rounded corners,fit=(scene)(cur),inner sep=6pt,label=above:{NEW (no geom code)}] {};
+\end{scope}
+\end{tikzpicture}
+\end{document}

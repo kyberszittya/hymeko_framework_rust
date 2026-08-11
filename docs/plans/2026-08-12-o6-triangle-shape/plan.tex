@@ -1,0 +1,115 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\title{Plan: O6-T --- Triangle, the first corner-bearing object (Track A2 probe)}
+\author{HyMeKo manipulation program}
+\date{2026-08-12}
+\begin{document}
+\maketitle
+
+\section{Scope and goal}
+Add \textbf{O6-T}, an equilateral triangular prism, as the first \emph{corner-bearing}
+manipuland in the multi-object curriculum, and characterize it through the existing
+exact-zero pipeline. This is a \textbf{Track A2 (shapes) probe} of the frozen roadmap
+(the roadmap's \texttt{NOW} is Track C0; this is a user-directed shape excursion).
+
+Key fact that makes this cheap: the geometry is \textbf{already wired}. \texttt{Shape.TRIANGLE},
+\texttt{ObjectSpec.from\_hymeko}, \texttt{compose\_kwargs}, \texttt{footprint\_radius}, and the
+\texttt{compose\_planar\_scene} \texttt{"triangle"} branch (equal-area equilateral prism mesh,
+density-derived mass/COM/inertia) \emph{all exist}. No new geometry code is written. The object
+is declared as another HyMeKo scene and added to the curriculum; the existing generation smoke
+picks it up.
+
+\paragraph{Why a triangle.} It is the first manipuland with \textbf{sharp corners} and a
+non-box, non-circular cross-section: three flat faces meeting at three vertices, a footprint
+\emph{circumradius} $R_c=\sqrt{\pi r^2/(\tfrac{3\sqrt3}{4})}\approx 31.1$\,mm for the equal-area
+$r=0.02$ (vs the coin's $20$\,mm), and orientation-dependent contact that is neither the disk's
+antipodal roll nor the box's flat clamp. It exercises the straddle-standoff generalization
+(\texttt{CoinStraddleTargets.for\_object(footprint)}) on a genuinely new geometry.
+
+\section{Affected files (full list)}
+\begin{itemize}[nosep]
+  \item \textbf{NEW} \texttt{data/robotics/galambos\_env\_o6\_triangle.hymeko} --- the scene
+    (\texttt{@dsk} declares \texttt{shape "triangle"}, \texttt{radius 0.02}, equal-area, mass $=$ O0).
+  \item \textbf{EDIT} \texttt{hymeko\_rl/coin\_delivery/object\_curriculum.py} --- add
+    \texttt{ObjectVariant("O6-T", \ldots, "shape-corner")}; update the module docstring.
+  \item \textbf{EDIT} \texttt{hymeko\_rl/tests/test\_object\_curriculum.py} --- (a) \textbf{fix a
+    pre-existing failure}: the membership assertion still reads \texttt{["O0","O1-L","O2-M","O4-S"]}
+    although \texttt{O5-R} was added earlier (test has been red since R12.2); correct it to the full
+    set incl.\ \texttt{O5-R} and \texttt{O6-T}; (b) add a triangle intent test (geom type
+    \texttt{MESH}, mass parity to O0, footprint $>$ coin).
+  \item \textbf{NEW} \texttt{reports/2026-08-12-o6-triangle-shape/} --- report + smoke JSON.
+  \item \textbf{NEW} \texttt{docs/plans/2026-08-12-o6-triangle-shape/} --- this plan (4 formats).
+\end{itemize}
+No harness is duplicated: the existing \texttt{r11\_7a\_u6a\_generation\_smoke.py} iterates
+\texttt{U6A\_CURRICULUM} and therefore covers O6-T automatically (no smoke edit).
+
+\section{CORE.YAML items touched}
+\textbf{None.} Verified against \texttt{CORE.YAML}: core is the Rust crates
+(\texttt{hymeko\_core/query/client/daemon/parser}), \texttt{docs/spec/*}, \texttt{rtl/*}, and pinned
+deps. All targets are \texttt{hymeko\_rl/**} (Python), \texttt{data/robotics/*.hymeko},
+\texttt{tests/**}, \texttt{reports/**}, \texttt{docs/plans/**} --- non-core (\texttt{on\_unknown\_path:
+treat\_as\_non\_core}). No dependency added or changed.
+
+\section{Interface changes}
+None. Additive curriculum entry only; no function signatures change. The scene $\to$ ObjectSpec
+$\to$ builder path is unchanged (the triangle branch is pre-existing).
+
+\section{Test strategy (by layer)}
+\begin{itemize}[nosep]
+  \item \textbf{Unit} (\texttt{test\_object\_spec.py}, extend if needed): \texttt{Shape.from\_str("triangle")},
+    \texttt{footprint\_radius} circumradius $>$ coin (already present); add a compiled-model mass-parity
+    assertion for a triangle spec.
+  \item \textbf{Unit} (\texttt{test\_object\_curriculum.py}): corrected membership; O6-T loads from HyMeKo,
+    keeps the stable \texttt{"disk"} handle, geom type \texttt{MESH}, mass $\approx$ O0
+    ($0.050265$\,kg, equal-area equal-thickness), footprint $>$ O0.
+  \item \textbf{Integration}: the generation smoke (\texttt{r11\_7a\_u6a\_generation\_smoke.py}) over the
+    full curriculum incl.\ O6-T: 0 model/contract failures, static contracts OK, certified-straddle for
+    the triangle, and per-variant certified-capture counts (the characterization row).
+  \item \textbf{Performance}: assert peak RSS $<$ 2\,GB (budget; U6A precedent $\approx 312$\,MB) and
+    record wall time. This is a numerical budget, not a print.
+\end{itemize}
+Coverage rule: the O6-T path and the corrected membership are each driven by a new/edited test that
+would fail against the prior tree (the membership test literally does today).
+
+\section{Performance budget}
+Peak RSS $<$ 2\,GB (hard cap 16\,GB, \S4). Wall: generation smoke $<$ 5\,min on the Mac CPU runner;
+plan compile (tectonic) $<$ 30\,s. No GPU. Determinism: the smoke fixes seeds
+(\texttt{\_SEEDS}); no system entropy.
+
+\section{Risk anticipation (production-scale)}
+\begin{itemize}[nosep]
+  \item \textbf{Mass parity.} The mesh mass is density-derived from the convex hull. Risk: the
+    equal-area formula and MuJoCo's volume integration disagree. Mitigation: the intent test asserts
+    \texttt{body\_mass} $\approx 0.050265$\,kg within $10^{-4}$; if it fails, the object is not a clean
+    shape-only ablation --- halt and report, do not proceed to characterization.
+  \item \textbf{Straddle standoff.} The triangle's circumradius footprint ($\approx 31$\,mm) exceeds
+    the coin's ($20$\,mm) and the square's diagonal ($\approx 25$\,mm). The straddle target placement
+    keys off \texttt{footprint\_radius}; the certified-straddle acquisition may fail more often. This is
+    a \emph{measurement}, not a bug --- the smoke's certified-capture count records it, and a low count
+    is an honest characterization result (like O1-L / O4-S), not a failure to fix.
+  \item \textbf{Corners vs.\ contract.} Sharp vertices could produce contact-contract anomalies. The
+    smoke's \emph{0 model/contract failures} gate catches this; if any variant trips it, halt.
+  \item \textbf{Pre-existing red test.} \texttt{test\_object\_curriculum.py} is already red (O5-R). This
+    plan fixes it as part of the change; the report declares the fix explicitly (\S9 of CLAUDE.md).
+  \item \textbf{Worst-case input.} Production scale here is the full curriculum ($6$ variants
+    $\times$ \texttt{\_POSITIONS} $\times$ \texttt{\_SEEDS}) through the smoke; no training, no overnight
+    run. Well within budget.
+\end{itemize}
+
+\section{Rollback path}
+Single commit. Revert = drop the scene file, the \texttt{ObjectVariant} line, and the test edits; the
+curriculum returns to its current 5-entry set and the (still pre-existing-red) membership test is
+untouched. No migrations, no state mutation, no checkpoints written.
+
+\section{Out of scope}
+No teacher-bank generation, no retrieval policy, no RL. If the smoke shows a clean generated triangle
+with certified captures, a bounded teacher characterization (reach / capture / teacher-K6$\mid$capture)
+may follow as a \emph{separate} step to fill the benchmark row --- but only after this gate passes.
+This plan does not commit to a full R11.7C-style multi-seed campaign.
+
+\end{document}
