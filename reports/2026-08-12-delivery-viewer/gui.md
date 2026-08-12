@@ -38,8 +38,29 @@ reimplemented — the GUI is UI + threading only.
   own bank; the physics delivery + render still run); round shapes → "no certified grasp" (the certification wall).
 - ruff clean. CORE.YAML none; no new dependency.
 
-## Three ways to view the same real delivery
+## The primary GUI: `delivery_live.py` — native interactive 3D (mujoco.viewer)
 
-- `delivery_gui.py` — this interactive tkinter window (shape + click-target + strategy + in-window playback).
-- `delivery_viewer.py` (live) — native `mujoco.viewer` 3D window (`mjpython`), orbit/zoom.
+The real robotics GUI: one live `mujoco.viewer` 3D window (mouse **orbit / zoom / pan**) showing the real trained
+delivery physics. Keyboard controls; the delivery runs on a worker thread (window stays live) and the real rollout
+**plays back in the 3D view**; the current target is a green marker.
+
+```bash
+cd /Users/kyberszittya/hakiko_ai_ws/03_implementation/hymeko_coin_r9_wt && \
+PYTHONPATH=/Users/kyberszittya/hakiko_ai_ws/03_implementation/hymeko_coin_r9_wt \
+/Users/kyberszittya/hakiko_ai_ws/03_implementation/hymeko_framework_rust/.venv/bin/mjpython \
+-m hymeko_rl.gui.delivery_live
+```
+
+**Keys:** `SPACE` run · `N` next shape (relaunches the window with the new model) · `T` next target · `G` next strategy
+· `Q`/`Esc` quit.
+
+Honesty: target *selection* is keyboard-cycling the deployable bank targets (the passive viewer exposes no
+click→world-point callback, so arbitrary click-to-place is not available; the target marker + mouse camera are native).
+Shape switch relaunches the window (the model changes). Following `viz/viewer.py`, the loop logic (`drive_delivery`) is
+**unit-tested headless with a fake handle** (4 tests: key flags, run→compute→replay, quit, shape-change); only the GL
+`launch` needs a display + `mjpython`.
+
+## The other two views of the same real delivery
+
+- `delivery_gui.py` — tkinter window (shape dropdown + click-target map + strategy + in-window playback; no mjpython).
 - `delivery_viewer.py --render` — headless GIF/MP4 (the canonical offscreen viz).
