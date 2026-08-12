@@ -26,7 +26,8 @@ import numpy as np
 from hymeko_rl.coin_delivery.delivery_bc.dataset import (
     bc_context, fresh_rig, reconstruct_capture, scenario_by_id)
 from hymeko_rl.coin_delivery.delivery_bc.evaluate import CLOSED_LOOP_CFG
-from hymeko_rl.coin_delivery.delivery_bc.models import Standardizer, clip_theta
+from hymeko_rl.coin_delivery.delivery_bc.models import clip_theta
+from hymeko_rl.coin_delivery.delivery_bc.retrieval import load_frozen
 from hymeko_rl.coin_delivery.forward_displacement import delivery_success, rollout_primitive
 from hymeko_rl.coin_delivery.object_curriculum import variant
 from hymeko_rl.experiments.coin_kinetic_capture_exploration_audit import _rig
@@ -41,23 +42,18 @@ STRATEGIES = ["TD3 (deployed retrieval)", "teacher (CEM θ)"]
 
 
 class DeployedPolicy:
-    """The frozen descriptor→θ retrieval table (the deployed coin policy) + the teacher θ per scenario."""
+    """The frozen deployed coin policy (``RetrievalDeliveryPolicy`` — the library's descriptor→θ retrieval) + the
+    scenario's teacher θ. The retrieval is NOT reimplemented here: it is the frozen policy loaded via ``load_frozen``."""
 
     def __init__(self) -> None:
-        fp = json.loads(_FROZEN.read_text())
-        x = np.asarray(fp["table"]["X"], np.float64)
-        self.std = Standardizer.fit(x)
-        self.xs = self.std.transform(x)
-        self.ids: list[str] = fp["table"]["scenario_ids"]
-        self.theta = np.asarray(fp["table"]["theta"], np.float64)
+        self.policy = load_frozen(json.loads(_FROZEN.read_text())["table"])   # the deployed RetrievalDeliveryPolicy
         self.samples = {s.scenario_id: s for s in _load_dataset(_DATASET)}
 
     def theta_for(self, sid: str, strategy: str) -> "tuple[np.ndarray, str]":
         smp = self.samples[sid]
         if strategy.startswith("teacher"):
             return np.asarray(smp.theta, np.float64), f"teacher θ ({sid})"
-        i = int(np.argmin(np.linalg.norm(self.xs - self.std.transform(np.asarray(smp.x, np.float64)), axis=1)))
-        return self.theta[i], f"retrieved {self.ids[i]}"
+        return self.policy.predict(np.asarray(smp.x, np.float64)), "descriptor-nearest θ (deployed)"
 
 
 def record_delivery(policy: DeployedPolicy, shape: str, sid: str, strategy: str) -> dict[str, Any]:
