@@ -48,17 +48,23 @@ delivery physics. Keyboard controls; the delivery runs on a worker thread (windo
 cd /Users/kyberszittya/hakiko_ai_ws/03_implementation/hymeko_coin_r9_wt && \
 PYTHONPATH=/Users/kyberszittya/hakiko_ai_ws/03_implementation/hymeko_coin_r9_wt \
 /Users/kyberszittya/hakiko_ai_ws/03_implementation/hymeko_framework_rust/.venv/bin/mjpython \
--m hymeko_rl.gui.delivery_live
+-m hymeko_rl.gui.delivery_live --shape triangle
 ```
 
-**Keys:** `SPACE` run · `N` next shape (relaunches the window with the new model) · `T` next target · `G` next strategy
-· `Q`/`Esc` quit.
+**Keys (the VIEWER WINDOW must be focused — not the terminal):** `SPACE` run · `T` next target · `G` next strategy ·
+`Q`/`Esc` quit.
 
-Honesty: target *selection* is keyboard-cycling the deployable bank targets (the passive viewer exposes no
-click→world-point callback, so arbitrary click-to-place is not available; the target marker + mouse camera are native).
-Shape switch relaunches the window (the model changes). Following `viz/viewer.py`, the loop logic (`drive_delivery`) is
-**unit-tested headless with a fake handle** (4 tests: key flags, run→compute→replay, quit, shape-change); only the GL
-`launch` needs a display + `mjpython`.
+Honest limits:
+- **Shape is fixed per session** (`--shape coin|square|triangle|pentagon|hexagon|ellipse|capsule`). macOS' `mjpython`
+  allows only **one** passive viewer per process, so relaunching to swap the object model crashes
+  ("another MuJoCo viewer is already open"). To switch shapes freely, use the **tkinter GUI** (`delivery_gui.py`), which
+  renders offscreen and has no such limit.
+- **Keys go to the viewer window, not the terminal** — click the 3D window first.
+- Target *selection* is keyboard-cycling the deployable bank targets (the passive viewer exposes no click→world callback,
+  so arbitrary click-to-place is not available; the marker + mouse camera are native).
+
+Following `viz/viewer.py`, the loop (`drive_delivery`) is **unit-tested headless with a fake handle** (3 tests: key
+flags, run→compute→replay-into-data, quit); only the GL `launch` needs a display + `mjpython`.
 
 ## The other two views of the same real delivery
 
