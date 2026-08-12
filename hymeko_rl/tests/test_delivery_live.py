@@ -10,7 +10,7 @@ import numpy as np
 
 from hymeko_rl.env.object_spec import ObjectSpec, Shape
 from hymeko_rl.env.planar_grasp_env import PlanarGraspEnv
-from hymeko_rl.gui.delivery_live import DemoState, drive_delivery, make_key_callback
+from hymeko_rl.gui.delivery_live import DemoState, drive_delivery, make_key_callback, show_scenario_start, viewer_model
 
 
 def _coin_model() -> Any:
@@ -73,6 +73,17 @@ def test_drive_runs_compute_and_replays_into_data() -> None:
     assert handle.syncs > 4                                # synced during idle + the 4 replay frames
     assert np.allclose(data.qpos, qframe)                  # the last real state was replayed into the viewer sim
     assert "K6=True" in st.status
+
+
+def test_show_scenario_start_moves_the_coin_per_scenario() -> None:
+    model = viewer_model("O0")
+    data = mujoco.MjData(model)
+    show_scenario_start(model, data, "bank_c1_-0.03_-0.02")
+    a = data.qpos[4:6].copy()
+    show_scenario_start(model, data, "bank_c1_+0.03_+0.02")
+    b = data.qpos[4:6].copy()
+    assert not np.allclose(a, b)                           # a different target scenario => a different coin start
+    assert np.allclose(data.qpos[:4], [-0.9, -1.4, 0.0, 2.7])   # arms at the generic home pose
 
 
 def test_drive_quits_immediately_without_compute() -> None:

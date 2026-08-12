@@ -90,6 +90,19 @@ def _target_xy(sid: str, zone: "tuple[float, float]") -> np.ndarray:
     return np.asarray(t, np.float64) if t is not None else np.asarray(zone, np.float64)
 
 
+def show_scenario_start(model: Any, data: Any, sid: str) -> None:
+    """Set the idle scene to a scenario's START: the coin at its ``coin_xy`` spawn, the arms at the generic home pose.
+    So cycling the target (T) visibly moves the object's starting position. # Postconditions: qpos reflects the
+    scenario's coin spawn; mj_forward'd so the render shows it."""
+    from hymeko_rl.coin_delivery.theta_option.home_states import HOME_STATE_V1_GENERIC
+    coin = getattr(scenario_by_id(sid), "coin_xy", None)
+    data.qpos[:] = 0.0
+    data.qpos[:4] = HOME_STATE_V1_GENERIC.q
+    if coin is not None:
+        data.qpos[4:6] = np.asarray(coin, np.float64)
+    mujoco.mj_forward(model, data)
+
+
 def _mark_target(handle: Handle, xy: np.ndarray) -> None:
     scn = handle.user_scn
     scn.ngeom = 0
@@ -109,12 +122,17 @@ def drive_delivery(handle: Handle, state: DemoState, policy: Any, model: Any, da
     dt = float(model.opt.timestep) * 5
     result: dict[str, Any] = {}
     worker: threading.Thread | None = None
+    shown_sid: str | None = None
     while handle.is_running() and not state.quit:
+        if state.sid != shown_sid and worker is None:            # target changed → show that scenario's START pose
+            show_scenario_start(model, data, state.sid)
+            shown_sid = state.sid
         _mark_target(handle, _target_xy(state.sid, zone))
         handle.sync()
         if state.run_requested and worker is None:
             state.run_requested = False
             result.clear()
+            show_scenario_start(model, data, state.sid)          # snap back to the coin spawn before the delivery plays
             state.status = f"running: {_SHAPE_LABELS.get(state.shape_id, state.shape_id)} -> {state.sid} ..."
             print(f"  {state.status}", flush=True)
 
