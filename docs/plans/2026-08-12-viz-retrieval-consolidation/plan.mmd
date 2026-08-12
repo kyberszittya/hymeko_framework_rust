@@ -1,0 +1,20 @@
+%% plan.mmd — viz + retrieval consolidation, each behind a parity gate, then the GUI demo.
+flowchart TD
+    subgraph RET["A) Retrieval"]
+        A1["add RetrievalDeliveryPolicy.predict_with_source(x) -> (theta, nearest_idx) + test"]
+        A2["migrate video_r11_6c._nearest -> predict_with_source (delivery_viewer already done)"]
+        A1 --> A2 --> GA{"theta parity vs old: max|dtheta|=0 ?"}
+        GA -- no --> HA["HALT"]
+    end
+    subgraph VIZ["B) Visualization"]
+        B1["NEW viz/rollout_film.py: Filmer(cam,phase) + CAMS presets + render_qpos_seq + test"]
+        B2["migrate video_r11_6c (_Filmer/_cam) + re-export for r11_7b_flagship"]
+        B3["migrate delivery_viewer.render_gif -> render_qpos_seq"]
+        B1 --> B2 --> B3 --> GB{"render 1 clip before/after: frames byte-identical ?"}
+        GB -- no --> HB["HALT (a frame changed)"]
+    end
+    GA -- yes --> DONE
+    GB -- yes --> DONE["both green -> commit"]
+    DONE --> GUI["THEN: GUI demo on the consolidated helpers"]
+
+    NOTE["NOT consolidated (different algorithms): coin_zero_home_rrt (RRT nearest), r11_7b_physics_selector (physics metric), r11_6d_* (audit id/distance)"]

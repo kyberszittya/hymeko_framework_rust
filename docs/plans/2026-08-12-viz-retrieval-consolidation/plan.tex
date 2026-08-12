@@ -1,0 +1,78 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\title{Plan: viz + retrieval de-duplication (then the GUI demo)}
+\author{HyMeKo — code-health consolidation}
+\date{2026-08-12}
+\begin{document}
+\maketitle
+
+\section{Scope and goal}
+Remove two verified duplications surfaced by the audit
+(\texttt{reports/2026-08-12-code-duplication-audit.md}), each behind a parity gate; then continue the GUI demo on the
+consolidated helpers.
+
+\paragraph{(A) Retrieval.} The library \texttt{RetrievalDeliveryPolicy.predict} is reimplemented because it does not
+return the \emph{source index} callers need for display/audit. Add \texttt{predict\_with\_source(x) -> (theta,
+nearest\_idx)} and migrate the one \emph{true} $\theta$-dup (\texttt{video\_r11\_6c\_composition.\_nearest};
+\texttt{delivery\_viewer} already migrated). Measured parity: $\max|\Delta\theta| = 0$.
+
+\paragraph{(B) Visualization.} \texttt{\_cam()} ($\times 8$, $\sim$3 presets) and \texttt{\_Filmer} ($\times 3$, nearly
+identical) and ad-hoc \texttt{mujoco.Renderer} loops. Create one \texttt{viz/rollout\_film.py} —
+\texttt{class Filmer(cam, phase=None)} (the frame\_hook), \texttt{CAMS} presets (\texttt{top\_down} 1.02/$-87$/90,
+\texttt{angled} 0.9/$-55$/90, \texttt{side} 0.60/90/$-68$), and \texttt{render\_qpos\_seq(model, qseq, cam)} — and
+migrate \texttt{video\_r11\_6c\_composition} (the template others import from) + \texttt{delivery\_viewer.render\_gif}.
+
+\paragraph{NOT consolidated (documented, different algorithms).} \texttt{coin\_zero\_home\_rrt.\_nearest} (RRT tree
+nearest-neighbour), \texttt{r11\_7b\_physics\_selector} (a physics-feature metric, not descriptor retrieval),
+\texttt{r11\_6d\_*} audits (return an id/distance metric, not $\theta$). A grep matches them; they are not
+\texttt{predict} dups. Leaving them is the correct call.
+
+\section{Affected files}
+\begin{itemize}[nosep]
+  \item \texttt{coin\_delivery/delivery\_bc/retrieval.py} --- add \texttt{predict\_with\_source} (additive). + test.
+  \item \textbf{NEW} \texttt{viz/rollout\_film.py} + \texttt{tests/test\_rollout\_film.py}.
+  \item \texttt{experiments/video\_r11\_6c\_composition.py} --- \texttt{\_nearest}$\to$\texttt{predict\_with\_source};
+    \texttt{\_Filmer}/\texttt{\_cam}$\to$\texttt{viz.rollout\_film} (keep \texttt{r11\_7b\_flagship}'s imports working).
+  \item \texttt{gui/delivery\_viewer.py} --- \texttt{render\_gif}$\to$\texttt{render\_qpos\_seq}.
+\end{itemize}
+
+\section{CORE.YAML items touched}
+\textbf{None} (all \texttt{hymeko\_rl/**}, non-core). No new dependency.
+
+\section{Interface changes}
+Additive only: \texttt{RetrievalDeliveryPolicy.predict\_with\_source}; new \texttt{viz.rollout\_film} symbols.
+\texttt{video\_r11\_6c\_composition} keeps exporting \texttt{\_Filmer}, \texttt{\_cam}, \texttt{\_trim\_settled} (as
+re-exports from \texttt{viz.rollout\_film}) so \texttt{r11\_7b\_flagship\_video}'s imports do not break.
+
+\section{Test strategy}
+\begin{itemize}[nosep]
+  \item Unit: \texttt{predict\_with\_source} returns \texttt{(predict(x), argmin\_idx)} --- $\theta$ equals
+    \texttt{predict}, index is the nearest row (leave-one-out honoured).
+  \item Unit: \texttt{Filmer} captures $N$ frames of shape $(H,W,3)$ + dtz; \texttt{CAMS} presets build valid cameras;
+    \texttt{render\_qpos\_seq} renders each state.
+  \item \textbf{Parity gate (retrieval)}: over $\ge 8$ scenarios, migrated \texttt{video\_r11\_6c} $\theta$ equals the
+    pre-migration $\theta$ ($\Delta = 0$).
+  \item \textbf{Parity gate (viz)}: render \texttt{video\_r11\_6c\_composition} one delivery clip before and after; the
+    frame arrays must be \textbf{byte-identical} (\texttt{render\_state\_signature} / array equality). Deterministic
+    renders, so $\Delta = 0$ or halt.
+  \item Static: \texttt{ruff}; \texttt{mypy --strict} on \texttt{retrieval.py} + \texttt{rollout\_film.py}.
+\end{itemize}
+
+\section{Performance budget \& risk}
+Peak RSS $<$ 2\,GB. The viz parity gate re-renders one clip twice ($\sim$1--2\,min each) --- background. Risks:
+(i) the generalized \texttt{Filmer} changes a frame (camera/renderer order) --- caught by the byte-parity gate, halt if
+non-zero; (ii) \texttt{predict\_with\_source} index off-by-one vs the manual argmin --- caught by the $\theta$-parity +
+the id equality; (iii) breaking \texttt{r11\_7b\_flagship}'s imports --- mitigated by re-exporting the moved symbols.
+
+\section{Rollback}
+Each consolidation is its own commit behind its parity gate; revert restores the local \texttt{\_nearest}/\texttt{\_cam}/
+\texttt{\_Filmer}. No state mutation.
+
+\section{Then: GUI demo}
+On the consolidated helpers, finish the delivery demo (shape/target/strategy over the real pipeline). Separate step,
+after both parity gates are green.
+\end{document}

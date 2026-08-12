@@ -13,20 +13,22 @@ from pathlib import Path
 from typing import Any
 
 import imageio.v2 as imageio
-import mujoco
 import numpy as np
 
 import dataclasses
 
 from hymeko_rl.coin_delivery.delivery_bc.dataset import bc_context, fresh_rig, reconstruct_capture, scenario_by_id
 from hymeko_rl.coin_delivery.delivery_bc.evaluate import CLOSED_LOOP_CFG
-from hymeko_rl.coin_delivery.delivery_bc.models import Standardizer, clip_theta
+from hymeko_rl.coin_delivery.delivery_bc.models import clip_theta
+from hymeko_rl.coin_delivery.delivery_bc.retrieval import RetrievalConfig, RetrievalDeliveryPolicy, load_frozen
 from hymeko_rl.coin_delivery.forward_displacement import delivery_success, rollout_primitive
 from hymeko_rl.coin_delivery.theta_option import planar_geometric_approach as pga
 from hymeko_rl.coin_delivery.theta_option import torque_path_option as tpo
 from hymeko_rl.experiments.coin_kinetic_capture_exploration_audit import _rig
 from hymeko_rl.experiments.coin_zero_home_reach import do_reach, solve_capture
 from hymeko_rl.experiments.r11_4b_conditioned_bc import _load_dataset
+from hymeko_rl.viz.rollout_film import Filmer as _Filmer          # consolidated frame_hook filmer
+from hymeko_rl.viz.rollout_film import top_down as _cam           # consolidated top-down camera preset
 from hymeko_rl.viz.rollout_overlay import (
     InfoPanel, StatusBar, TimeSeriesPanel, encode_clip, overlay_frames, summary_card)
 
@@ -40,46 +42,24 @@ SUCCESS = ["bank_c1_+0.03_-0.02", "bank_c2_+0.025_-0.015", "bank_c3_r5_a-15"]   
 FAILURE = "bank_c3_r9_a-30"
 
 
-def _cam() -> Any:
-    # near-top-down: the task is PLANAR, so an overhead view is the readable one and removes the depth illusion of the
-    # coin passing "through" an arm link (the coin only collides with fingertips+floor, so a link may pass over it).
-    cam = mujoco.MjvCamera()
-    mujoco.mjv_defaultCamera(cam)
-    cam.distance, cam.elevation, cam.azimuth = 1.02, -87, 90
-    cam.lookat = np.array([0.0, 0.09, 0.0])
-    return cam
+# `_cam` (top-down camera) and `_Filmer` (frame_hook renderer) are the consolidated viz.rollout_film versions (imported
+# above; re-exported here so r11_7b_flagship_video's `from …video_r11_6c_composition import _Filmer, _cam` still works).
 
 
-class _Filmer:
-    """Captures (frame, coin dtz mm) per governed delivery step from a ``mujoco.Renderer`` (read-only)."""
-
-    def __init__(self, cam: Any) -> None:
-        self.cam, self.r, self.frames, self.dtz_mm = cam, None, [], []
-
-    def __call__(self, rl: Any, _t: int) -> None:
-        if self.r is None:
-            self.r = mujoco.Renderer(rl.inner.model, height=H, width=W)
-        self.r.update_scene(rl.inner.data, camera=self.cam)
-        self.frames.append(np.asarray(self.r.render(), np.uint8))
-        self.dtz_mm.append(float(rl.inner.direction_to_zone()[1]) * 1000.0)
-
-    def close(self) -> None:
-        if self.r is not None:
-            self.r.close()
+def _nearest(x: np.ndarray, policy: RetrievalDeliveryPolicy, ids: "list[str]") -> "tuple[str, np.ndarray]":
+    """The deployed descriptor→(source_id, θ) retrieval — the library policy, no reimplemented nearest lookup."""
+    theta, idx = policy.predict_with_source(np.asarray(x, np.float64))
+    return ids[idx], theta
 
 
-def _nearest(x: np.ndarray, Xs: np.ndarray, ids: "list[str]", theta: list, std: Standardizer) -> "tuple[str, np.ndarray]":
-    i = int(np.argmin(np.linalg.norm(Xs - std.transform(x), axis=1)))
-    return ids[i], np.asarray(theta[i], np.float64)
-
-
-def deliver_clip(sid: str, smp: Any, fp: dict, Xs: np.ndarray, std: Standardizer, cfg: Any, conf: Any, obj: Any) -> dict:
+def deliver_clip(sid: str, smp: Any, policy: RetrievalDeliveryPolicy, ids: "list[str]", cfg: Any, conf: Any,
+                 obj: Any) -> dict:
     """Render one scenario's teacher-free retrieval delivery; return frames + overlay facts."""
     rc = reconstruct_capture(fresh_rig(), cfg, conf, obj, scenario_by_id(sid), smp.seed)
     if rc is None:
         return {"sid": sid, "error": "no_certified_grasp"}
     snap = rc.result.outcome.snapshot
-    bank_id, theta = _nearest(np.asarray(smp.x, np.float64), Xs, fp["table"]["scenario_ids"], fp["table"]["theta"], std)
+    bank_id, theta = _nearest(smp.x, policy, ids)
     film = _Filmer(_cam())
     m = rollout_primitive(snap, clip_theta(theta), CLOSED_LOOP_CFG, frame_hook=film)
     film.close()
@@ -178,12 +158,13 @@ def _overlay(clip: dict) -> list:
 def render(out: Path = OUT) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     fp = json.loads(FROZEN.read_text())
-    X = np.asarray(fp["table"]["X"], np.float64)
-    std = Standardizer.fit(X)
-    Xs = std.transform(X)
+    # RetrievalConfig() (k=1, NEAREST) reproduces the former local `_nearest` (top-1) byte-for-byte; the frozen table's
+    # own config is k=3 dist_weighted — NOT used here so this demo video's θ is unchanged by the consolidation.
+    policy = load_frozen(fp["table"], RetrievalConfig())
+    ids = fp["table"]["scenario_ids"]
     cfg, conf, obj = bc_context()
     smps = {s.scenario_id: s for s in _load_dataset(B1_DATASET)}
-    theta_open = np.asarray(fp["table"]["theta"][fp["table"]["scenario_ids"].index(OPENING)], np.float64)
+    theta_open = np.asarray(fp["table"]["theta"][ids.index(OPENING)], np.float64)
     opening = opening_clip(theta_open)
     print(f"  OPENING {OPENING}: full chain, {len(opening)} frames", flush=True)
     size = (opening[0].width, opening[0].height) if opening else (W, H)
@@ -193,7 +174,7 @@ def render(out: Path = OUT) -> dict:
     clip: list = list(intro) + list(opening)
     facts: list = []
     for sid in [*SUCCESS, FAILURE]:
-        c = deliver_clip(sid, smps[sid], fp, Xs, std, cfg, conf, obj)
+        c = deliver_clip(sid, smps[sid], policy, ids, cfg, conf, obj)
         if "error" in c:
             print(f"  {sid}: {c['error']}", flush=True)
             continue

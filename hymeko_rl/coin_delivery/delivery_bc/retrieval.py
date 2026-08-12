@@ -93,10 +93,19 @@ class RetrievalDeliveryPolicy:
 
     def predict(self, x: np.ndarray, exclude_idx: "int | None" = None) -> np.ndarray:
         """Map one descriptor to a clipped theta. ``exclude_idx`` drops that table row (leave-one-out train eval)."""
+        return self.predict_with_source(x, exclude_idx)[0]
+
+    def predict_with_source(self, x: np.ndarray, exclude_idx: "int | None" = None) -> "tuple[np.ndarray, int]":
+        """Like :meth:`predict`, but also return the NEAREST table-row index — the primary retrieved demonstration —
+        so callers can label/audit *which* demo was retrieved without reimplementing the nearest lookup.
+
+        # Postconditions: the theta equals :meth:`predict`; the index is ``argmin`` of the query distance (respecting
+          ``exclude_idx``). For ``SelectRule.NEAREST`` the theta IS ``theta[index]``; for k>1 blends the index is the
+          nearest (primary) source of the blend."""
         d = self._distances(x, exclude_idx)
         k = min(self._cfg.k, int(np.isfinite(d).sum()))
         idx = np.argsort(d)[:k]
-        return clip_theta(self._select(idx, d))
+        return clip_theta(self._select(idx, d)), int(idx[0])
 
     def support_distance(self, x: np.ndarray) -> float:
         """Distance from a query to its NEAREST table row (in the policy's metric) — the retrieval-support signal. A

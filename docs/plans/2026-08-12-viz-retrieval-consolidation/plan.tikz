@@ -1,0 +1,40 @@
+% plan.tikz — viz + retrieval de-duplication: before (scattered) -> after (one home each), + parity gates.
+\documentclass[tikz,border=8pt]{standalone}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,shapes.geometric}
+\begin{document}
+\begin{tikzpicture}[
+  font=\small,
+  dup/.style={draw,rounded corners,fill=red!8,draw=red!50,align=center,minimum height=7mm,inner sep=3pt},
+  lib/.style={draw,rounded corners,fill=green!12,draw=green!55!black,thick,align=center,minimum height=8mm,inner sep=4pt},
+  keep/.style={draw,rounded corners,fill=gray!8,draw=gray!50,align=center,minimum height=7mm,inner sep=3pt},
+  flow/.style={-{Stealth[length=3mm]},thick},
+  gate/.style={draw,diamond,aspect=2,fill=yellow!18,draw=orange!70,align=center,inner sep=1pt},
+]
+% RETRIEVAL
+\node[dup] (n1) {\texttt{video\_r11\_6c.\_nearest}\\(id + $\theta$)};
+\node[dup,below=2mm of n1] (n2) {\texttt{delivery\_viewer}\\(done)};
+\node[lib,right=16mm of n1] (rp) {\texttt{RetrievalDeliveryPolicy}\\\textbf{+ predict\_with\_source}};
+\node[gate,right=12mm of rp] (g1) {$\Delta\theta{=}0$};
+\draw[flow] (n1) -- (rp); \draw[flow] (n2.east) -- (rp);
+\draw[flow] (rp) -- (g1);
+\node[keep,below=8mm of n2,text width=4.6cm] (keep1) {NOT dups (leave): RRT \texttt{\_nearest}, physics-selector, r11\_6d audit-metrics};
+
+% VIZ
+\begin{scope}[shift={(0,-3.2)}]
+  \node[dup] (c) {\texttt{\_cam()} $\times 8$};
+  \node[dup,below=2mm of c] (f) {\texttt{\_Filmer} $\times 3$};
+  \node[dup,below=2mm of f] (r) {\texttt{mujoco.Renderer} loops $\times 17$};
+  \node[lib,right=16mm of f] (vf) {\texttt{viz/rollout\_film.py}\\\texttt{Filmer} · \texttt{CAMS} · \texttt{render\_qpos\_seq}};
+  \node[gate,right=12mm of vf] (g2) {frame\\byte-eq};
+  \draw[flow] (c) -- (vf); \draw[flow] (f) -- (vf); \draw[flow] (r) -- (vf);
+  \draw[flow] (vf) -- (g2);
+\end{scope}
+
+\node[lib,below=6mm of g2] (gui) {then: GUI demo\\on the consolidated helpers};
+\draw[flow] (g1) |- (gui); \draw[flow] (g2) -- (gui);
+
+\begin{scope}[on background layer]
+  \node[draw=green!45!black,dashed,rounded corners,fit=(rp)(vf),inner sep=8pt,label=above:{ONE home each (library)}] {};
+\end{scope}
+\end{tikzpicture}
+\end{document}

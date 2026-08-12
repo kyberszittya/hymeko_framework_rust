@@ -75,3 +75,21 @@ own refactors; this audit stays on the coin-delivery / viz surface this session 
 
 Neither §1 nor §2 is a same-commit change (each touches ~5–10 files and wants a frame/θ-parity gate) — they are scoped
 follow-ups with a 4-format plan. This commit does only the verified, safe self-fix (retrieval in `delivery_viewer`).
+
+## Update (2026-08-12, plan `docs/plans/2026-08-12-viz-retrieval-consolidation/`) — consolidations done + a correction
+
+Both consolidations are now implemented behind parity gates:
+
+- **`viz/rollout_film.py`** created (`Filmer`, `CAMS` presets, `render_qpos_seq` + tests); `video_r11_6c_composition`
+  (the template `r11_7b_flagship_video` imports from) and `delivery_viewer.render_gif` migrated to it. **Frame
+  byte-parity = identical** (verified against the former inline `_cam`/`_Filmer`).
+- **`RetrievalDeliveryPolicy.predict_with_source`** added (returns `(θ, nearest_idx)` — the missing API that caused the
+  reimplementation) + test; `video_r11_6c._nearest` migrated. **θ-parity = 0** vs the former local top-1 lookup.
+
+**⚠️ Correction to the self-fix above.** The parity gate caught a real mistake I made: the frozen table's own config is
+**`k=3, dist_weighted`**, but the local lookups (and `video_r11_6c`'s original `_nearest`) were **single top-1
+nearest** (`RetrievalConfig()` default = k=1, NEAREST). My earlier `delivery_viewer` self-fix used bare `load_frozen(...)`
+(the k=3 blend) — a *behaviour change* (Δθ = 2.69 vs top-1), which I had mislabelled "Δθ = 0" (that measurement was
+against the default-config policy, not `load_frozen`). Both call sites now use `load_frozen(table, RetrievalConfig())`
+(top-1), restoring Δθ = 0. The k=3 blend is the table's stored deployed config; switching the demos to it is a separate,
+deliberate behaviour choice, not part of this dedup.

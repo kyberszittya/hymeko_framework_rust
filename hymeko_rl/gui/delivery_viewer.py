@@ -27,7 +27,7 @@ from hymeko_rl.coin_delivery.delivery_bc.dataset import (
     bc_context, fresh_rig, reconstruct_capture, scenario_by_id)
 from hymeko_rl.coin_delivery.delivery_bc.evaluate import CLOSED_LOOP_CFG
 from hymeko_rl.coin_delivery.delivery_bc.models import clip_theta
-from hymeko_rl.coin_delivery.delivery_bc.retrieval import load_frozen
+from hymeko_rl.coin_delivery.delivery_bc.retrieval import RetrievalConfig, load_frozen
 from hymeko_rl.coin_delivery.forward_displacement import delivery_success, rollout_primitive
 from hymeko_rl.coin_delivery.object_curriculum import variant
 from hymeko_rl.experiments.coin_kinetic_capture_exploration_audit import _rig
@@ -46,7 +46,9 @@ class DeployedPolicy:
     scenario's teacher θ. The retrieval is NOT reimplemented here: it is the frozen policy loaded via ``load_frozen``."""
 
     def __init__(self) -> None:
-        self.policy = load_frozen(json.loads(_FROZEN.read_text())["table"])   # the deployed RetrievalDeliveryPolicy
+        # RetrievalConfig() (k=1, NEAREST) = the descriptor-nearest deploy this demo shows (matches the manual top-1
+        # lookup it replaced, Δθ=0). The frozen table's own config is k=3 dist_weighted — a different, blended policy.
+        self.policy = load_frozen(json.loads(_FROZEN.read_text())["table"], RetrievalConfig())
         self.samples = {s.scenario_id: s for s in _load_dataset(_DATASET)}
 
     def theta_for(self, sid: str, strategy: str) -> "tuple[np.ndarray, str]":
@@ -82,21 +84,12 @@ def record_delivery(policy: DeployedPolicy, shape: str, sid: str, strategy: str)
 
 
 def render_gif(model: Any, qpos_seq: np.ndarray, path: Path, fps: int = 30) -> None:
-    """Offscreen render of a recorded real-physics trajectory to a GIF (no display needed) — reuses the codebase's
-    ``mujoco.Renderer`` + top-down camera. The canonical headless visualization (same as the video_* experiments)."""
+    """Offscreen render of a recorded real-physics trajectory to a GIF — the canonical viz (``viz.rollout_film``)."""
     from PIL import Image
 
-    from hymeko_rl.experiments.video_r11_6c_composition import _cam
+    from hymeko_rl.viz.rollout_film import render_qpos_seq, top_down
     from hymeko_rl.viz.rollout_overlay import encode_clip
-    renderer = mujoco.Renderer(model, height=480, width=560)
-    data = mujoco.MjData(model)
-    frames = []
-    for q in qpos_seq:
-        data.qpos[:] = q
-        mujoco.mj_forward(model, data)
-        renderer.update_scene(data, camera=_cam())
-        frames.append(Image.fromarray(np.asarray(renderer.render(), np.uint8)))
-    renderer.close()
+    frames = [Image.fromarray(f) for f in render_qpos_seq(model, qpos_seq, top_down())]
     path.parent.mkdir(parents=True, exist_ok=True)
     encode_clip(frames, path, fps=fps)
 
