@@ -49,7 +49,8 @@ class DeliveryGUI:
         self.samples = self.policy.samples
         self.sids = list(self.samples.keys())
         self.targets = {sid: _target_of_scenario(sid, self.zone) for sid in self.sids}
-        self.shape = tk.StringVar(value="O0")
+        self._id_by_label = {_SHAPE_LABELS[s]: s for s in SHAPES}     # "coin" → "O0"
+        self.shape_label = tk.StringVar(value=_SHAPE_LABELS["O0"])
         self.strategy = tk.StringVar(value=STRATEGIES[0])
         self.sid = self.sids[0]
         self._q: "queue.Queue[Any]" = queue.Queue()
@@ -59,8 +60,8 @@ class DeliveryGUI:
         ctrl = ttk.Frame(root, padding=8)
         ctrl.grid(row=0, column=0, sticky="ns")
         ttk.Label(ctrl, text="object shape").grid(row=0, column=0, sticky="w")
-        ttk.OptionMenu(ctrl, self.shape, "O0", *[s for s, _ in SHAPES],
-                       command=lambda _e: self._redraw_map()).grid(row=1, column=0, sticky="ew", pady=(0, 8))
+        _labels = [_SHAPE_LABELS[s] for s in SHAPES]
+        ttk.OptionMenu(ctrl, self.shape_label, _labels[0], *_labels).grid(row=1, column=0, sticky="ew", pady=(0, 8))
         ttk.Label(ctrl, text="strategy").grid(row=2, column=0, sticky="w")
         ttk.OptionMenu(ctrl, self.strategy, STRATEGIES[0], *STRATEGIES).grid(row=3, column=0, sticky="ew", pady=(0, 8))
         ttk.Label(ctrl, text="target — click the map").grid(row=4, column=0, sticky="w")
@@ -108,18 +109,21 @@ class DeliveryGUI:
 
     # -- run (worker thread) ----------------------------------------------------------------------------------------
     def _on_run(self, *_a: Any) -> None:
+        shape_id = self._id_by_label[self.shape_label.get()]
         self.run_btn.config(state="disabled")
-        self._set_status(f"running real physics: {_SHAPE_LABELS.get(self.shape.get(), self.shape.get())} → {self.sid} …")
-        threading.Thread(target=self._worker, args=(self.shape.get(), self.sid, self.strategy.get()),
+        self._set_status(f"running real physics: {self.shape_label.get()} → {self.sid} …")
+        threading.Thread(target=self._worker, args=(shape_id, self.sid, self.strategy.get()),
                          daemon=True).start()
         self.root.after(80, self._poll)
 
     def _worker(self, shape: str, sid: str, strategy: str) -> None:
+        # Render on the worker thread (mujoco.Renderer is thread-safe here); produce PIL Images only — Tk objects
+        # (PhotoImage) must NOT be created off the main thread, so that conversion happens in _poll.
         try:
             res = record_delivery(self.policy, shape, sid, strategy)
             if "error" not in res:
-                res["pil"] = [ImageTk.PhotoImage(Image.fromarray(f))
-                              for f in render_qpos_seq(res["model"], res["qpos_seq"], top_down())]
+                res["images"] = [Image.fromarray(f)
+                                 for f in render_qpos_seq(res["model"], res["qpos_seq"], top_down())]
             self._q.put(res)
         except Exception as e:                       # noqa: BLE001 — surface, never crash the UI thread
             self._q.put({"error": f"{type(e).__name__}: {e}"})
@@ -134,7 +138,7 @@ class DeliveryGUI:
         if "error" in res:
             self._set_status(res["error"])
             return
-        self._frames = res["pil"]
+        self._frames = [ImageTk.PhotoImage(im) for im in res["images"]]   # PhotoImage on the MAIN thread (Tk-safe)
         self._set_status(f"{res['retrieval']}  →  K6={res['k6']}  dtz_end={res['dtz_end_mm']}mm  "
                          f"({len(self._frames)} steps)")
         self._play(0)
