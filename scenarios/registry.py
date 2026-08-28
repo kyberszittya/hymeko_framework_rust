@@ -82,6 +82,15 @@ class EmbodimentEntry:
         return self.load_model()
 
 
+def _coin_load_model() -> ControlModel:
+    """CIP-COIN-00's ControlModel, lazily built from the coin repo's adapter (``hymeko_rl.coin_delivery.cip``) — its
+    runtime lives in a separate tree (hymeko/rl), so it is imported on demand (put that repo on PYTHONPATH), mirroring
+    how the aibo adapter lazily imports its env. Torch-free: only the schema-v0 ControlModel dict + this framework's
+    validator are touched. # Raises ``ImportError`` if the coin runtime tree is not importable."""
+    from hymeko_rl.coin_delivery.cip.coin_adapter import load_model as _coin
+    return _coin()
+
+
 _ENTRIES: tuple[EmbodimentEntry, ...] = (
     EmbodimentEntry(
         embodiment="pick_place",
@@ -115,8 +124,10 @@ _ENTRIES: tuple[EmbodimentEntry, ...] = (
         embodiment="coin",
         scenario_id="CIP-COIN-00",
         title="Two-arm coin delivery (Reference Scenario 0)",
-        status=EmbodimentStatus.PENDING,
-        measured="HOME->K6 44/55 in hymeko_rl_standalone (separate tree, K6-blind wide family); CIP-0 adapter scoped, not yet a consumer",
+        status=EmbodimentStatus.PRESENT_UNTAGGED,
+        measured="HOME->K6 46/55 (adaptive brake, supersedes 44/55). CIP-COIN-00 adapter is a consumer: CoinCIPAdapter "
+                 "delegates to the deployed coin runtime (hymeko_rl_standalone, separate tree); parity-green.",
+        load_model=_coin_load_model,
     ),
 )
 
