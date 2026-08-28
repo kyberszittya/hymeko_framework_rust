@@ -25,7 +25,7 @@ from hymeko_control.execution import (
 
 
 def _ok_result(**kw) -> TaskResult:
-    base = dict(task_id="t", status=TaskStatus.SUCCEEDED, succeeded=True)
+    base = {"task_id": "t", "status": TaskStatus.SUCCEEDED, "succeeded": True}
     base.update(kw)
     return TaskResult(**base)
 
@@ -71,6 +71,23 @@ class TestTaskResult:
         assert good.timestamps_monotonic()
         bad = _ok_result(trajectory=(TrajectorySample(3, "MOVE"), TrajectorySample(1, "CERTIFY")))
         assert not bad.timestamps_monotonic()
+
+    def test_to_public_is_json_safe_generic_surface(self) -> None:
+        import json
+
+        cert = CertificateResult(passed=True, success_passed=True, safety_passed=True,
+                                 per_certificate={"strict_k6": True}, details={"dtz_end_mm": 16.5})
+        r = _ok_result(certificate=cert, metrics={"q_task": -0.018}, provenance={"reach_planner_binding": "RRT_CONNECT"},
+                       events=(TaskEvent(0, TaskEventKind.PLAN_COMPUTED, "ReachPlanned", {"planner": "RRT_CONNECT"}),),
+                       trajectory=(TrajectorySample(0, "MOVE", {"coin_x": 0.1}),))
+        pub = r.to_public()
+        s = json.dumps(pub)  # no custom default: no mappingproxy, no enum objects leak through
+        back = json.loads(s)
+        assert back["status"] == "succeeded" and back["succeeded"] is True   # enum -> value
+        assert back["certificate"]["per_certificate"]["strict_k6"] is True
+        assert back["events"][0]["kind"] == "plan_computed" and back["events"][0]["payload"]["planner"] == "RRT_CONNECT"
+        assert back["trajectory"][0]["payload"]["coin_x"] == 0.1
+        assert "coin" not in back   # generic base carries no scenario extension
 
 
 class TestTaskEventAndTrajectory:

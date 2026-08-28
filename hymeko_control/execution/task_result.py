@@ -135,3 +135,25 @@ class TaskResult:
         ev = [e.t for e in self.events]
         tr = [s.t for s in self.trajectory]
         return ev == sorted(ev) and tr == sorted(tr)
+
+    def to_public(self) -> dict[str, Any]:
+        """A plain, JSON-serializable dict of the GENERIC surface (§10). No ``mappingproxy``, no enum objects — a
+        generic consumer (GUI framework, logger) renders from this without importing the contract types. A
+        specialization overrides this to append its extension under its own key, never mutating the generic keys."""
+        cert = self.certificate
+        return {
+            "task_id": self.task_id,
+            "status": self.status.value,
+            "succeeded": self.succeeded,
+            "failure_class": self.failure_class,
+            "certificate": (None if cert is None else {
+                "passed": cert.passed, "success_passed": cert.success_passed, "safety_passed": cert.safety_passed,
+                "per_certificate": dict(cert.per_certificate), "details": dict(cert.details)}),
+            "metrics": dict(self.metrics),
+            "timing": dict(self.timing),
+            "provenance": dict(self.provenance),
+            "events": [{"t": e.t, "kind": e.kind.value, "label": e.label, "payload": dict(e.payload)}
+                       for e in self.events],
+            "trajectory": [{"t": s.t, "phase": s.phase, "payload": dict(s.payload), "provenance": dict(s.provenance)}
+                           for s in self.trajectory],
+        }
