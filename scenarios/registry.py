@@ -116,7 +116,7 @@ _ENTRIES: tuple[EmbodimentEntry, ...] = (
         scenario_id="CIP-COIN-00",
         title="Two-arm coin delivery (Reference Scenario 0)",
         status=EmbodimentStatus.PENDING,
-        measured="HOME->K6 33/55 in hymeko_rl_standalone (separate tree); CIP-0 adapter scoped, not yet a consumer",
+        measured="HOME->K6 44/55 in hymeko_rl_standalone (separate tree, K6-blind wide family); CIP-0 adapter scoped, not yet a consumer",
     ),
 )
 
