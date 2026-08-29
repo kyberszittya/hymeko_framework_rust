@@ -17,6 +17,7 @@ from .planning import (
     PlanningStatus,
 )
 from .task_result import (
+    TaskCommand,
     TaskEvent,
     TaskEventKind,
     TaskResult,
@@ -31,6 +32,7 @@ __all__ = [
     "PlanningResult",
     "PlanningRole",
     "PlanningStatus",
+    "TaskCommand",
     "TaskEvent",
     "TaskEventKind",
     "TaskResult",

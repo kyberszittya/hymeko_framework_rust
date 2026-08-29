@@ -92,6 +92,27 @@ class TrajectorySample:
 
 
 @dataclass(frozen=True)
+class TaskCommand:
+    """WHAT to execute (addendum §12): a task identity + declarative start / goal / context. Embodiment-agnostic — a
+    concrete pose/coordinate encoding lives inside ``context`` (never a coin_xy on the generic surface). A
+    ``TaskExecutor`` resolves the current DeploymentProfile and runs the method composition to a :class:`TaskResult`;
+    the command names no concrete algorithm.
+
+    # Invariants: frozen; all mappings are read-only views.
+    """
+
+    task_id: str
+    start: Mapping[str, Any] = field(default_factory=dict)
+    goal: Mapping[str, Any] = field(default_factory=dict)
+    context: Mapping[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "start", freeze_mapping(self.start))
+        object.__setattr__(self, "goal", freeze_mapping(self.goal))
+        object.__setattr__(self, "context", freeze_mapping(self.context))
+
+
+@dataclass(frozen=True)
 class TaskResult:
     """The generic result of executing one task. Specializations extend this; generic consumers depend ONLY on it.
 
